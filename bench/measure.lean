@@ -1,6 +1,6 @@
 import Lean
-import GroupoidModel.Syntax.Typechecker.Synth
-import GroupoidModel.Syntax.Frontend.Translation
+import HoTTLean.Syntax.Typechecker.Synth
+import HoTTLean.Syntax.Frontend.Translation
 
 open Lean Elab Meta Term Command
 open SynthLean

@@ -18,7 +18,7 @@ jobs:
         run: ~/.elan/bin/lake exe cache get
 
       - name: Build project
-        run: ~/.elan/bin/lake build GroupoidModel
+        run: ~/.elan/bin/lake build HoTTLean
 
       - name: Run tests
         run: ~/.elan/bin/lake test

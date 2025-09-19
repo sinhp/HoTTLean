@@ -1,7 +1,7 @@
 import Lake
 open Lake DSL
 
-package groupoid_model where
+package hottlean where
   -- Settings applied to both builds and interactive editing
   leanOptions := #[
     ⟨`pp.unicode.fun, true⟩, -- pretty-prints `fun a ↦ b`
@@ -13,17 +13,15 @@ package groupoid_model where
 
 require Poly from git "https://github.com/sinhp/Poly" @ "master"
 
-require "chasenorman" / "Canonical"
-
 /-- We must ensure the theory prelude gets built
 so that theory environments can be created from its `.olean`.
 But we should not import the theory prelude into any Lean environment.
 So it is built manually. -/
 lean_lib Prelude where
-  roots := #[`GroupoidModel.Syntax.Frontend.Prelude]
+  roots := #[`HoTTLean.Syntax.Frontend.Prelude]
 
 @[default_target]
-lean_lib GroupoidModel where
+lean_lib HoTTLean where
   needs := #[Prelude]
 
 require checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"
