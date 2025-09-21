@@ -2,49 +2,7 @@ import Lean
 import Qq
 import HoTTLean.Typechecker.Synth
 import HoTTLean.Frontend.EnvExt
-import HoTTLean.Syntax.Typechecker.Synth
-import HoTTLean.Syntax.Frontend.EnvExt
-import HoTTLean.Syntax.Frontend.Translation
-
--- TODO: backported from newer Lean; remove when bumping.
-namespace Lean
-namespace CollectAxioms'
-
-structure State where
-  visited : NameSet    := {}
-  axioms  : Array Name := #[]
-
-abbrev M := ReaderT Environment $ StateM State
-
-partial def collect (c : Name) : M Unit := do
-  let collectExpr (e : Expr) : M Unit := e.getUsedConstants.forM collect
-  let s ← get
-  unless s.visited.contains c do
-    modify fun s => { s with visited := s.visited.insert c }
-    let env ← read
-    -- We should take the constant from the kernel env, which may differ from the one in the elab
-    -- env in case of (async) errors.
-    match env.checked.get.find? c with
-    | some (ConstantInfo.axiomInfo v)  =>
-        modify fun s => { s with axioms := (s.axioms.push c) }
-        collectExpr v.type
-    | some (ConstantInfo.defnInfo v)   => collectExpr v.type *> collectExpr v.value
-    | some (ConstantInfo.thmInfo v)    => collectExpr v.type *> collectExpr v.value
-    | some (ConstantInfo.opaqueInfo v) => collectExpr v.type *> collectExpr v.value
-    | some (ConstantInfo.quotInfo _)   => pure ()
-    | some (ConstantInfo.ctorInfo v)   => collectExpr v.type
-    | some (ConstantInfo.recInfo v)    => collectExpr v.type
-    | some (ConstantInfo.inductInfo v) => collectExpr v.type *> v.ctors.forM collect
-    | none                             => pure ()
-
-end CollectAxioms'
-
-def collectAxioms' {m : Type → Type} [Monad m] [MonadEnv m] (constName : Name) : m (Array Name) := do
-  let env ← getEnv
-  let (_, s) := ((CollectAxioms'.collect constName).run env).run {}
-  pure s.axioms
-
-end Lean
+import HoTTLean.Frontend.Translation
 
 namespace SynthLean
 
@@ -64,14 +22,15 @@ and return them as an axiom environment.
 Assumes that all such axioms are present in the ambient environment
 as definitions of type `CheckedAx _` under the same name. -/
 def computeAxioms (thyEnv : Environment) (constNm : Name) : MetaM ((E : Q(Axioms Name)) × Q(($E).Wf)) := do
-  let axioms ← withEnv thyEnv <| collectAxioms' constNm
+  let (_, st) ← (CollectAxioms.collect constNm).run thyEnv |>.run {}
+  let axioms := st.axioms
   -- The output includes `constNm` if it is itself an axiom.
   let axioms := axioms.filter (· != constNm)
   -- Order the axioms by '`a` uses `b`'.
   let mut axiomAxioms : Std.HashMap Name (Array Name) := {}
   for axNm in axioms do
-    let axioms ← withEnv thyEnv <| collectAxioms' axNm
-    let axioms := axioms.filter (· != axNm)
+    let (_, st) ← (CollectAxioms.collect axNm).run thyEnv |>.run {}
+    let axioms := st.axioms.filter (· != axNm)
     axiomAxioms := axiomAxioms.insert axNm axioms
   let mut axioms := axioms.qsort (fun a b => axiomAxioms[b]!.contains a)
   -- HACK: replace `sorryAx` with our universe-monomorphic versions.
