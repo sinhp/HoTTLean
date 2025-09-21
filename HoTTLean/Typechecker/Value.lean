@@ -422,10 +422,10 @@ private theorem conv_ctx_all :
     exact NeutEqTm.conv_neut this (EqTm.refl_tm this.wf_tm) (eqA.symm_tp.conv_ctx eq)
   case clos₂_tp Aeq Beq C ihE _ eq =>
     apply Clos₂EqTp.clos₂_tp (ihE eq) (Aeq.conv_ctx eq) (Beq.conv_ctx _) C
-    grind [Clos₂EqTp.clos₂_tp, EqTp.conv_ctx, EqCtx.snoc, EqTp.trans_tp, EqTp.symm_tp]
+    grind [Clos₂EqTp.clos₂_tp, EqTp.conv_ctx, EqCtx.snoc]
   case clos₂_val_tp Aeq Beq C ihE _ _ eq =>
     apply Clos₂EqTp.clos₂_val_tp (ihE eq) (Aeq.conv_ctx eq) (Beq.conv_ctx _) C
-    grind [Clos₂EqTp.clos₂_tp, EqTp.conv_ctx, EqCtx.snoc, EqTp.trans_tp, EqTp.symm_tp]
+    grind [Clos₂EqTp.clos₂_tp, EqTp.conv_ctx, EqCtx.snoc]
   case clos_tm Aeq Beq b env _ eq =>
     exact ClosEqTm.clos_tm (env eq) (Aeq.conv_ctx eq)
       (Beq.conv_ctx <| eq.snoc <| EqTp.refl_tp Aeq.wf_right)
