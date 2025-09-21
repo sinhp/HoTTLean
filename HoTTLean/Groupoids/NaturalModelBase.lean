@@ -1,7 +1,7 @@
 import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 import Mathlib.CategoryTheory.Category.Cat.Limit
 
-import HoTTLean.Syntax.UHom
+import HoTTLean.Model.UHom
 import HoTTLean.Grothendieck.Groupoidal.IsPullback
 import HoTTLean.Groupoids.IsPullback
 

@@ -4,6 +4,8 @@ import HoTTLean.Syntax.Typing
 import HoTTLean.Tactic.MutualInduction
 import HoTTLean.Tactic.GrindCases
 
+namespace SynthLean
+
 variable {χ : Type*} {E : Axioms χ} {Θ Δ Γ : Ctx χ}
   {A A' B B' t t' b b' u u' : Expr χ} {σ σ' σ'' : Nat → Expr χ} {ξ ξ' : Nat → Nat}
   {i l l' : Nat}
@@ -576,3 +578,5 @@ theorem Axioms.Wf.atCtx {c Al} : E.Wf → WfCtx E Γ → E c = some Al → E ∣
   . rename_i ih
     rcases Γwf with _ | ⟨Γwf, A⟩
     simpa [Expr.subst_of_isClosed _ Al.2.1] using (ih Γwf).subst (SubstProof.wfSb_wk Γwf A)
+
+end SynthLean

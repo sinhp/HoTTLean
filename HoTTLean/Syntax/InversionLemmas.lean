@@ -1,5 +1,6 @@
 import HoTTLean.Syntax.Inversion
 
+namespace SynthLean
 variable {χ : Type*} {E : Axioms χ}
 
 /-! This module establishes consequences of typing inversion,
@@ -355,3 +356,5 @@ theorem WfTm.inv_code {Γ A C l₀} : E ∣ Γ ⊢[l₀] .code A : C →
     intros; rename_i ih _ _ eq
     obtain ⟨_, rfl, _⟩ := ih eq
     grind [EqTp.trans_tp, EqTp.symm_tp]
+
+end SynthLean

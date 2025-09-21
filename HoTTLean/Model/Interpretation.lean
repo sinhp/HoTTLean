@@ -1,5 +1,5 @@
 import HoTTLean.Syntax.Inversion
-import HoTTLean.Syntax.UHom
+import HoTTLean.Model.UHom
 
 import HoTTLean.ForMathlib
 
@@ -17,6 +17,7 @@ open CategoryTheory Limits
 noncomputable section
 
 namespace NaturalModel.Universe
+open SynthLean
 
 variable {𝒞 : Type u} [SmallCategory 𝒞] [ChosenTerminal 𝒞]
 open ChosenTerminal
@@ -28,17 +29,17 @@ variable {s : UHomSeq 𝒞} (slen : univMax ≤ s.length)
 variable {χ : Type*} {E : Axioms χ} {Γ : Ctx χ} {A B t u : Expr χ} {l : Nat}
 include slen
 
-theorem _root_.EqTp.lt_slen (H : E ∣ Γ ⊢[l] A ≡ B) : l < s.length + 1 := by
+theorem _root_.SynthLean.EqTp.lt_slen (H : E ∣ Γ ⊢[l] A ≡ B) : l < s.length + 1 := by
   have := H.le_univMax
   omega
 
-theorem _root_.WfTp.lt_slen (H : E ∣ Γ ⊢[l] A) : l < s.length + 1 :=
+theorem _root_.SynthLean.WfTp.lt_slen (H : E ∣ Γ ⊢[l] A) : l < s.length + 1 :=
   (EqTp.refl_tp H).lt_slen slen
 
-theorem _root_.EqTm.lt_slen (H : E ∣ Γ ⊢[l] t ≡ u : A) : l < s.length + 1 :=
+theorem _root_.SynthLean.EqTm.lt_slen (H : E ∣ Γ ⊢[l] t ≡ u : A) : l < s.length + 1 :=
   H.wf_tp.lt_slen slen
 
-theorem _root_.WfTm.lt_slen (H : E ∣ Γ ⊢[l] t : A) : l < s.length + 1 :=
+theorem _root_.SynthLean.WfTm.lt_slen (H : E ∣ Γ ⊢[l] t : A) : l < s.length + 1 :=
   H.wf_tp.lt_slen slen
 
 end univBounds

@@ -1,6 +1,6 @@
 import Lean
 import Qq
-import HoTTLean.Syntax.Frontend.Checked
+import HoTTLean.Frontend.Checked
 
 /-!
 For all definitions added to a given theory, we must keep track of both

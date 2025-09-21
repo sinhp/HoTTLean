@@ -1,6 +1,6 @@
 import HoTTLean.Groupoids.NaturalModelBase
 
-import HoTTLean.Syntax.NaturalModel
+import HoTTLean.Model.NaturalModel
 
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 

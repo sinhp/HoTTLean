@@ -1,5 +1,6 @@
 import Lean
 
+namespace SynthLean
 namespace TypecheckerM
 open Lean
 
@@ -44,3 +45,5 @@ def eventually {α : Type} {m : Type → Type} [Monad m] (f : α → m Unit) (x 
 
 def TypecheckerM.run {α : Type} (x : TypecheckerM α) : Lean.MetaM α :=
   x.run' {}
+
+end SynthLean

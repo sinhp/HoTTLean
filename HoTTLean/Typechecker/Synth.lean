@@ -1,11 +1,14 @@
-import HoTTLean.Syntax.Typechecker.Equate
-import HoTTLean.Syntax.Frontend.Checked
+import HoTTLean.Typechecker.Equate
+import HoTTLean.Frontend.Checked
 
-open Qq
+/-! ## Typechecker
 
-/-! This module contains the top-level typechecker implementation.
+This module contains the top-level typechecker implementation.
 
 For now it is specialized to axioms named by `Lean.Name`. -/
+
+namespace SynthLean
+open Qq
 
 def traceClsTypechecker : Lean.Name := `SynthLean.Typechecker
 
@@ -408,3 +411,5 @@ partial def synthTm (vΓ : Q(TpEnv Lean.Name)) (l : Q(Nat)) (t : Q(Expr Lean.Nam
   | t =>
     throwError "expected a term, got{Lean.indentExpr t}"
 end
+
+end SynthLean

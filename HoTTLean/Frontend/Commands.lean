@@ -1,5 +1,7 @@
 import Lean
 import Qq
+import HoTTLean.Typechecker.Synth
+import HoTTLean.Frontend.EnvExt
 import HoTTLean.Syntax.Typechecker.Synth
 import HoTTLean.Syntax.Frontend.EnvExt
 import HoTTLean.Syntax.Frontend.Translation

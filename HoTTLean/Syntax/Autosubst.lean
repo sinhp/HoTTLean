@@ -5,7 +5,7 @@ import HoTTLean.Syntax.Basic
 following Schäfer/Tebbi/Smolka in
 *Autosubst: Reasoning with de Bruijn Terms and Parallel Substitution*. -/
 
-namespace Expr
+namespace SynthLean.Expr
 
 /-- Append an element to a substitution or a renaming.
 ```
@@ -327,4 +327,4 @@ theorem subst_of_isClosed' {e : Expr χ} {k} {σ : Nat → Expr χ} :
 theorem subst_of_isClosed {e : Expr χ} (σ : Nat → Expr χ) : e.isClosed → e.subst σ = e :=
   fun h => e.subst_of_isClosed' h (.zero _)
 
-end Expr
+end SynthLean.Expr

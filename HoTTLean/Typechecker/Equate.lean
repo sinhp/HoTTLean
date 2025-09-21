@@ -1,5 +1,6 @@
-import HoTTLean.Syntax.Typechecker.Evaluate
+import HoTTLean.Typechecker.Evaluate
 
+namespace SynthLean
 open Qq
 
 variable {_u : Lean.Level} {χ : Q(Type _u)}
@@ -348,3 +349,5 @@ partial def equateNeutTm (d : Q(Nat)) (nt nu : Q(Neut $χ)) :
       {Lean.indentD "≡?≡"}\
         {Lean.indentExpr nu |>.nest 2}"
 end
+
+end SynthLean

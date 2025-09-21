@@ -1,7 +1,7 @@
-import HoTTLean.Syntax.NaturalModel
-import HoTTLean.ForMathlib
 import Mathlib.CategoryTheory.Limits.Shapes.StrictInitial
+import HoTTLean.ForMathlib
 import HoTTLean.ForPoly
+import HoTTLean.Model.NaturalModel
 
 /-! Morphisms of natural models, and Russell-universe embeddings. -/
 

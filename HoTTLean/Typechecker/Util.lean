@@ -1,7 +1,6 @@
 import Qq
 
 namespace Qq
-
 open Lean Meta
 
 def withLetDeclQ {n : Type → Type} {u : Level} {α : Type} [Monad n] [MonadControlT MetaM n]
@@ -17,6 +16,7 @@ def mkLetFVarsQ {u : Level} {T : Q(Sort u)} (xs : Array Lean.Expr) (e : Q($T))
 
 end Qq
 
+namespace SynthLean
 open Qq
 
 def equateNat (n m : Q(Nat)) : Lean.MetaM Q($n = $m) := do
@@ -35,6 +35,8 @@ def ltNat (n m : Q(Nat)) : Lean.MetaM Q($n < $m) := do
   if vm <= vn then throwError "inequality does not hold{Lean.indentD ""}{n} < {m}"
   let pf ← Lean.Meta.mkEqRefl q(decide ($n < $m))
   Lean.Meta.mkAppM ``of_decide_eq_true #[pf]
+
+end SynthLean
 
 -- /-- Hacks to use during development:
 -- `as_aux_lemma` blocks are not elaborated and kernel typechecking is off,

@@ -1,6 +1,8 @@
-import HoTTLean.Syntax.Typechecker.Value
+import HoTTLean.Typechecker.Value
 
 /-! ## Inversion for value relations -/
+
+namespace SynthLean
 
 variable {χ : Type*} {E : Axioms χ}
 
@@ -236,3 +238,5 @@ theorem NeutEqTm.inv_idRec {Γ C vA cM va vr nh j l₀ l l'} :
   mutual_induction ValEqTm
   case idRec => grind [NeutEqTm.wf_tm, WfTm.wf_tp, → NeutEqTm.idRec]
   all_goals grind [EqTm.conv_eq]
+
+end SynthLean

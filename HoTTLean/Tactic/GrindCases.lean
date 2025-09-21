@@ -1,6 +1,6 @@
 import Lean.Meta.Tactic
-import Lean.Meta.Tactic.Grind
 
+namespace SynthLean
 open Lean Elab Meta Tactic
 
 def elabGrindCases : TacticM Unit := withMainContext do
@@ -38,4 +38,6 @@ def elabGrindCases : TacticM Unit := withMainContext do
 and tries to solve it by `grind [Foo.l]`
 where `Foo` is the head of the goal type,
 possibly under a telescope of universal quantifiers. -/
-elab "grind_cases" : tactic => elabGrindCases
+scoped elab "grind_cases" : tactic => elabGrindCases
+
+end SynthLean

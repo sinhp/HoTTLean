@@ -2,6 +2,8 @@ import Lean.Meta.Tactic.Simp
 
 universe u
 
+namespace SynthLean
+
 variable (χ : Type u) in
 /-- A HoTT0 expression with axioms indexed by `χ`. -/
 inductive Expr where
@@ -45,3 +47,5 @@ theorem Expr.sizeOf_pos {χ} (e : Expr χ) : 0 < sizeOf e := by
 /-- A convergent rewriting system for the HoTT0 σ-calculus. -/
 -- The attribute has to be initialized here for use in downstream modules.
 register_simp_attr autosubst
+
+end SynthLean

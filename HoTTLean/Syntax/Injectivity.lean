@@ -1,5 +1,7 @@
 import HoTTLean.Syntax.EqCtx
 
+namespace SynthLean
+
 variable {χ : Type*} {E : Axioms χ}
 
 /-! ## Injectivity of type formers
@@ -23,3 +25,5 @@ axiom EqTp.inv_sigma {Γ A B A' B' l₀ l₁ l₂ l₁' l₂'} :
 axiom EqTp.inv_Id {Γ A A' t u t' u' l₀ l l'} :
     E ∣ Γ ⊢[l₀] .Id l A t u ≡ .Id l' A' t' u' →
     l₀ = l ∧ l₀ = l' ∧ (E ∣ Γ ⊢[l₀] A ≡ A') ∧ (E ∣ Γ ⊢[l₀] t ≡ t' : A) ∧ (E ∣ Γ ⊢[l₀] u ≡ u' : A)
+
+end SynthLean

@@ -1,13 +1,14 @@
 import Qq
 
 import HoTTLean.Syntax.Synth
-import HoTTLean.Syntax.Typechecker.ValueInversion
-import HoTTLean.Syntax.Typechecker.Util
-import HoTTLean.Syntax.Typechecker.Cache
-
-open Qq
+import HoTTLean.Typechecker.ValueInversion
+import HoTTLean.Typechecker.Util
+import HoTTLean.Typechecker.Cache
 
 /-! ## Evaluation -/
+
+namespace SynthLean
+open Qq
 
 -- Qq bug: shadowing by `u : Q(Expr)` below causes 'unbound level param' errors.
 variable {_u : Lean.Level} {χ : Q(Type _u)}
@@ -848,3 +849,5 @@ def evalTmId (vΓ : Q(TpEnv $χ)) (t : Q(Expr $χ)) :
     introv vΓ t
     convert ($vtpost vΓ.toEnv_wf t) using 1 <;> autosubst
   )⟩
+
+end SynthLean

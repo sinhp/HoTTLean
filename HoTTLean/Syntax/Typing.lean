@@ -5,15 +5,13 @@ import HoTTLean.Syntax.Autosubst
 In this file we specify typing judgments of the type theory
 as `Prop`-valued relations. -/
 
-section Notation -- TODO make notation local
+namespace SynthLean
 
 declare_syntax_cat judgment
-syntax:50 term:51 : judgment
-syntax:50 term:51 " ≡ " term:51 : judgment
-syntax:50 term:51 " : " term:51 : judgment
-syntax:50 term:51 " ≡ " term:51 " : " term:51 : judgment
-
-end Notation
+scoped syntax:50 term:51 : judgment
+scoped syntax:50 term:51 " ≡ " term:51 : judgment
+scoped syntax:50 term:51 " : " term:51 : judgment
+scoped syntax:50 term:51 " ≡ " term:51 " : " term:51 : judgment
 
 /-- The maximum `l` for which `Γ ⊢[l] 𝒥` makes sense.
 When set to `0`, types cannot be quantified over at all. -/
@@ -361,7 +359,7 @@ end
 /-! ## Pretty-printers -/
 
 -- FIXME: hovering over this syntax doesn't show docstrings for `WfTp` et al.
-syntax:25 term:51 " ∣ " term:51 " ⊢[" term:51 "] " judgment:50 : term
+scoped syntax:25 term:51 " ∣ " term:51 " ⊢[" term:51 "] " judgment:50 : term
 
 macro_rules
   | `($E ∣ $Γ ⊢[$l:term] $A:term) => ``(WfTp $E $Γ $l $A)
@@ -369,7 +367,7 @@ macro_rules
   | `($E ∣ $Γ ⊢[$l:term] $t:term : $A:term) => ``(WfTm $E $Γ $l $A $t)
   | `($E ∣ $Γ ⊢[$l:term] $t:term ≡ $u:term : $A:term) => ``(EqTm $E $Γ $l $A $t $u)
 
-section PrettyPrinting
+namespace PrettyPrinting
 open Lean PrettyPrinter
 
 @[app_unexpander WfTp]
@@ -409,3 +407,5 @@ and this should be done using custom automation
 (do NOT write a million lemmas by hand). -/
 abbrev Axioms.Wf (E : Axioms χ) :=
   ∀ ⦃c p⦄, E c = some p → E ∣ [] ⊢[p.val.2] p.val.1
+
+end SynthLean

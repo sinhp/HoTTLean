@@ -1,5 +1,7 @@
 import HoTTLean.Syntax.Inversion
 
+namespace SynthLean
+
 variable {χ : Type*} {E : Axioms χ} {Δ Δ' Γ Γ' Γ'' : Ctx χ}
   {A A' B B' t t' u : Expr χ} {σ : Nat → Expr χ}
   {i l l' : Nat}
@@ -123,3 +125,5 @@ theorem WfSb.conv_dom_binder : WfSb E ((A, l) :: Γ) σ Δ → E ∣ Γ ⊢[l] A
 theorem WfSb.conv_cod_binder : WfSb E Γ σ ((A, l) :: Δ) → E ∣ Δ ⊢[l] A ≡ A' →
     WfSb E Γ σ ((A', l) :: Δ) :=
   fun h eq => h.conv_cod (eq.wf_ctx.eq_self.snoc eq)
+
+end SynthLean

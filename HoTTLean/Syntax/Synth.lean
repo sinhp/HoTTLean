@@ -1,6 +1,8 @@
 import HoTTLean.Syntax.Inversion
 import HoTTLean.Syntax.GCongr
 
+namespace SynthLean
+
 variable {χ : Type*} {E E' : Axioms χ} {Γ : Ctx χ}
   {A A' t t' : Expr χ} {i l l' : Nat}
 
@@ -73,10 +75,10 @@ theorem eq_synthLvl :
   all_goals grind [synthLvl, synthLvl.go]
 
 theorem WfTp.lvl_eq_synthLvl : E ∣ Γ ⊢[l] A → l = synthLvl Γ A :=
-  fun A => _root_.eq_synthLvl.1 A
+  fun A => eq_synthLvl.1 A
 
 theorem WfTm.lvl_eq_synthLvl : E ∣ Γ ⊢[l] t : A → l = synthLvl Γ t :=
-  fun t => _root_.eq_synthLvl.2 t
+  fun t => eq_synthLvl.2 t
 
 /-- A type's universe level is unique. -/
 theorem WfTp.uniq_lvl : E ∣ Γ ⊢[l] A → E' ∣ Γ ⊢[l'] A → l = l' :=
@@ -145,3 +147,5 @@ theorem WfTm.with_synthTp : E ∣ Γ ⊢[l] t : A → E ∣ Γ ⊢[l] t : synthT
 /-- A term's type is unique up to conversion. -/
 theorem WfTm.uniq_tp : E ∣ Γ ⊢[l] t : A → E ∣ Γ ⊢[l'] t : A' → E ∣ Γ ⊢[l] A ≡ A' :=
   fun tA tB => tA.tp_eq_synthTp.trans_tp (tA.uniq_lvl tB ▸ tB).tp_eq_synthTp.symm_tp
+
+end SynthLean

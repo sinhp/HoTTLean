@@ -4,6 +4,7 @@ import Lean.Meta.Tactic
 
 A rudimentary mutual induction tactic. Written with Claude Sonnet 4 assistance. -/
 
+namespace SynthLean
 open Lean Elab Meta Tactic
 
 partial def splitConjunctions (mvarId : MVarId) (type : Expr) : MetaM (List MVarId) := do
@@ -112,4 +113,6 @@ partial def elabMutualInduction (A : Ident) : TacticM Unit := withMainContext do
   setGoals <| indGoals.toList.map (·.mvarId!)
 
 /-- `mutual_induction Foo` eliminates the mutual inductive family that `Foo` is part of. -/
-elab "mutual_induction" A:ident : tactic => elabMutualInduction A
+scoped elab "mutual_induction" A:ident : tactic => elabMutualInduction A
+
+end SynthLean

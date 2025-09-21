@@ -4,7 +4,7 @@ import Mathlib.CategoryTheory.Category.Cat.Limit
 import Mathlib.CategoryTheory.Monoidal.Cartesian.Cat
 
 import HoTTLean.ForMathlib.CategoryTheory.Core
-import HoTTLean.Syntax.NaturalModel
+import HoTTLean.Model.NaturalModel
 import HoTTLean.Grothendieck.Groupoidal.IsPullback
 
 /-!

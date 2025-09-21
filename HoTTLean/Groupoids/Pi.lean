@@ -1,5 +1,5 @@
 import HoTTLean.Groupoids.Sigma
-import HoTTLean.Syntax.NaturalModel
+import HoTTLean.Model.NaturalModel
 import HoTTLean.ForMathlib.CategoryTheory.Whiskering
 import HoTTLean.ForMathlib.CategoryTheory.NatTrans
 

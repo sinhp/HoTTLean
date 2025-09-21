@@ -1,6 +1,8 @@
+import Mathlib.Tactic.GCongr
 import HoTTLean.Syntax.EqCtx
 import HoTTLean.Syntax.InversionLemmas
-import Mathlib.Tactic.GCongr
+
+namespace SynthLean
 
 variable {χ : Type*} {E : Axioms χ}
 
@@ -208,3 +210,5 @@ attribute [gcongr] EqTm.subst_eq
 
 attribute [gcongr] EqTp.subst
 attribute [gcongr] EqTm.subst
+
+end SynthLean

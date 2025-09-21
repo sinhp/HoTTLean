@@ -1,6 +1,6 @@
 import Lean
-import HoTTLean.Syntax.Typechecker.Synth
-import HoTTLean.Syntax.Frontend.Translation
+import HoTTLean.Typechecker.Synth
+import HoTTLean.Frontend.Translation
 
 open Lean Elab Meta Term Command
 open SynthLean

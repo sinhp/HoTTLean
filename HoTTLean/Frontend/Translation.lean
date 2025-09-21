@@ -1,6 +1,6 @@
 import Qq
 import HoTTLean.Syntax.Axioms
-import HoTTLean.Syntax.Frontend.Checked
+import HoTTLean.Frontend.Checked
 
 namespace SynthLean
 
@@ -46,7 +46,7 @@ def isType : Lean.Expr → Bool
 
 /-- Make the SynthLean term
 `fun (A : Type l) (B : A → Type l') : Type (max l l') => code (Σ (El A) (El (B #0)))`. -/
-def mkSigma {u : Level} (χ : Q(Type u)) (l l' : Nat) : Q(_root_.Expr $χ) :=
+def mkSigma {u : Level} (χ : Q(Type u)) (l l' : Nat) : Q(Expr $χ) :=
   q(.lam ($l + 1) (max $l $l' + 1) (.univ $l) <|
     .lam (max $l ($l' + 1)) (max $l $l' + 1) (.pi $l ($l' + 1) (.el <| .bvar 0) (.univ $l')) <|
       .code <|
@@ -56,7 +56,7 @@ def mkSigma {u : Level} (χ : Q(Type u)) (l l' : Nat) : Q(_root_.Expr $χ) :=
 
 /-- Make the SynthLean term
 `fun (A : Type l) (a b : A) : Type l => code (.Id l a b)`. -/
-def mkId {u : Level} (χ : Q(Type u)) (l : Nat) : Q(_root_.Expr $χ) :=
+def mkId {u : Level} (χ : Q(Type u)) (l : Nat) : Q(Expr $χ) :=
   q(.lam ($l + 1) ($l + 1) (.univ $l) <|
     .lam $l ($l + 1) (.el <| .bvar 0) <|
       .lam $l ($l + 1) (.el <| .bvar 1) <|
@@ -65,7 +65,7 @@ def mkId {u : Level} (χ : Q(Type u)) (l : Nat) : Q(_root_.Expr $χ) :=
 mutual
 /-- Completeness: if the argument is well-formed in Lean,
 the output is well-typed in MLTT. -/
-partial def translateAsTp (e : Lean.Expr) : TranslateM (Nat × Q(_root_.Expr Lean.Name)) := do
+partial def translateAsTp (e : Lean.Expr) : TranslateM (Nat × Q(Expr Lean.Name)) := do
   Lean.withTraceNode (ε := Lean.Exception) (traceClsTranslation ++ `tp) (fun
     | .ok ⟨l, A⟩ => do
       let mA : MessageData ← withEnv (← read).extEnv <| addMessageContextPartial A
@@ -88,7 +88,7 @@ partial def translateAsTp (e : Lean.Expr) : TranslateM (Nat × Q(_root_.Expr Lea
     return ⟨max l l', q(.pi $l $l' $A $B)⟩
   | _ => throwError "internal error: should fail `isType`{indentExpr e}"
 
-partial def translateAsTm (e : Lean.Expr) : TranslateM (Nat × Q(_root_.Expr Lean.Name)) := do
+partial def translateAsTm (e : Lean.Expr) : TranslateM (Nat × Q(Expr Lean.Name)) := do
   Lean.withTraceNode (ε := Lean.Exception) (traceClsTranslation ++ `tm) (fun
     | .ok ⟨l, a⟩ => do
       let ma : MessageData ← withEnv (← read).extEnv <| addMessageContextPartial a

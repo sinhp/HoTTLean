@@ -1,9 +1,9 @@
-import GroupoidModel.Syntax.Frontend.Commands
-import GroupoidModel.Syntax.Interpretation
-import GroupoidModel.Groupoids.NaturalModelBase
-import GroupoidModel.Groupoids.Pi
-import GroupoidModel.Groupoids.Sigma
-import GroupoidModel.Groupoids.Id
+import HoTTLean.Syntax.Frontend.Commands
+import HoTTLean.Syntax.Interpretation
+import HoTTLean.Groupoids.NaturalModelBase
+import HoTTLean.Groupoids.Pi
+import HoTTLean.Groupoids.Sigma
+import HoTTLean.Groupoids.Id
 
 noncomputable section
 

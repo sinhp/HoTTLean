@@ -1,5 +1,7 @@
 import HoTTLean.Syntax.Synth
 
+namespace SynthLean
+
 variable {χ : Type*} {E : Axioms χ}
 
 theorem isClosed_all :
@@ -107,3 +109,5 @@ theorem Axioms.Wf.snoc {E : Axioms χ} {A l}
   . cases Ed
     exact Awf.of_axioms_le le
   . exact (Ewf Ed).of_axioms_le le
+
+end SynthLean

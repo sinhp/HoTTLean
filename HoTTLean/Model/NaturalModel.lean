@@ -1,7 +1,6 @@
-import SEq.Tactic.DepRewrite
+import Mathlib.CategoryTheory.Limits.Shapes.KernelPair
 import Poly.ForMathlib.CategoryTheory.LocallyCartesianClosed.Presheaf
 import Poly.UvPoly.UPFan
-import Mathlib.CategoryTheory.Limits.Shapes.KernelPair
 
 import HoTTLean.ForPoly
 import HoTTLean.ForMathlib.Tactic.CategoryTheory.FunctorMap

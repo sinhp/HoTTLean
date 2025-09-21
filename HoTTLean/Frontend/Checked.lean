@@ -1,7 +1,9 @@
 import HoTTLean.Syntax.Axioms
-import HoTTLean.Syntax.Typechecker.Value
+import HoTTLean.Typechecker.Value
 
 /-! Structures that store deeply embedded axioms and definitions. -/
+
+namespace SynthLean
 
 variable {χ : Type*} {E : Axioms χ}
 
@@ -57,3 +59,4 @@ theorem wf_tp (d : CheckedDef E) : E ∣ [] ⊢[d.l] d.tp :=
   d.wf_val.wf_tp
 
 end CheckedDef
+end SynthLean

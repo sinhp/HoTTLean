@@ -1,5 +1,7 @@
 import HoTTLean.Syntax.Substitution
 
+namespace SynthLean
+
 variable {χ : Type*} {E : Axioms χ} {Θ Δ Γ : Ctx χ}
   {A A' B B' t t' b b' u u' : Expr χ}
   {σ σ' : Nat → Expr χ}
@@ -283,3 +285,4 @@ theorem toSb : E ∣ Γ ⊢[l] t ≡ t' : A → EqSb E Γ t.toSb t'.toSb ((A, l)
   fun tt' => snoc (EqSb.refl <| WfSb.id tt'.wf_ctx) tt'.wf_tp (autosubst% tt')
 
 end EqSb
+end SynthLean

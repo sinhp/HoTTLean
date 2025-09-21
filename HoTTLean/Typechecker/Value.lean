@@ -3,6 +3,8 @@ import HoTTLean.Syntax.Injectivity
 import HoTTLean.Syntax.Synth
 import HoTTLean.Syntax.Axioms
 
+namespace SynthLean
+
 variable {χ : Type*} {E : Axioms χ}
 
 /-! # Values, neutral forms, closures, and evaluation environments
@@ -350,28 +352,28 @@ private theorem wf_expr :
   grind_cases
 
 theorem ValEqTp.wf_tp {Γ l vA A} (h : ValEqTp E Γ l vA A) : E ∣ Γ ⊢[l] A :=
-  _root_.wf_expr.1 h
+  wf_expr.1 h
 
 theorem ValEqTm.wf_tm {Γ l vt t A} (h : ValEqTm E Γ l vt t A) : E ∣ Γ ⊢[l] t : A :=
-  _root_.wf_expr.2.1 h
+  wf_expr.2.1 h
 
 theorem NeutEqTm.wf_tm {Γ l vt t A} (h : NeutEqTm E Γ l vt t A) : E ∣ Γ ⊢[l] t : A :=
-  _root_.wf_expr.2.2.1 h
+  wf_expr.2.2.1 h
 
 theorem ClosEqTp.wf_tp {Γ l l' A vB B} (h : ClosEqTp E Γ l l' A vB B) :
     E ∣ (A, l) :: Γ ⊢[l'] B :=
-  _root_.wf_expr.2.2.2.1 h
+  wf_expr.2.2.2.1 h
 
 theorem Clos₂EqTp.wf_tp {Γ A B C vC l l' l''} (h : Clos₂EqTp E Γ A l B l' l'' vC C) :
     E ∣ (B, l') :: (A, l) :: Γ ⊢[l''] C :=
-  _root_.wf_expr.2.2.2.2.1 h
+  wf_expr.2.2.2.2.1 h
 
 theorem ClosEqTm.wf_tm {Γ l l' A B vb b} (h : ClosEqTm E Γ l l' A B vb b) :
     E ∣ (A, l) :: Γ ⊢[l'] b : B :=
-  _root_.wf_expr.2.2.2.2.2.1 h
+  wf_expr.2.2.2.2.2.1 h
 
 theorem EnvEqSb.wf_sb {Δ Eᵥ σ Γ} (h : EnvEqSb E Δ Eᵥ σ Γ) : WfSb E Δ σ Γ :=
-  _root_.wf_expr.2.2.2.2.2.2 h
+  wf_expr.2.2.2.2.2.2 h
 
 theorem ValEqTm.conv_tm {Γ A vt t t' l} :
     ValEqTm E Γ l vt t A → E ∣ Γ ⊢[l] t ≡ t' : A → ValEqTm E Γ l vt t' A :=
@@ -392,7 +394,7 @@ theorem NeutEqTm.conv_tp {Γ A A' vt t l} :
 /-! ## Values are closed under context conversion -/
 
 attribute [local grind →] EqCtx.length_eq WfTp.conv_ctx EqTp.conv_ctx WfTm.conv_ctx EqTm.conv_ctx in
-private theorem conv_ctx :
+private theorem conv_ctx_all :
     (∀ {Γ l vA A}, ValEqTp E Γ l vA A → ∀ {Γ'},
       EqCtx E Γ Γ' → ValEqTp E Γ' l vA A) ∧
     (∀ {Γ l vt t A}, ValEqTm E Γ l vt t A → ∀ {Γ'},
@@ -435,32 +437,32 @@ private theorem conv_ctx :
   grind_cases
 
 theorem ValEqTp.conv_ctx {Γ Γ' l vA A} : ValEqTp E Γ l vA A → EqCtx E Γ Γ' → ValEqTp E Γ' l vA A :=
-  fun h eq => _root_.conv_ctx.1 h eq
+  fun h eq => conv_ctx_all.1 h eq
 
 theorem ValEqTm.conv_ctx {Γ Γ' l vt t A} : ValEqTm E Γ l vt t A → EqCtx E Γ Γ' →
     ValEqTm E Γ' l vt t A :=
-  fun h eq => _root_.conv_ctx.2.1 h eq
+  fun h eq => conv_ctx_all.2.1 h eq
 
 theorem NeutEqTm.conv_ctx {Γ Γ' l vt t A} : NeutEqTm E Γ l vt t A → EqCtx E Γ Γ' →
     NeutEqTm E Γ' l vt t A :=
-  fun h eq => _root_.conv_ctx.2.2.1 h eq
+  fun h eq => conv_ctx_all.2.2.1 h eq
 
 theorem ClosEqTp.conv_ctx {Γ Γ' l l' A vB B} : ClosEqTp E Γ l l' A vB B → EqCtx E Γ Γ' →
     ClosEqTp E Γ' l l' A vB B :=
-  fun h eq => _root_.conv_ctx.2.2.2.1 h eq
+  fun h eq => conv_ctx_all.2.2.2.1 h eq
 
 theorem Clos₂EqTp.conv_ctx {Γ Γ' A B C vC l l' l''} :
     Clos₂EqTp E Γ A l B l' l'' vC C →
     EqCtx E Γ Γ' →
     Clos₂EqTp E Γ' A l B l' l'' vC C :=
-  fun h eq => _root_.conv_ctx.2.2.2.2.1 h eq
+  fun h eq => conv_ctx_all.2.2.2.2.1 h eq
 
 theorem ClosEqTm.conv_ctx {Γ Γ' l l' A B vb b} :
     ClosEqTm E Γ l l' A B vb b → EqCtx E Γ Γ' → ClosEqTm E Γ' l l' A B vb b :=
-  fun h eq => _root_.conv_ctx.2.2.2.2.2.1 h eq
+  fun h eq => conv_ctx_all.2.2.2.2.2.1 h eq
 
 theorem EnvEqSb.conv_dom {Δ Δ' Eᵥ σ Γ} : EnvEqSb E Δ Eᵥ σ Γ → EqCtx E Δ Δ' → EnvEqSb E Δ' Eᵥ σ Γ :=
-  fun h eq => _root_.conv_ctx.2.2.2.2.2.2 h eq
+  fun h eq => conv_ctx_all.2.2.2.2.2.2 h eq
 
 /-! ## Weakening is free -/
 
@@ -639,7 +641,7 @@ theorem TpEnvEqCtx.toEnv_wf {vΓ Γ} : TpEnvEqCtx E vΓ Γ → EnvEqSb E Γ vΓ.
 
 attribute [local grind] WfCtx.of_axioms_le WfTp.of_axioms_le WfTm.of_axioms_le EqTp.of_axioms_le
   EqTm.of_axioms_le in
-private theorem of_axioms_le {E E' : Axioms χ} (le : E ≤ E') :
+private theorem of_axioms_le_all {E E' : Axioms χ} (le : E ≤ E') :
     (∀ {Γ l vA A}, ValEqTp E Γ l vA A → ValEqTp E' Γ l vA A) ∧
     (∀ {Γ l vt t A}, ValEqTm E Γ l vt t A → ValEqTm E' Γ l vt t A) ∧
     (∀ {Γ l vt t A}, NeutEqTm E Γ l vt t A → NeutEqTm E' Γ l vt t A) ∧
@@ -653,31 +655,31 @@ private theorem of_axioms_le {E E' : Axioms χ} (le : E ≤ E') :
 
 theorem ValEqTp.of_axioms_le {E E' : Axioms χ} (le : E ≤ E') {Γ l vA A} :
     ValEqTp E Γ l vA A → ValEqTp E' Γ l vA A :=
-  fun h => _root_.of_axioms_le le |>.1 h
+  fun h => of_axioms_le_all le |>.1 h
 
 theorem ValEqTm.of_axioms_le {E E' : Axioms χ} (le : E ≤ E') {Γ l vt t A} :
     ValEqTm E Γ l vt t A → ValEqTm E' Γ l vt t A :=
-  fun h => _root_.of_axioms_le le |>.2.1 h
+  fun h => of_axioms_le_all le |>.2.1 h
 
 theorem NeutEqTm.of_axioms_le {E E' : Axioms χ} (le : E ≤ E') {Γ l vn n A} :
     NeutEqTm E Γ l vn n A → NeutEqTm E' Γ l vn n A :=
-  fun h => _root_.of_axioms_le le |>.2.2.1 h
+  fun h => of_axioms_le_all le |>.2.2.1 h
 
 theorem ClosEqTp.of_axioms_le {E E' : Axioms χ} (le : E ≤ E') {Γ l l' A vB B} :
     ClosEqTp E Γ l l' A vB B → ClosEqTp E' Γ l l' A vB B :=
-  fun h => _root_.of_axioms_le le |>.2.2.2.1 h
+  fun h => of_axioms_le_all le |>.2.2.2.1 h
 
 theorem Clos₂EqTp.of_axioms_le {E E' : Axioms χ} (le : E ≤ E') {Γ A l B l' l'' vC C} :
     Clos₂EqTp E Γ A l B l' l'' vC C → Clos₂EqTp E' Γ A l B l' l'' vC C :=
-  fun h => _root_.of_axioms_le le |>.2.2.2.2.1 h
+  fun h => of_axioms_le_all le |>.2.2.2.2.1 h
 
 theorem ClosEqTm.of_axioms_le {E E' : Axioms χ} (le : E ≤ E') {Γ l l' A B vb b} :
     ClosEqTm E Γ l l' A B vb b → ClosEqTm E' Γ l l' A B vb b :=
-  fun h => _root_.of_axioms_le le |>.2.2.2.2.2.1 h
+  fun h => of_axioms_le_all le |>.2.2.2.2.2.1 h
 
 theorem EnvEqSb.of_axioms_le {E E' : Axioms χ} (le : E ≤ E') {Δ Eᵥ σ Γ} :
     EnvEqSb E Δ Eᵥ σ Γ → EnvEqSb E' Δ Eᵥ σ Γ :=
-  fun h => _root_.of_axioms_le le |>.2.2.2.2.2.2 h
+  fun h => of_axioms_le_all le |>.2.2.2.2.2.2 h
 
 /-! ## Misc lemmas -/
 
@@ -690,3 +692,5 @@ theorem ValEqTp.Id_bvar {Γ vA A va a l} : ValEqTp E Γ l vA A → ValEqTm E Γ 
   apply ValEqTp.Id (vA.wk A) (va.wk A)
   apply ValEqTm.neut_tm (vA.wk A)
   exact NeutEqTm.bvar (A.wf_ctx.snoc A) (.zero ..)
+
+end SynthLean
