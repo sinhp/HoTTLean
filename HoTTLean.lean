@@ -1,4 +1,4 @@
-import HoTTLean.Syntax.Interpretation
+import HoTTLean.Model.Interpretation
 import HoTTLean.Groupoids.NaturalModelBase
 import HoTTLean.Groupoids.Sigma
 import HoTTLean.Groupoids.Pi

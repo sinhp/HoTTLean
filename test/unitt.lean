@@ -1,5 +1,5 @@
-import HoTTLean.Syntax.Frontend.Commands
-import HoTTLean.Syntax.Interpretation
+import HoTTLean.Frontend.Commands
+import HoTTLean.Model.Interpretation
 import HoTTLean.Groupoids.NaturalModelBase
 import HoTTLean.Groupoids.Pi
 import HoTTLean.Groupoids.Sigma
@@ -28,7 +28,8 @@ unitt def uniq_fn {A : Type} (f g : A → Unit) : Identity f g := by
 
 /-! ## Interpretation -/
 
-open CategoryTheory MonoidalCategory NaturalModel GroupoidModel
+open SynthLean
+open CategoryTheory MonoidalCategory NaturalModel Universe GroupoidModel
 
 instance : uHomSeq.IdSeq := sorry
 
@@ -50,7 +51,7 @@ def sUnit' : y(𝟙_ Ctx) ⟶ uHomSeq[1].Tm :=
 def sUnit'_tp : sUnit' ≫ uHomSeq[1].tp = (uHomSeq.homSucc 0).wkU _ := by
   simp [sUnit']
 
-def I : Interpretation Lean.Name uHomSeq where
+def I : Universe.Interpretation Lean.Name uHomSeq where
   ax := fun
     | ``Unit, 1, _ => some sUnit'
     | _, _, _ => none
@@ -64,6 +65,7 @@ theorem I_wf : I.Wf slen Unit.snocAxioms where
     subst_vars
     unfold Unit
     simp [I, Interpretation.ofType, UHomSeq.nilCObj]
+    rfl
 
 instance : Fact (I.Wf slen Unit.snocAxioms) := ⟨I_wf⟩
 
@@ -71,4 +73,4 @@ example : I.interpTm Unit.wf_val = sUnit' := by
   unfold Interpretation.interpTm Interpretation.ofTerm CheckedAx.val I Unit
   simp only [Part.pure_eq_some, Part.get_some]
   conv => rhs; rw [← Category.id_comp sUnit']
-  congr 1; apply Limits.IsTerminal.hom_ext isTerminal_yUnit
+  congr 1; apply Limits.IsTerminal.hom_ext ChosenTerminal.isTerminal_yUnit

@@ -1,4 +1,4 @@
-import HoTTLean.Syntax.Frontend.Commands
+import HoTTLean.Frontend.Commands
 
 noncomputable section
 
