@@ -266,13 +266,13 @@ def conjugatingObjNatTransEquiv' {x y : Γ} (f : x ⟶ y) (S) (T) :
     simp only [whiskerLeft_comp, whiskerLeft_eqToHom, whiskerLeft_twice, associator_eq,
       CategoryTheory.Iso.refl_inv, CategoryTheory.Iso.refl_hom, Category.comp_id, Category.assoc,
       ← heq_eq_eq, eqToHom_comp_heq_iff]
-    rw! [Category.id_comp, comp_eqToHom_heq_iff]
+    rw! (transparency := .default) [Category.id_comp, comp_eqToHom_heq_iff]
     apply Functor.Iso.whiskerLeft_inv_hom_heq
   right_inv η := by
     simp only [whiskerLeft_comp, whiskerLeft_twice, associator_eq, CategoryTheory.Iso.refl_inv,
       CategoryTheory.Iso.refl_hom, Category.comp_id, whiskerLeft_eqToHom, Category.assoc, ←
       heq_eq_eq, eqToHom_comp_heq_iff]
-    rw! [Category.id_comp, comp_eqToHom_heq_iff]
+    rw! (transparency := .default) [Category.id_comp, comp_eqToHom_heq_iff]
     apply Functor.Iso.whiskerLeft_hom_inv_heq
 
 def conjugatingObjNatTransEquiv {x y : Γ} (f : x ⟶ y) (S) (T) :
@@ -690,7 +690,7 @@ lemma lamObjFiberObjCompSigMap.app_comp {x y z : Γ} (f : x ⟶ y) (g : y ⟶ z)
       heq_eqToHom_comp_iff, eqToHom_comp_heq_iff]
     have : ((ιNatTrans g).app ((A.map f).obj a)) = homMk g (𝟙 _) := by
       apply Hom.ext _ _ (by simp) (by aesop_cat)
-    rw! [Category.id_comp, base_eqToHom, eqToHom_map, eqToHom_map,
+    rw! (castMode := .all) [Category.id_comp, base_eqToHom, eqToHom_map, eqToHom_map,
       Functor.Grothendieck.base_eqToHom, ιNatTrans_app_base, this]
     aesop_cat
 

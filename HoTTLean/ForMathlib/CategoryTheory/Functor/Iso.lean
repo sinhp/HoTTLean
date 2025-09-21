@@ -1,5 +1,4 @@
 import Mathlib.CategoryTheory.Functor.Category
-import SEq.Tactic.DepRewrite
 import Mathlib.CategoryTheory.Category.ULift
 
 namespace CategoryTheory.Functor
@@ -106,18 +105,18 @@ variable (X) in
 @[simp]
 theorem refl_symm : (Iso.refl X).symm = Iso.refl X := rfl
 
-/-- Composition of two isomorphisms -/
+/-- Composition of two category isomorphisms. -/
 @[simps]
 def trans (α : X ≅≅ Y) (β : Y ≅≅ Z) : X ≅≅ Z where
   hom := α.hom ⋙ β.hom
   inv := β.inv ⋙ α.inv
   hom_inv_id := by
-    calc (α.hom ⋙ β.hom) ⋙ β.inv ⋙ α.inv = α.hom ⋙ (β.hom ⋙ β.inv) ⋙ α.inv := by rw! [Functor.assoc]
+    calc (α.hom ⋙ β.hom) ⋙ β.inv ⋙ α.inv = α.hom ⋙ (β.hom ⋙ β.inv) ⋙ α.inv := rfl
     _ = α.hom ⋙ 𝟭 _ ⋙ α.inv := by rw [β.hom_inv_id]
     _ = α.hom ⋙ α.inv := by rw [Functor.id_comp]
     _ = 𝟭 _ := by rw [α.hom_inv_id']
   inv_hom_id := by
-    calc (β.inv ⋙ α.inv) ⋙ α.hom ⋙ β.hom = β.inv ⋙ (α.inv ⋙ α.hom) ⋙ β.hom := by rw! [Functor.assoc]
+    calc (β.inv ⋙ α.inv) ⋙ α.hom ⋙ β.hom = β.inv ⋙ (α.inv ⋙ α.hom) ⋙ β.hom := rfl
     _ = β.inv ⋙ 𝟭 _ ⋙ β.hom := by rw [α.inv_hom_id]
     _ = β.inv ⋙ β.hom := by rw [Functor.id_comp]
     _ = 𝟭 _ := by rw [β.inv_hom_id']

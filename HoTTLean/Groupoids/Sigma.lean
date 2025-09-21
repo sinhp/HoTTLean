@@ -1,7 +1,6 @@
 import HoTTLean.Groupoids.NaturalModelBase
 import HoTTLean.Model.NaturalModel
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
-import SEq.Tactic.DepRewrite
 
 universe v u v₁ u₁ v₂ u₂ v₃ u₃
 
@@ -148,7 +147,7 @@ variable {z : Γ} {f} {g : y ⟶ z}
       Grpd.comp_eq_comp, eqToHom_trans_assoc, comp_base, Functor.Groupoidal.comp_fiber,
       fiber_eqToHom, eqToHom_map, Functor.map_comp, Category.assoc, heq_eqToHom_comp_iff,
       heq_comp_eqToHom_iff, eqToHom_comp_heq_iff, comp_eqToHom_heq_iff]
-    rw! [Functor.congr_hom h3]
+    rw! (transparency := .default) [Functor.congr_hom h3]
     simp only [sigmaObj, Functor.comp_obj, Functor.comp_map, heq_eqToHom_comp_iff,
       heq_comp_eqToHom_iff, heq_eq_eq]
 
@@ -248,7 +247,7 @@ theorem pairSectionMap_aux_aux {x y} (f : x ⟶ y) :
   apply Hom.ext
   · simp only [Functor.Groupoidal.comp_fiber, ιNatTrans_app_fiber, ι_obj_fiber, ι_map_fiber,
       sec_map_fiber, mapFiber', mapFiber]
-    rw! [CategoryTheory.Functor.map_id, Category.id_comp]
+    rw! (transparency := .default) [CategoryTheory.Functor.map_id, Category.id_comp]
     simp [mapFiber'EqToHom]
   · simp
 
@@ -354,7 +353,7 @@ theorem pairMapFiber_comp {x y z : Γ} (f : x ⟶ y) (g : y ⟶ z) :
     ≫ (((sigma (α ⋙ forgetToGrpd) B).map g).map (pairMapFiber h f) ≫ pairMapFiber h g) := by
   fapply Hom.ext
   · simp [sigmaObj, - Functor.comp_obj, mapFiber] -- FIXME
-  · rw! [pairMapFiber_fiber, Functor.Groupoidal.comp_fiber, Functor.Groupoidal.comp_fiber,
+  · rw! (transparency := .default) [pairMapFiber_fiber, Functor.Groupoidal.comp_fiber, Functor.Groupoidal.comp_fiber,
       fiber_eqToHom, eqToHom_map, pairMapFiber_comp_aux,
       Functor.congr_hom (Functor.congr_hom h.symm g) (mapFiber' h f), mapFiber'_comp]
     simp only [sigmaObj, pairMapFiber_fiber, mapFiber', eqToHom_trans_assoc, Category.assoc,
@@ -601,7 +600,7 @@ theorem snd_forgetToGrpd : snd B ⋙ forgetToGrpd = fstAux' B ⋙ B :=
   simp only [snd, assoc, Functor.comp_map]
   rw! [Functor.Groupoidal.functorFrom_map, assoc_hom_app_fiber]
   simp only [toPGrpd_map_fiber, Functor.Groupoidal.comp_fiber]
-  rw! [CategoryTheory.Functor.map_id]
+  rw! (transparency := .default) [CategoryTheory.Functor.map_id]
   simp
 
 end
@@ -864,7 +863,7 @@ theorem smallUSig.pair_naturality {Γ Δ : Ctx} (f : Δ ⟶ Γ)
   dsimp only [smallUSig.pair_app]
   rw [← yonedaCategoryEquiv_symm_naturality_left, FunctorOperation.pair_naturality]
   -- Like with `smallUSig.Sig_naturality` rw from inside to outside (w.r.t type dependency)
-  rw! [dependent_naturality, snd_naturality, fst_naturality]
+  rw! (castMode := .all) [dependent_naturality, snd_naturality, fst_naturality]
   simp [map_id_eq, Functor.id_comp]
 
 def smallUSig.pair : smallU.compDom.{v} ⟶ smallU.{v}.Tm :=
@@ -914,7 +913,7 @@ def lift : y(Γ) ⟶ smallU.compDom.{v} :=
 theorem fac_left : lift.{v} AB αβ hαβ ≫ smallUSig.pair.{v} = αβ := by
   rw [smallUSig.pair_app_eq]
   dsimp only [lift]
-  rw! [dependent_mk, snd_mk, fst_mk]
+  rw! (castMode := .all) [dependent_mk, snd_mk, fst_mk]
   simp only [eqToHom_refl, map_id_eq, Cat.of_α, Functor.id_comp]
   rw [yonedaCategoryEquiv.symm_apply_eq, sigma.eta]
 

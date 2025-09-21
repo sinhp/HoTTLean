@@ -4,8 +4,6 @@ import HoTTLean.Model.NaturalModel
 
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 
-import SEq.Tactic.DepRewrite
-
 universe w v u v₁ u₁ v₂ u₂
 
 noncomputable section

@@ -839,11 +839,13 @@ lemma toK_comp_left {Δ} (σ : Δ ⟶ Γ) : ii.toK (ym(σ) ≫ a) =
     ym(M.substWk σ (a ≫ M.tp)) ≫ ii.toK a := by
   dsimp [toK]
   apply ii.isKernelPair.hom_ext
-  · rw! [Category.assoc]
+  -- FIXME: `transparency := .default` is like `erw` and should be avoided
+  · rw! (transparency := .default) [Category.assoc]
     simp
   · simp only [IsKernelPair.lift_snd, Category.assoc]
     slice_rhs 1 2 => rw [← Functor.map_comp, substWk_disp]
-    rw! [Category.assoc]
+    -- FIXME: `transparency := .default` is like `erw` and should be avoided
+    rw! (transparency := .default) [Category.assoc]
     simp
 
 def toI : y(ii.motiveCtx a) ⟶ ie.i :=
@@ -1138,7 +1140,8 @@ def j : y(ii.motiveCtx a) ⟶ N.Tm :=
 /-- Typing for elimination rule `J` -/
 lemma j_tp : j i a C r r_tp ≫ N.tp = C := by
   simp only [j, Category.assoc, IdElimBase.equivSnd, ← UvPoly.Equiv.snd'_comp_right]
-  rw! [WeakPullback.coherentLift_snd]
+  -- FIXME: `transparency := .default` is like `erw` and should be avoided
+  rw! (transparency := .default) [WeakPullback.coherentLift_snd]
   simp only [IdElimBase.equivMk]
   rw! [equivFst_lift_eq]
   simp
@@ -1157,7 +1160,8 @@ lemma comp_j : ym(ii.motiveSubst σ _) ≫ j i a C r r_tp =
 /-- β rule for identity types. Substituting `J` with `refl` gives the user-supplied value `r` -/
 lemma reflSubst_j : ym(ii.reflSubst a) ≫ j i a C r r_tp = r := by
   have h := ie.equivSnd_verticalNatTrans_app (i.lift a C r r_tp)
-  rw! [i.weakPullback.coherentLift_fst] at h
+  -- FIXME: `transparency := .default` is like `erw` and should be avoided
+  rw! (transparency := .default) [i.weakPullback.coherentLift_fst] at h
   unfold reflCase at h
   rw [UvPoly.Equiv.snd'_eq_snd', UvPoly.Equiv.snd'_mk', ← Iso.eq_inv_comp] at h
   conv => right; rw [h]
@@ -1248,7 +1252,8 @@ lemma reflCase_comp_tp : reflCase ar ≫ N.tp =
     (ie.toI (ie.equivFst aC)) (UvPoly.Equiv.fst ie.iUvPoly N.Ty aC) ie.iUvPoly.p := by
     convert (ie.motiveCtx_isPullback' (ie.equivFst aC)).flip
     simp
-  rw! [UvPoly.snd'_verticalNatTrans_app
+  -- FIXME: `transparency := .default` is like `erw` and should be avoided
+  rw! (transparency := .default) [UvPoly.snd'_verticalNatTrans_app
     (R := y(ii.motiveCtx (ie.equivFst aC)))
     (H := H)
     (R' := y(Γ)) (f' := 𝟙 _) (g' := UvPoly.Equiv.fst (UvPoly.id M.Tm) N.Tm ar)

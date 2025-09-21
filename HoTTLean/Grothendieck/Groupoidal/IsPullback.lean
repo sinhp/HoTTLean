@@ -1,8 +1,6 @@
 import HoTTLean.Pointed.IsPullback
 import HoTTLean.Grothendieck.Groupoidal.Basic
 
-import SEq.Tactic.DepRewrite
-
 /-!
 # The Grothendieck construction as a pullback of categories
 

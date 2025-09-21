@@ -146,7 +146,7 @@ theorem id_base (X : ∫(F)) :
 
 @[simp]
 theorem id_fiber (X : ∫(F)) :
-    Hom.fiber (𝟙 X) = eqToHom (by rw! [Functor.map_id]; simp) :=
+    Hom.fiber (𝟙 X) = eqToHom (by rw [id_base, Functor.map_id]; simp) :=
   Grothendieck.Hom.id_fiber _
 
 @[simp]
@@ -710,8 +710,12 @@ def ιNatIso {X Y : Γ} (f : X ⟶ Y) : ι A X ≅ A.map f ⋙ ι A Y where
     . simp only [NatTrans.comp_app, whiskerLeft_app, comp_base,  comp_fiber, Grpd.map_comp_map,
         Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
         NatTrans.id_app, id_fiber, eqToHom_comp_heq_iff]
-      rw! (castMode := .all) [eqToHom_app, map_eqToHom_base, Category.id_comp,
-        Functor.map_id, Category.id_comp]
+      -- FIXME: `transparency := default` is like `erw` and should be avoided
+      rw! (castMode := .all) (transparency := .default)
+        [eqToHom_app, map_eqToHom_base, Category.id_comp]
+      -- FIXME: `occs` is fragile
+      rw! (transparency := .default) (occs := .pos [4]) [Functor.map_id]
+      rw! (transparency := .default) [Category.id_comp]
       simp only [eqToHom_refl, fiber_eqToHom, eqRec_heq_iff_heq]
       -- these should be automated
       apply HEq.trans (eqToHom_heq_id_cod _ _ _)
@@ -723,7 +727,11 @@ def ιNatIso {X Y : Γ} (f : X ⟶ Y) : ι A X ≅ A.map f ⋙ ι A Y where
     . simp only [NatTrans.comp_app, whiskerLeft_app, comp_fiber, ιNatTrans_app_fiber,
         map_comp, eqToHom_map, Category.assoc, eqToHom_trans_assoc, NatTrans.id_app,
         id_fiber, eqToHom_comp_heq_iff]
-      rw! [Functor.map_id, Functor.map_id, eqToHom_app]
+      -- FIXME: `transparency := default` is like `erw` and should be avoided
+      -- FIXME: `occs` is fragile
+      rw! (transparency := .default) (occs := .pos [6]) [Functor.map_id]
+      rw! (transparency := .default) (occs := .pos [4]) [Functor.map_id]
+      rw! (transparency := .default) [eqToHom_app]
       simp only [comp_obj, fiber_eqToHom, eqToHom_map, Category.id_comp, id_base,
         eqToHom_comp_heq_iff]
       exact (eqToHom_heq_id_cod _ _ _).symm
@@ -805,8 +813,8 @@ lemma eqToHom_eq_homOf_map {Γ : Type*} [Groupoid Γ] {F G : Γ ⥤ Grpd} (h : F
     · simp
     · simp
   · intro x y f
-    rw! [Groupoidal.map_id_eq]
-    simp
+    simp only [eqToHom_refl, Category.id_comp]
+    apply Hom.ext <;> simp
 
 -- TODO factor through Grothendieck
 theorem map_eqToHom_heq_id_dom {Γ : Type*} [Category Γ] {A A' : Γ ⥤ Grpd}

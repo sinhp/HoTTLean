@@ -9,7 +9,6 @@ import Mathlib.Data.Part
 import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 import Mathlib.CategoryTheory.Core
 import Mathlib.CategoryTheory.Adjunction.Limits
-import SEq.Tactic.DepRewrite
 import HoTTLean.ForMathlib.CategoryTheory.Bicategory.Grothendieck
 
 /-! This file contains declarations missing from mathlib,

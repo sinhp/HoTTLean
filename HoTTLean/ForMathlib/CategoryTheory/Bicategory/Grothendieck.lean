@@ -6,7 +6,7 @@ Authors: Calle Sönne, Joseph Hua
 
 import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
-import SEq.Tactic.DepRewrite
+import Mathlib.Tactic.DepRewrite
 import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 import Mathlib.CategoryTheory.Category.Cat.AsSmall
 import Mathlib.CategoryTheory.Elements
@@ -162,7 +162,7 @@ lemma Hom.ext (f g : a ⟶ b) (hfg₁ : f.base = g.base)
     (hfg₂ : eqToHom (hfg₁ ▸ rfl) ≫ f.fiber = g.fiber) : f = g := by
   cases f; cases g
   dsimp at hfg₁ hfg₂
-  rw! [← hfg₂, ← hfg₁]
+  rw! (castMode := .all) [← hfg₂, ← hfg₁]
   simp
 
 lemma Hom.ext_iff (f g : a ⟶ b) :
@@ -396,7 +396,7 @@ lemma ext (hfg₁ : f.base = g.base)
     (hfg₂ : eqToHom (hfg₁ ▸ rfl) ≫ f.fiber = g.fiber) : f = g := by
   cases f; cases g
   dsimp at hfg₁ hfg₂
-  rw! [← hfg₂, ← hfg₁]
+  rw! (castMode := .all) [← hfg₂, ← hfg₁]
   simp
 
 lemma ext_iff : f = g ↔ ∃ (hfg : f.base = g.base), eqToHom (hfg ▸ rfl) ≫ f.fiber = g.fiber where
