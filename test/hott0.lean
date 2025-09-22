@@ -1,4 +1,4 @@
-import GroupoidModel.Syntax.Frontend.Commands
+import HoTTLean.Frontend.Commands
 
 noncomputable section
 
