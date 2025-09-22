@@ -20,8 +20,8 @@ It currently contains the following components:
   These are being upstreamed to Mathlib.
 
 Documentation of the Lean code can be found
-[here](https://sinhp.github.io/groupoid_model_in_lean4/docs/).
-(We also have [a blueprint](https://sinhp.github.io/groupoid_model_in_lean4/),
+[here](https://sinhp.github.io/HoTTLean/docs/).
+(We also have [a blueprint](https://sinhp.github.io/HoTTLean/),
 but it is very outdated.)
 
 We rely on [Mathlib](https://github.com/leanprover-community/mathlib4)
