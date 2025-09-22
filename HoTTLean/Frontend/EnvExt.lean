@@ -70,7 +70,7 @@ For the initial shallow environment,
 we pull in a custom prelude with `Type`-valued identity types. -/
 def mkInitTheoryData (modNm mainModule : Name) : m TheoryData := do
   -- TODO: check if the `.olean` exists and print a better error if not.
-  let mut thyEnv ← importModules #[{ module := `HoTTLean.Syntax.Frontend.Prelude }]
+  let mut thyEnv ← importModules #[{ module := `HoTTLean.Prelude }]
     (← getOptions) (leakEnv := true) (loadExts := true)
   thyEnv := thyEnv.setMainModule mainModule
   return {
