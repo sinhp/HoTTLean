@@ -40,7 +40,7 @@ jobs:
         run: ~/.elan/bin/lake exe cache get || true
 
       - name: Build project
-        run: ~/.elan/bin/lake build HoTTLean
+        run: ~/.elan/bin/lake build
 
       - name: Run tests
         run: ~/.elan/bin/lake test
