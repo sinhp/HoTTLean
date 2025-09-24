@@ -54,7 +54,7 @@ can be found under `test/`:
 
 Contributions are very welcome!
 We use GitHub issues to organize the project and track formalization progress.
-New contributors should pay attention to issues marked with `help wanted`
+New contributors should pay attention to issues marked with `O-help` (help wanted)
 and `D-low` (low difficulty).
 You can also reach out to us on the [Lean Zulip](https://leanprover.zulipchat.com/).
 
