@@ -186,13 +186,25 @@ open CategoryTheory NaturalModel Universe Opposite Functor.Groupoidal
 lemma smallU.PtpEquiv.fst_app_comp_map_tp {Γ : Ctx} (ab : y(Γ) ⟶ smallU.Ptp.obj smallU.Tm) :
     smallU.PtpEquiv.fst (ab ≫ smallU.Ptp.map smallU.tp) = smallU.PtpEquiv.fst ab := by
   dsimp[fst]
-  --erw[fst_naturality]
-  sorry
+  rw[NaturalModel.Universe.PtpEquiv.fst_comp_right]
 
 lemma smallU.PtpEquiv.snd_app_comp_map_tp {Γ : Ctx} (ab : y(Γ) ⟶ smallU.Ptp.obj smallU.Tm) :
     smallU.PtpEquiv.snd (ab ≫ smallU.Ptp.map smallU.tp)
-    ≍ smallU.PtpEquiv.snd ab ⋙ PGrpd.forgetToGrpd :=
-  sorry
+    ≍ smallU.PtpEquiv.snd ab ⋙ PGrpd.forgetToGrpd := by
+  dsimp[snd]
+  rw [NaturalModel.Universe.PtpEquiv.snd_comp_right]
+  . have h : Universe.PtpEquiv.fst smallU ab =
+    Universe.PtpEquiv.fst smallU (ab ≫ smallU.Ptp.map ym(π)) := by
+      rw[NaturalModel.Universe.PtpEquiv.fst_comp_right]
+    --have := congr(Universe.PtpEquiv.snd smallU ab $h h ≫ ym(π))
+    sorry
+    --rw [NaturalModel.Universe.PtpEquiv.fst_comp_right]
+  . rw[NaturalModel.Universe.PtpEquiv.fst_comp_right]
+  --
+  --apply Eq.mpr (by congr)
+
+  -- refine heq_of_eqRec_eq ?_ ?_
+  -- . erw[smallU.PtpEquiv.fst_comp_right]
 
 end GroupoidModel
 
@@ -550,7 +562,9 @@ lemma mapStrongTrans_comp_fstAux' : mapStrongTrans B s hs ⋙ sigma.fstAux' B = 
     simp only [sigma.fstAux', Functor.comp_obj, map_obj_fiber, sigma_obj, sigma.fstAux_app,
       Functor.Groupoidal.forget_obj, Functor.id_obj, heq_eq_eq]
     exact Functor.congr_obj (PGrpd.objFiber' hs x.base).property x.fiber
-  · sorry
+  · intro x y f
+    simp [Functor.comp_map, Functor.comp_obj, sigma.fstAux', Functor.id_map, Functor.id_obj]
+    sorry
 
 lemma inversion_comp_forgetToGrpd : inversion B s hs ⋙ PGrpd.forgetToGrpd = B :=
   calc mapStrongTrans B s hs ⋙ sigma.assoc B ⋙ toPGrpd B ⋙ PGrpd.forgetToGrpd
