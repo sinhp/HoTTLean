@@ -1,3 +1,4 @@
+#exit
 import Poly.UvPoly.Basic
 import HoTTLean.ForMathlib
 

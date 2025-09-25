@@ -34,14 +34,6 @@ instance : CartesianMonoidalCategory Grpd :=
       cone := prodCone X Y
       isLimit := isLimitProdCone X Y })
 
-/-- The identity in the category of groupoids equals the identity functor.-/
-theorem id_eq_id (X : Grpd) : 𝟙 X = 𝟭 X := rfl
-
--- NOTE this is currently called `Grpd.hom_to_functor` in mathlib,
--- but this naming is inconsistent with that of `Cat`
-/-- Composition in the category of groupoids equals functor composition.-/
-theorem comp_eq_comp {X Y Z : Grpd} (F : X ⟶ Y) (G : Y ⟶ Z) : F ≫ G = F ⋙ G := rfl
-
 theorem eqToHom_obj
   {C1 C2 : Grpd.{v,u}} (x : C1) (eq : C1 = C2) :
     (eqToHom eq).obj x = cast (congrArg Bundled.α eq) x := by

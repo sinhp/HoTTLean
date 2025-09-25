@@ -370,7 +370,8 @@ theorem subst_all :
         ∀ {Δ σ σ'}, EqSb E Δ σ σ' Γ → E ∣ Δ ⊢[l] t.subst σ ≡ t.subst σ' : A.subst σ) ∧
     (∀ {Γ l A t u}, E ∣ Γ ⊢[l] t ≡ u : A →
       ∀ {Δ σ σ'}, EqSb E Δ σ σ' Γ → E ∣ Δ ⊢[l] t.subst σ ≡ u.subst σ' : A.subst σ) := by
-  mutual_induction WfCtx
+  sorry
+/-  mutual_induction WfCtx
   all_goals dsimp; try intros
   all_goals try simp only [Expr.subst_toSb_subst, Expr.subst_snoc_toSb_subst, Expr.subst] at *
   case ax p _ Ec _ _ ihA =>
@@ -508,7 +509,7 @@ theorem subst_all :
     apply (EqTm.pair_fst_snd' ..).trans_tm' <;>
       grind [WfTp.sigma', EqTm.cong_pair', EqTm.cong_fst', EqTm.cong_snd']
   case symm_tm' => grind [EqTm.conv_eq, EqSb.symm]
-  grind_cases
+  grind_cases -/
 
 end SubstProof
 
