@@ -193,18 +193,14 @@ lemma smallU.PtpEquiv.snd_app_comp_map_tp {Γ : Ctx} (ab : y(Γ) ⟶ smallU.Ptp.
     ≍ smallU.PtpEquiv.snd ab ⋙ PGrpd.forgetToGrpd := by
   dsimp[snd]
   rw [NaturalModel.Universe.PtpEquiv.snd_comp_right]
-  . have h : Universe.PtpEquiv.fst smallU ab =
-    Universe.PtpEquiv.fst smallU (ab ≫ smallU.Ptp.map ym(π)) := by
-      rw[NaturalModel.Universe.PtpEquiv.fst_comp_right]
-    --have := congr(Universe.PtpEquiv.snd smallU ab $h h ≫ ym(π))
-    sorry
-    --rw [NaturalModel.Universe.PtpEquiv.fst_comp_right]
+  . rw! (castMode := .all) [NaturalModel.Universe.PtpEquiv.fst_comp_right]
+    simp only [eqRec_heq_iff_heq]
+    have h : ym(π) = ym(Ctx.homOfFunctor PGrpd.forgetToGrpd) := by
+      apply congrArg
+      dsimp[π]
+    rw! (castMode := .all) [h]
+    rw [yonedaCategoryEquiv_naturality_right]
   . rw[NaturalModel.Universe.PtpEquiv.fst_comp_right]
-  --
-  --apply Eq.mpr (by congr)
-
-  -- refine heq_of_eqRec_eq ?_ ?_
-  -- . erw[smallU.PtpEquiv.fst_comp_right]
 
 end GroupoidModel
 
