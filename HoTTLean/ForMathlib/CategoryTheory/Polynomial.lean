@@ -9,7 +9,7 @@ import Mathlib.CategoryTheory.Functor.TwoSquare
 import Mathlib.CategoryTheory.NatTrans.IsCartesian
 import Mathlib.CategoryTheory.Comma.Over.Pushforward
 
-universe v u
+universe v u v₁ u₁
 
 noncomputable section
 
@@ -573,7 +573,7 @@ lemma snd_eq (pair : Γ ⟶ P @ X) : snd pair =
     (by simp) ≫ sndProj P X := by
   simpa [Limits.pullback.map] using congrArg CommaMorphism.left (MvPoly.Equiv.snd_eq (fstAux pair))
 
-def snd' (pair : Γ ⟶ P @ X) {R f g} (H : IsPullback (P := R) f g (fst pair) P.p) : R ⟶ X :=
+def snd' (pair : Γ ⟶ P @ X) {pb f g} (H : IsPullback (P := pb) f g (fst pair) P.p) : pb ⟶ X :=
   H.isoPullback.hom ≫ snd pair
 
 theorem snd_eq_snd' (pair : Γ ⟶ P @ X) :
@@ -592,7 +592,7 @@ def mk (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) : Γ ⟶ P @ X :=
   (MvPoly.Equiv.mk (P := P.mvPoly) (Γ := Over.mk (terminal.from Γ))
     (Over.mk b) (by congr; apply terminal.hom_ext) (mkAux b x)).left
 
-def mk' (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X) : Γ ⟶ P @ X :=
+def mk' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X) : Γ ⟶ P @ X :=
   mk b (H.isoPullback.inv ≫ x)
 
 theorem mk_eq_mk' (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
@@ -606,12 +606,12 @@ lemma fst_mk (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
   simp [← heq_eq_eq]; rfl
 
 @[simp]
-lemma fst_mk' (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X) :
+lemma fst_mk' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X) :
     fst (mk' b H x) = b := by
   simp [mk']
 
 @[simp]
-lemma mk'_comp_fstProj (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X) :
+lemma mk'_comp_fstProj (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X) :
     mk' b H x ≫ P.fstProj X = b := by
   simp [← fst_eq]
 
@@ -622,22 +622,22 @@ theorem fst_comp_right (pair : Γ ⟶ P @ X) (f : X ⟶ Y) :
     fst (pair ≫ P.functor.map f) = fst pair := by
   simp [fst_eq]
 
-lemma snd'_eq (pair : Γ ⟶ P @ X) {R f g} (H : IsPullback (P := R) f g (fst pair) P.p) :
+lemma snd'_eq (pair : Γ ⟶ P @ X) {pb f g} (H : IsPullback (P := pb) f g (fst pair) P.p) :
     snd' pair H = pullback.lift (f ≫ pair) g (by simpa using H.w) ≫ sndProj P X := by
   rw [snd', snd_eq, ← Category.assoc]
   congr 1
   ext <;> simp
 
-/-- Switch the selected pullback `R` used in `UvPoly.Equiv.snd'` with a different pullback `R'`. -/
-lemma snd'_eq_snd' (pair : Γ ⟶ P @ X) {R f g} (H : IsPullback (P := R) f g (fst pair) P.p)
-    {R' f' g'} (H' : IsPullback (P := R') f' g' (fst pair) P.p) :
+/-- Switch the selected pullback `pb` used in `UvPoly.Equiv.snd'` with a different pullback `pb'`. -/
+lemma snd'_eq_snd' (pair : Γ ⟶ P @ X) {pb f g} (H : IsPullback (P := pb) f g (fst pair) P.p)
+    {pb' f' g'} (H' : IsPullback (P := pb') f' g' (fst pair) P.p) :
     snd' pair H = (H.isoIsPullback _ _ H').hom ≫ snd' pair H' := by
   simp [snd'_eq, ← Category.assoc]
   congr 2
   ext <;> simp
 
 @[simp]
-lemma snd'_mk' (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X) :
+lemma snd'_mk' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X) :
     snd' (mk' b H x) (by rwa [fst_mk']) = x := by
   sorry
   -- have : comparison (c := fan P X) (mk' P X b H x) ≫ _ =
@@ -666,9 +666,9 @@ lemma snd_mk (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
   apply eq_of_heq; rw [heq_eqToHom_comp_iff]; apply snd_mk_heq
 
 theorem snd'_comp_left (pair : Γ ⟶ P @ X)
-    {R f g} (H : IsPullback (P := R) f g (fst pair) P.p)
+    {pb f g} (H : IsPullback (P := pb) f g (fst pair) P.p)
     {Δ} (σ : Δ ⟶ Γ)
-    {R' f' g'} (H' : IsPullback (P := R') f' g' (σ ≫ fst pair) P.p) :
+    {pb' f' g'} (H' : IsPullback (P := pb') f' g' (σ ≫ fst pair) P.p) :
     snd' (σ ≫ pair) (by convert H'; rw [fst_comp_left]) =
     H.lift (f' ≫ σ) g' (by simp [H'.w]) ≫ snd' pair H := by
   simp only [snd'_eq, ← Category.assoc]
@@ -678,7 +678,7 @@ theorem snd'_comp_left (pair : Γ ⟶ P @ X)
   · simp
 
 theorem snd'_comp_right (pair : Γ ⟶ P @ X) (f : X ⟶ Y)
-    {R f1 f2} (H : IsPullback (P := R) f1 f2 (fst pair) P.p) :
+    {pb f1 f2} (H : IsPullback (P := pb) f1 f2 (fst pair) P.p) :
     snd' (pair ≫ P.functor.map f) (by rwa [fst_comp_right]) =
     snd' pair H ≫ f := by
   sorry
@@ -701,7 +701,7 @@ theorem snd_comp_right (pair : Γ ⟶ P @ X) (f : X ⟶ Y) : snd (pair ≫ P.fun
   sorry
 
 lemma ext' {pair₁ pair₂ : Γ ⟶ P @ X}
-    {R f g} (H : IsPullback (P := R) f g (fst pair₁) P.p)
+    {pb f g} (H : IsPullback (P := pb) f g (fst pair₁) P.p)
     (h1 : fst pair₁ = fst pair₂)
     (h2 : snd' pair₁ H = snd' pair₂ (by rwa [h1] at H)) :
     pair₁ = pair₂ := by
@@ -720,9 +720,9 @@ lemma ext' {pair₁ pair₂ : Γ ⟶ P @ X}
   --   simp
   sorry
 
-/-- Switch the selected pullback `R` used in `UvPoly.Equiv.mk'` with a different pullback `R'`. -/
-theorem mk'_eq_mk' (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X)
-    {R' f' g'} (H' : IsPullback (P := R') f' g' b P.p) :
+/-- Switch the selected pullback `pb` used in `UvPoly.Equiv.mk'` with a different pullback `pb'`. -/
+theorem mk'_eq_mk' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X)
+    {pb' f' g'} (H' : IsPullback (P := pb') f' g' b P.p) :
     mk' b H x = mk' b H' ((IsPullback.isoIsPullback _ _ H H').inv ≫ x) := by
   -- apply ext' P X (R := R) (f := f) (g := g) (by convert H; simp)
   -- · rw [snd'_eq_snd' P X (mk' P X b H' ((IsPullback.isoIsPullback _ _ H H').inv ≫ x))
@@ -733,7 +733,7 @@ theorem mk'_eq_mk' (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x
 
 @[simp]
 lemma eta' (pair : Γ ⟶ P @ X)
-    {R f1 f2} (H : IsPullback (P := R) f1 f2 (fst pair) P.p) :
+    {pb f1 f2} (H : IsPullback (P := pb) f1 f2 (fst pair) P.p) :
     mk' (fst pair) H (snd' pair H) = pair :=
   .symm <| ext' H (by simp) (by simp)
 
@@ -742,7 +742,7 @@ lemma eta (pair : Γ ⟶ P @ X) :
     mk (fst pair) (snd pair) = pair := by
   simp [mk_eq_mk', snd_eq_snd']
 
-lemma mk'_comp_right (b : Γ ⟶ B) {R f1 f2} (H : IsPullback (P := R) f1 f2 b P.p) (x : R ⟶ X)
+lemma mk'_comp_right (b : Γ ⟶ B) {pb f1 f2} (H : IsPullback (P := pb) f1 f2 b P.p) (x : pb ⟶ X)
     (f : X ⟶ Y) : mk' b H x ≫ P.functor.map f = mk' b H (x ≫ f) := by
   -- refine .symm <| ext' _ _ (by rwa [fst_mk']) (by simp [fst_comp_right]) ?_
   -- rw [snd'_comp_right (H := by rwa [fst_mk'])]; simp
@@ -772,8 +772,8 @@ theorem mk_comp_left {Δ} (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) (σ: Δ ⟶ 
   congr 2; ext <;> simp
 
 -- lemma mk'_comp_cartesianNatTrans_app {E' B' Γ X : C} {P' : UvPoly R E' B'}
---     (y : Γ ⟶ B) (R f g) (H : IsPullback (P := R) f g y P.p.1)
---     (x : R ⟶ X) (e : E ⟶ E') (b : B ⟶ B')
+--     (y : Γ ⟶ B) (pb f g) (H : IsPullback (P := pb) f g y P.p.1)
+--     (x : pb ⟶ X) (e : E ⟶ E') (b : B ⟶ B')
 --     (hp : IsPullback P.p.1 e b P'.p.1) :
 --     Equiv.mk' y H x ≫ (P.cartesianNatTrans P' b e hp).app X =
 --     Equiv.mk' P' X (y ≫ b) (H.paste_vert hp) x := by
