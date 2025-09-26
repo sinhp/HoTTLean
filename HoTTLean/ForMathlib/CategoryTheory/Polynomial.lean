@@ -787,3 +787,8 @@ theorem mk_comp_left {Δ} (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) (σ: Δ ⟶ 
 --   simp only [← Category.assoc]; congr 1; ext <;> simp
 
 end Equiv
+
+instance preservesPullbacks (P : UvPoly R E B) {Pb X Y Z : C} (fst : Pb ⟶ X) (snd : Pb ⟶ Y)
+    (f : X ⟶ Z) (g : Y ⟶ Z) (h: IsPullback fst snd f g) :
+    IsPullback (P.functor.map fst) (P.functor.map snd) (P.functor.map f) (P.functor.map g) :=
+  P.functor.map_isPullback h

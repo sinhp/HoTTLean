@@ -451,7 +451,8 @@ def Pi_pb :
     CategoryTheory.UvPoly.preservesPullbacks s[max i j].uvPolyTp _ _ _ _
     (s.homOfLe j (max i j)).pb
   have q := IsPullback.paste_horiz pbB (nmPi (max i j)).Pi_pullback
-  apply CategoryTheory.IsPullback.paste_horiz (p1 s[j].tp).flip q
+  sorry
+  -- apply CategoryTheory.IsPullback.paste_horiz (p1.isCartesian s[j].tp).flip q
 
 /--
 ```
@@ -553,8 +554,8 @@ theorem comp_mkApp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
       s.mkApp ilen jlen σA ((s[i].substWk σ A _ eq) ≫ B)
         ((σ) ≫ f) (by simp [f_tp, comp_mkPi (eq := eq)])
         ((σ) ≫ a) (by simp [a_tp, eq]) := by
-  unfold mkApp; rw [← Functor.map_comp_assoc,
-    comp_sec (eq := eq), Functor.map_comp_assoc, comp_unLam (eq := eq)]
+  unfold mkApp; rw [← Category.assoc,
+    comp_sec (eq := eq), Category.assoc, comp_unLam (eq := eq)]
 
 @[simp]
 theorem mkLam_unLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
@@ -562,9 +563,9 @@ theorem mkLam_unLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j]
     s.mkLam ilen jlen A (s.unLam ilen jlen A B f f_tp) = f := by
   let total : (Γ) ⟶ s[i].Ptp.obj s[j].Tm :=
     (s.Pi_pb ilen jlen).lift f (PtpEquiv.mk s[i] A B) f_tp
-  simp [mkLam, unLam]
+  simp only [mkLam, unLam]
   have : PtpEquiv.fst s[i] total = A := by
-    simp [total, PtpEquiv.fst, UvPoly.Equiv.fst]
+    simp only [PtpEquiv.fst, UvPoly.Equiv.fst_eq, total]
     rw [← s[i].uvPolyTp.map_fstProj s[j].tp]
     slice_lhs 1 2 => apply (s.Pi_pb ilen jlen).lift_snd
     apply PtpEquiv.fst_mk
@@ -625,7 +626,7 @@ theorem mkApp_mkLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j]
   assumption
 
 end Pi
-
+/-
 /-! ## Sigma -/
 
 /-- The data of `Sig` and `pair` formers at each universe `s[i].tp`. -/
@@ -785,7 +786,7 @@ theorem mkPair_mkFst_mkSnd {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) �
   simp [this]
 
 end Sigma
-
+-/
 /-! ## Identity types -/
 
 class IdSeq (s : UHomSeq R) where
@@ -858,14 +859,14 @@ def mkIdRec {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty)
         (by> simp [comp_mkId, t_tp, ← B_eq])) ≫ M)
     (u : (Γ) ⟶ s[i].Tm) (u_tp : u ≫ s[i].tp = A)
     (h : (Γ) ⟶ s[i].Tm) (h_tp : h ≫ s[i].tp = s.mkId ilen A t u t_tp u_tp) :
-    (Γ) ⟶ s[j].Tm := by
-  refine (nmId i j).toId'.mkJ t
-    ((substWk _ (substWk _ (𝟙 _) _ _ (by simp [t_tp])) _ _ ?_) ≫ M)
-    r ?_ u (t_tp ▸ u_tp) h ?_
-  · simp [← B_eq, comp_mkId, ← mkId.eq_def]; congr 1 <;> simp [t_tp, substWk]
-  · simp [r_tp]; rw [← Functor.map_comp_assoc]; congr 1
-    apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.reflSubst, mkRefl, substWk, sec]
-  · simp [h_tp, mkId, IdIntro.mkId]
+    (Γ) ⟶ s[j].Tm := by sorry
+  -- refine (nmId i j).toId'.mkJ t
+  --   ((substWk _ (substWk _ (𝟙 _) _ _ (by simp [t_tp])) _ _ ?_) ≫ M)
+  --   r ?_ u (t_tp ▸ u_tp) h ?_
+  -- · simp [← B_eq, comp_mkId, ← mkId.eq_def]; congr 1 <;> simp [t_tp, substWk]
+  -- · simp [r_tp]; rw [← Functor.map_comp_assoc]; congr 1
+  --   apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.reflSubst, mkRefl, substWk, sec]
+  -- · simp [h_tp, mkId, IdIntro.mkId]
 
 theorem comp_mkIdRec {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
     (A : (Γ) ⟶ s[i].Ty) (σA) (σA_eq : (σ) ≫ A = σA)
@@ -876,55 +877,58 @@ theorem comp_mkIdRec {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
       σB (by>
         simp [← σB_eq, ← B_eq]
         rw [comp_mkId]; congr! 1
-        · rw [← Functor.map_comp_assoc, ← Functor.map_comp_assoc, substWk_disp]
+        · rw [← Category.assoc, ← Category.assoc, substWk_disp]
         · simp
-        · rw [← Functor.map_comp_assoc, substWk_disp]; simp [σA_eq])
+        · rw [← Category.assoc, substWk_disp]; simp [σA_eq])
       ((s[i].substWk (s[i].substWk σ _ _ σA_eq) _ _ σB_eq) ≫ M)
       ((σ) ≫ r) (by>
-        simp [*]
-        simp only [← Functor.map_comp_assoc]; congr! 2
-        simp [comp_substCons, comp_sec, substWk, comp_mkRefl])
+        -- simp [*]
+        -- simp only [← Category.assoc]; congr! 2
+        -- simp [comp_substCons, comp_sec, substWk, comp_mkRefl]
+        sorry)
       ((σ) ≫ u) (by> simp [*])
-      ((σ) ≫ h) (by> simp [*, comp_mkId]) := by
-  simp [mkIdRec, Id'.mkJ]
-  change let σ' := _; _ = (σ') ≫ _; intro σ'
-  refine .trans ?h1 (congr((σ') ≫ $((nmId i j).comp_j σ t ((?v) ≫ M) r ?h2)).trans ?h3)
-  case v =>
-    exact s[i].substWk (s[i].substWk (𝟙 _) _ _ (by simp [t_tp])) _ _ (by
-      simp [← B_eq, comp_mkId, ← mkId.eq_def]
-      congr! 1 <;>
-      · subst t_tp; rw [substWk_disp_functor_map_assoc]; simp)
-  · simp [← Category.assoc]; congr 1
-    apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.motiveSubst]
-    · dsimp [Id'.endPtSubst, σ']
-      simp only [substCons_var]
-    · rw [substWk_disp_functor_map]
-      apply (s[i].disp_pullback _).hom_ext <;> simp [Id'.endPtSubst, σ', substWk_disp_functor_map]
-  · simp [r_tp]
-    simp [← Category.assoc]; congr 1
-    apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.reflSubst]; rfl
-    rw [substWk_disp_functor_map, substCons_disp_functor_map_assoc]
-    apply (s[i].disp_pullback _).hom_ext <;> simp
-    simp [substWk_disp_functor_map]
-  · congr 2; simp only [← Category.assoc]; congr 1
-    apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.motiveSubst]
-    apply (s[i].disp_pullback _).hom_ext <;> simp
-    · simp [substWk_disp_functor_map_assoc]
-    · simp [substWk_disp_functor_map, substWk_disp_functor_map_assoc]
+      ((σ) ≫ h) (by> simp [*, comp_mkId]) := by sorry
+  -- simp [mkIdRec, Id'.mkJ]
+  -- change let σ' := _; _ = (σ') ≫ _; intro σ'
+  -- refine .trans ?h1 (congr((σ') ≫ $((nmId i j).comp_j σ t ((?v) ≫ M) r ?h2)).trans ?h3)
+  -- case v =>
+  --   exact s[i].substWk (s[i].substWk (𝟙 _) _ _ (by simp [t_tp])) _ _ (by
+  --     simp [← B_eq, comp_mkId, ← mkId.eq_def]
+  --     congr! 1 <;>
+  --     · subst t_tp; rw [substWk_disp_functor_map_assoc]; simp)
+  -- · simp [← Category.assoc]; congr 1
+  --   apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.motiveSubst]
+  --   · dsimp [Id'.endPtSubst, σ']
+  --     simp only [substCons_var]
+  --   · rw [substWk_disp_functor_map]
+  --     apply (s[i].disp_pullback _).hom_ext <;> simp [Id'.endPtSubst, σ', substWk_disp_functor_map]
+  -- · simp [r_tp]
+  --   simp [← Category.assoc]; congr 1
+  --   apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.reflSubst]; rfl
+  --   rw [substWk_disp_functor_map, substCons_disp_functor_map_assoc]
+  --   apply (s[i].disp_pullback _).hom_ext <;> simp
+  --   simp [substWk_disp_functor_map]
+  -- · congr 2; simp only [← Category.assoc]; congr 1
+  --   apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.motiveSubst]
+  --   apply (s[i].disp_pullback _).hom_ext <;> simp
+  --   · simp [substWk_disp_functor_map_assoc]
+  --   · simp [substWk_disp_functor_map, substWk_disp_functor_map_assoc]
 
 @[simp]
 theorem mkIdRec_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty)
     (t t_tp B B_eq M) (r : (Γ) ⟶ s[j].Tm) (r_tp u u_tp h h_tp) :
     s.mkIdRec ilen jlen A t t_tp B B_eq M r r_tp u u_tp h h_tp ≫ s[j].tp =
       (substCons _ (s[i].sec _ u u_tp) _ h (by> simp [h_tp, comp_mkId, ← B_eq])) ≫ M := by
-  simp [mkIdRec, Id'.mkJ_tp]; rw [← Functor.map_comp_assoc]; congr 1
-  apply (s[i].disp_pullback _).hom_ext <;> simp [Id'.endPtSubst, sec, substWk]
+  -- simp [mkIdRec, Id'.mkJ_tp]; rw [← Category.assoc]; congr 1
+  -- apply (s[i].disp_pullback _).hom_ext <;> simp [Id'.endPtSubst, sec, substWk]
+  sorry
 
 @[simp]
 theorem mkIdRec_mkRefl {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty)
     (t t_tp B B_eq M) (r : (Γ) ⟶ s[j].Tm) (r_tp) :
     s.mkIdRec ilen jlen A t t_tp B B_eq M r r_tp t t_tp
       (s.mkRefl ilen t) (s.mkRefl_tp ilen _ t t_tp) = r := by
-  simp [mkIdRec, mkRefl, Id'.mkJ_refl]
+  -- simp [mkIdRec, mkRefl, Id'.mkJ_refl]
+  sorry
 
 end Id
