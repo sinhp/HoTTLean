@@ -1034,7 +1034,7 @@ lemma dependent_comp {Δ} (σ : Δ ⟶ Γ) (triple : Γ ⟶ compDom P P')
   congr
   ext <;> simp
 
-lemma mk_comp {Δ} (σ : Δ ⟶ Γ) (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
+lemma comp_mk {Δ} (σ : Δ ⟶ Γ) (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
     {pb'} (f' : pb' ⟶ Γ) (g' : pb' ⟶ E) (H' : IsPullback f' g' b P.p)
     {pb} (f : pb ⟶ Δ) (g : pb ⟶ E) (H : IsPullback f g (σ ≫ b) P.p)
     (b' : pb' ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H'.lift (𝟙 Γ) e (by simp [he]) ≫ b') :

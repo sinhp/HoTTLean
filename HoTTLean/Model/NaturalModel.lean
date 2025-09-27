@@ -345,20 +345,24 @@ theorem PtpEquiv.mk_map {Γ : Ctx} {X Y : Ctx}
 --         (M.Ptp_equiv AB).2 :=
 --   sorry
 
-/-
+abbrev compDom (M N : Universe R) : Ctx := M.uvPolyTp.compDom N.uvPolyTp
+
+abbrev compP (M N : Universe R) : M.compDom N ⟶ M.uvPolyTp @ N.Ty :=
+  (M.uvPolyTp.comp N.uvPolyTp).p
+
 namespace compDomEquiv
 open UvPoly
 
 variable {M N : Universe R} {Γ Δ : Ctx} (σ : Δ ⟶ Γ)
+
 /-- Universal property of `compDom`, decomposition (part 1).
 
 A map `ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp` is equivalently three maps
 `fst, dependent, snd` such that `fst_tp` and `snd_tp`. The map `fst : Γ ⟶ M.Tm`
 is the `(a : A)` in `(a : A) × (b : B a)`.
 -/
-def fst (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) : Γ ⟶ M.Tm :=
-  ab ≫ pullback.snd N.tp (UvPoly.PartialProduct.fan M.uvPolyTp N.Ty).snd ≫
-    pullback.snd (M.uvPolyTp.fstProj N.Ty) M.uvPolyTp.p
+abbrev fst (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) : Γ ⟶ M.Tm :=
+  UvPoly.compDomEquiv.fst ab
 
 /-- Computation of `comp` (part 1).
 
@@ -373,15 +377,12 @@ def fst (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) : Γ ⟶ M.Tm :=
 Namely the first projection `α ≫ tp` agrees.
 -/
 theorem fst_tp (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) :
-    fst ab ≫ M.tp = PtpEquiv.fst M (ab ≫ (M.uvPolyTp.compP _)) := by
-  have : pullback.snd (M.uvPolyTp.fstProj N.Ty) M.tp ≫ M.tp =
-    pullback.fst (M.uvPolyTp.fstProj N.Ty) M.tp ≫ M.uvPolyTp.fstProj N.Ty :=
-      Eq.symm pullback.condition
-  simp [PtpEquiv.fst, fst, this]
-  rfl
+    fst ab ≫ M.tp = PtpEquiv.fst M (ab ≫ M.compP N) :=
+  UvPoly.compDomEquiv.fst_comp_p ..
 
-theorem comp_fst (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) (σ : Δ ⟶ Γ) :
-    σ ≫ fst ab = fst (σ ≫ ab) := by simp [fst]
+theorem fst_comp (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) (σ : Δ ⟶ Γ) :
+    fst (σ ≫ ab) = σ ≫ fst ab :=
+  UvPoly.compDomEquiv.fst_comp ..
 
 /-- Universal property of `compDom`, decomposition (part 2).
 
@@ -391,17 +392,23 @@ The map `dependent : (M.ext (fst N ab ≫ M.tp)) ⟶ M.Ty`
 is the `B : A ⟶ Type` in `(a : A) × (b : B a)`.
 Here `A` is implicit, derived by the typing of `fst`, or `(a : A)`.
 -/
-def dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
+abbrev dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     (A := fst ab ≫ M.tp) (eq : fst ab ≫ M.tp = A := by rfl) :
     (M.ext A) ⟶ N.Ty :=
-  PtpEquiv.snd M (ab ≫ (M.uvPolyTp.compP _)) _ (by rw [← eq, fst_tp])
+  UvPoly.compDomEquiv.dependent ab (M.disp A) (M.var A) <| by
+    simpa [eq] using (M.disp_pullback A).flip
 
 theorem comp_dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     {A} (eq1 : fst ab ≫ M.tp = A)
     {σA} (eq2 : σ ≫ A = σA) :
     (substWk M σ _ _ eq2) ≫ dependent ab A eq1 =
-    dependent (σ ≫ ab) σA (by simp [← comp_fst, eq1, eq2]) := by
-  rw [dependent, ← PtpEquiv.snd_comp_left]; rfl
+    dependent (σ ≫ ab) σA (by simp [fst_comp, eq1, eq2]) := by
+  dsimp [dependent]
+  rw [UvPoly.compDomEquiv.dependent_comp σ ab (M.disp A) (M.var A)
+    (by simpa [eq1] using (M.disp_pullback A).flip)]
+  · congr 1
+    simp [substWk, substCons]
+    apply (M.disp_pullback A).hom_ext <;> simp
 
 /-- Universal property of `compDom`, decomposition (part 3).
 
@@ -410,11 +417,12 @@ A map `ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp` is equivalently three maps
 The map `snd : Γ ⟶ M.Tm`
 is the `(b : B a)` in `(a : A) × (b : B a)`.
 -/
-def snd (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) : Γ ⟶ N.Tm :=
-  ab ≫ pullback.fst N.tp (PartialProduct.fan M.uvPolyTp N.Ty).snd
+abbrev snd (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) : Γ ⟶ N.Tm :=
+  UvPoly.compDomEquiv.snd ab
 
-theorem comp_snd (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) (σ : Δ ⟶ Γ) :
-    σ ≫ snd ab = snd (σ ≫ ab) := by simp [snd]
+theorem snd_comp (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) (σ : Δ ⟶ Γ) :
+    snd (σ ≫ ab) = σ ≫ snd ab :=
+  UvPoly.compDomEquiv.snd_comp ..
 
 /-- Universal property of `compDom`, decomposition (part 4).
 
@@ -426,21 +434,19 @@ the expression for `B a` obtained solely from `dependent`, or `B : A ⟶ Type`.
 theorem snd_tp (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     {A} (eq : fst ab ≫ M.tp = A) :
     snd ab ≫ N.tp = (M.sec _ (fst ab) eq) ≫ dependent ab A eq := by
-  simp [snd, pullback.condition, dependent, PtpEquiv.snd, Equiv.snd'_eq]
-  simp only [← Category.assoc]; congr! 1
-  apply pullback.hom_ext <;> simp [fst, UvPoly.compP]
+  rw [UvPoly.compDomEquiv.snd_comp_p ab (M.disp A) (M.var A) <| by
+    simpa [eq] using (M.disp_pullback A).flip]
+  congr 1
+  apply (disp_pullback ..).hom_ext
+  · simp
+  · simp
 
 /-- Universal property of `compDom`, constructing a map into `compDom`. -/
-def mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : (M.ext A) ⟶ N.Ty) (β : Γ ⟶ N.Tm)
-    (h : β ≫ N.tp = (M.sec _ α eq) ≫ B) : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp := by
-  refine pullback.lift β (pullback.lift (PtpEquiv.mk _ A B) α ?_) ?_
-  · simp [← Equiv.fst_eq, ← PtpEquiv.fst.eq_def, eq]
-  · simp [h]
-    conv_lhs => arg 2; exact
-      Equiv.snd'_mk' M.uvPolyTp N.Ty A _ B
-        |>.symm.trans <| Equiv.snd'_eq M.uvPolyTp N.Ty (PtpEquiv.mk M A B) _
-    simp only [← Category.assoc]; congr! 1
-    apply pullback.hom_ext <;> simp
+def mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : M.ext A ⟶ N.Ty) (β : Γ ⟶ N.Tm)
+    (h : β ≫ N.tp = M.sec _ α eq ≫ B) : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp :=
+  UvPoly.compDomEquiv.mk _ α eq (M.disp A) (M.var A) (M.disp_pullback A).flip B β (by
+    convert h
+    apply (disp_pullback ..).hom_ext <;> simp)
 
 @[simp]
 theorem fst_mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : (M.ext A) ⟶ N.Ty) (β : Γ ⟶ N.Tm)
@@ -452,10 +458,7 @@ theorem dependent_mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A)
     (B : (M.ext A) ⟶ N.Ty) (β : Γ ⟶ N.Tm)
     (h : β ≫ N.tp = (M.sec _ α eq) ≫ B) :
     dependent (mk α eq B β h) A (by simp [fst_mk, eq]) = B := by
-  simp [mk, dependent, UvPoly.compP]
-  convert PtpEquiv.snd_mk M A B using 2
-  slice_lhs 1 2 => apply pullback.lift_snd
-  simp
+  simp [mk]
 
 @[simp]
 theorem snd_mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : (M.ext A) ⟶ N.Ty) (β : Γ ⟶ N.Tm)
@@ -467,12 +470,10 @@ theorem ext {ab₁ ab₂ : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp}
     (h1 : fst ab₁ = fst ab₂)
     (h2 : dependent ab₁ A eq = dependent ab₂ A (h1 ▸ eq))
     (h3 : snd ab₁ = snd ab₂) : ab₁ = ab₂ := by
-  refine pullback.hom_ext h3 (pullback.hom_ext ?_ h1)
-  simp only [dependent, PtpEquiv.snd] at h2
-  generalize_proofs _ _ H at h2
-  refine Equiv.ext' M.uvPolyTp N.Ty H ?_ h2
-  simp [Equiv.fst, pullback.condition]
-  simp only [← Category.assoc]; congr 1
+  apply UvPoly.compDomEquiv.ext ab₁ ab₂ h1 h3 (M.disp _) (M.var _) (M.disp_pullback _).flip
+  dsimp only [dependent] at *
+  subst eq
+  rw! [h2]
 
 theorem comp_mk
     (α : Γ ⟶ M.Tm) {A} (e1 : α ≫ M.tp = A)
@@ -483,9 +484,13 @@ theorem comp_mk
     σ ≫ mk α e1 B β e2 =
     mk (σ ≫ α) (by simp [e1, e3])
       ((M.substWk σ A _ e3) ≫ B) (σ ≫ β)
-      (by simp [e2]; rw [← Functor.map_comp_assoc, comp_sec]; simp; congr!) := by
-  apply ext (A := σA) (by simp [← comp_fst, e1, e3]) <;> simp [← comp_fst, ← comp_snd]
-  rw [← comp_dependent, dependent_mk]
+      (by simp [e2]; rw [← Category.assoc, comp_sec]; simp; congr!) := by
+  dsimp only [mk]
+  rw [UvPoly.compDomEquiv.comp_mk σ _ α e1 (M.disp _) (M.var _) (M.disp_pullback _).flip
+    (M.disp _) (M.var _) (M.disp_pullback _).flip ]
+  subst e1 e3
+  congr 2
+  apply (disp_pullback ..).hom_ext <;> simp [substWk_disp]
 
 theorem eta (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     {A} (eq : fst ab ≫ M.tp = A) :
@@ -493,19 +498,52 @@ theorem eta (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
   symm; apply ext (eq := eq) <;> simp
 
 end compDomEquiv
--/
+
 /-! ## Pi and Sigma types -/
 
-set_option linter.dupNamespace false in
-protected structure Pi where
-  Pi : M.Ptp.obj M.Ty ⟶ M.Ty
-  lam : M.Ptp.obj M.Tm ⟶ M.Tm
-  Pi_pullback : IsPullback lam (M.Ptp.map M.tp) M.tp Pi
+/-- The structure on three universes that for
+`A : Γ ⟶ U0.Ty` and `B : Γ.A ⟶ U1.Ty` constructs a Π-type `Π_A B : Γ ⟶ U2.Ty`.
+-/
+structure PiAux (U0 U1 U2 : Universe R) where
+  Pi : U0.Ptp.obj U1.Ty ⟶ U2.Ty
+  lam : U0.Ptp.obj U1.Tm ⟶ U2.Tm
+  Pi_pullback : IsPullback lam (U0.Ptp.map U1.tp) U2.tp Pi
 
-protected structure Sigma where
-  Sig : M.Ptp.obj M.Ty ⟶ M.Ty
-  pair : UvPoly.compDom (uvPolyTp M) (uvPolyTp M) ⟶ M.Tm
-  -- Sig_pullback : IsPullback pair ((uvPolyTp M).compP (uvPolyTp M)) M.tp Sig
+/-- The structure on three universes that for
+`A : Γ ⟶ U0.Ty` and `B : Γ.A ⟶ U1.Ty` constructs a Π-type `Σ_A B : Γ ⟶ U2.Ty`. -/
+structure SigmaAux (U0 U1 U2 : Universe R) where
+  Sig : U0.Ptp.obj U1.Ty ⟶ U2.Ty
+  pair : U0.compDom U1 ⟶ U2.Tm
+  Sig_pullback : IsPullback pair (U0.compP U1) U2.tp Sig
+
+set_option linter.dupNamespace false in
+/-- A universe `M` has Π-type structure. This is the data of a pullback square
+```
+       lam
+Ptp Tm ------> Tm
+  |             |
+Ptp tp          |tp
+  |             |
+  V             V
+Ptp Ty ------> Ty
+        Pi
+```
+-/
+protected abbrev Pi := PiAux M M M
+
+/-- A universe `M` has Σ-type structure. This is the data of a pullback square
+```
+        Sig
+compDom ------> Tm
+  |             |
+ compP          |tp
+  |             |
+  V             V
+Ptp Ty ------> Ty
+        pair
+```
+-/
+protected abbrev Sigma := SigmaAux M M M
 
 /--
 Universe.IdIntro consists of the following commutative square

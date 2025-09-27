@@ -235,7 +235,6 @@ end PtpEquiv
 
 def compDom := U.{v}.uvPolyTp.compDom U.{v}.uvPolyTp
 
-/-
 @[simp]
 def comp : compDom.{v} ⟶ U.{v}.Ptp.obj Ty.{v} :=
   U.uvPolyTp.compP U.uvPolyTp
@@ -271,6 +270,7 @@ is `(b : B a)` in `(a : A) × (b : B a)`.
 def snd : Γ ⥤ PGrpd.{v,v} :=
   toCoreAsSmallEquiv (Universe.compDomEquiv.snd ab)
 
+/-
 /-- Universal property of `compDom`, decomposition (part 4).
 
 A map `ab : (Γ) ⟶ compDom` is equivalently three functors
