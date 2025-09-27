@@ -811,6 +811,7 @@ end sigma
 
 end FunctorOperation
 
+/-
 open FunctorOperation
 
 /--
@@ -1006,6 +1007,7 @@ def uHomSeqSigs' (i : ℕ) (ilen : i < 4) :
 
 instance uHomSeqSigma : uHomSeq.SigSeq where
   nmSig := uHomSeqSigs'
+-/
 
 end GroupoidModel
 end

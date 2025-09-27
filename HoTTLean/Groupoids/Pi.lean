@@ -41,75 +41,6 @@ lemma Functor.Iso.whiskerLeft_hom_inv {C : Type u} [Category.{v} C] {D : Type u�
   simpa [← heq_eq_eq] using
     Functor.Iso.whiskerLeft_hom_inv_heq F G H η
 
-variable {Γ : Type u} [Groupoid Γ] {Δ : Type u₁} [Groupoid.{v₁} Δ]
-
-@[simps]
-def Grpd.functorIsoOfIso {A B : Grpd} (F : A ≅ B) : A ≅≅ B where
-  hom := F.hom
-  inv := F.inv
-  hom_inv_id := F.hom_inv_id
-  inv_hom_id := F.inv_hom_id
-
-def Grpd.Functor.iso (A : Γ ⥤ Grpd) {x y : Γ} (f : x ⟶ y) : A.obj x ≅≅ A.obj y :=
-  Grpd.functorIsoOfIso (Functor.mapIso A (asIso f))
-
--- Note: this should not be a simp lemma, because we want simp to
--- see the Functor.Iso structure
-def Grpd.Functor.iso_hom (A : Γ ⥤ Grpd) {x y : Γ} (f : x ⟶ y) :
-  (iso A f).hom = A.map f := rfl
-
--- Note: this should not be a simp lemma, because we want simp to
--- see the Functor.Iso structure
-def Grpd.Functor.iso_inv (A : Γ ⥤ Grpd) {x y : Γ} (f : x ⟶ y) :
-  (iso A f).inv = A.map (inv f) := rfl
-
-@[simp]
-lemma Grpd.Functor.iso_id (A : Γ ⥤ Grpd) (x : Γ) : Grpd.Functor.iso A (𝟙 x) =
-    Functor.Iso.refl _ := by
-  ext
-  simp [Grpd.id_eq_id, iso]
-
-@[simp]
-lemma Grpd.Functor.iso_comp (A : Γ ⥤ Grpd) {x y z : Γ} (f : x ⟶ y) (g : y ⟶ z) :
-    Grpd.Functor.iso A (f ≫ g) = Grpd.Functor.iso A f ≪⋙ Grpd.Functor.iso A g := by
-  ext
-  simp [Grpd.comp_eq_comp, iso]
-
-@[simp]
-lemma Grpd.Functor.iso_naturality (A : Γ ⥤ Grpd) (σ : Δ ⥤ Γ) {x y : Δ} (f : x ⟶ y) :
-    Grpd.Functor.iso (σ ⋙ A) f = Grpd.Functor.iso A (σ.map f) := by
-  ext
-  simp [iso]
-
-open Functor
-
-lemma Grpd.Functor.hcongr_obj {C C' D D' : Grpd.{v,u}} (hC : C = C') (hD : D = D')
-    {F : C ⥤ D} {F' : C' ⥤ D'} (hF : F ≍ F') {x} {x'} (hx : x ≍ x') :
-    HEq (F.obj x) (F'.obj x') := by
-  subst hC hD hF hx
-  rfl
-
-lemma Grpd.whiskerLeft_hcongr_right {C D : Type*} [Category C] [Category D]
-    {E E' : Grpd.{v,u}} (hE : E ≍ E') (F : C ⥤ D) {G H : D ⥤ E} {G' H' : D ⥤ E'}
-    (hG : G ≍ G') (hH : H ≍ H') {α : G ⟶ H} {α' : G' ⟶ H'} (hα : α ≍ α') :
-    whiskerLeft F α ≍ whiskerLeft F α' := by
-  subst hE hG hH hα
-  rfl
-
-lemma Grpd.comp_hcongr {C C' D D' E E' : Grpd.{v,u}} (hC : C ≍ C') (hD : D ≍ D')
-    (hE : E ≍ E') {F : C ⥤ D} {F' : C' ⥤ D'} {G : D ⥤ E} {G' : D' ⥤ E'}
-    (hF : F ≍ F') (hG : G ≍ G')
-    : F ⋙ G ≍ F' ⋙ G' := by
-  subst hC hD hE hF hG
-  rfl
-
-lemma Grpd.NatTrans.hext {X X' Y Y' : Grpd.{v,u}} (hX : X = X') (hY : Y = Y')
-    {F G : X ⥤ Y} {F' G' : X' ⥤ Y'} (hF : F ≍ F') (hG : G ≍ G')
-    (α : F ⟶ G) (α' : F' ⟶ G') (happ : ∀ x : X, α.app x ≍ α'.app ((eqToHom hX).obj x)) :
-    α ≍ α' := by
-  subst hX hY hF hG
-  aesop_cat
-
 lemma Functor.associator_eq {C D E E' : Type*} [Category C] [Category D] [Category E] [Category E']
     (F : C ⥤ D) (G : D ⥤ E) (H : E ⥤ E') : associator F G H = CategoryTheory.Iso.refl _ :=
   rfl
@@ -182,17 +113,6 @@ end CategoryTheory
 namespace GroupoidModel
 
 open CategoryTheory NaturalModel Universe Opposite Functor.Groupoidal
-
-lemma smallU.PtpEquiv.fst_app_comp_map_tp {Γ : Ctx} (ab : y(Γ) ⟶ smallU.Ptp.obj smallU.Tm) :
-    smallU.PtpEquiv.fst (ab ≫ smallU.Ptp.map smallU.tp) = smallU.PtpEquiv.fst ab := by
-  dsimp[fst]
-  --erw[fst_naturality]
-  sorry
-
-lemma smallU.PtpEquiv.snd_app_comp_map_tp {Γ : Ctx} (ab : y(Γ) ⟶ smallU.Ptp.obj smallU.Tm) :
-    smallU.PtpEquiv.snd (ab ≫ smallU.Ptp.map smallU.tp)
-    ≍ smallU.PtpEquiv.snd ab ⋙ PGrpd.forgetToGrpd :=
-  sorry
 
 end GroupoidModel
 
@@ -952,6 +872,7 @@ end FunctorOperation
 section
 variable {Γ : Ctx}
 
+/-
 namespace smallUPi
 
 open FunctorOperation
@@ -1098,7 +1019,7 @@ def uHomSeqPis' (i : ℕ) (ilen : i < 4) :
 
 instance uHomSeqPi : uHomSeq.PiSeq where
   nmPi := uHomSeqPis'
-
+-/
 end
 
 end GroupoidModel
