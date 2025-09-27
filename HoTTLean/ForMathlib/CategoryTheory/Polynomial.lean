@@ -654,6 +654,21 @@ variable {P : UvPoly R E B} {Γ X Y : C}
 abbrev homMk (pair : Γ ⟶ P @ X) : Over.mk (terminal.from Γ) ⟶
     ((toOverTerminal ⋙ MvPoly.functor P.mvPoly).obj X).toComma := Over.homMk pair
 
+/--
+A morphism `pair : Γ ⟶ P @ X` is equivalent to a pair of morphisms
+`fst : Γ ⟶ B` and `snd : pb ⟶ X` in the following diagram
+```
+    snd
+B <---- pb ------> E
+        |          |
+        |          |p
+        |          |
+        V          V
+        Γ -------> B
+             fst
+```
+The following API allows users to convert back and forth along this (natural) bijection.
+-/
 def fst (pair : Γ ⟶ P @ X) : Γ ⟶ B :=
   (MvPoly.Equiv.fst (homMk pair)).hom
 
@@ -737,15 +752,15 @@ lemma snd_mk (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) : snd (mk b x) =
   convert congr_arg CommaMorphism.left this
   simp
 
--- @[simp]
--- lemma snd'_mk' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X) :
---     snd' (mk' b H x) (by rwa [fst_mk']) = x := by
---   simp only [snd', mk', snd_mk]
---   rw! [fst_mk]
---   simp
+@[simp]
+lemma snd'_mk' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X) :
+    snd' (mk' b H x) (by rwa [fst_mk']) = x := by
+  simp only [snd', mk', snd_mk]
+  rw! [fst_mk]
+  simp
 
 @[simp]
-lemma snd'_mk' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X)
+lemma snd'_mk'' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X)
    {pb' f' g'} (H' : IsPullback (P := pb') f' g' (fst (mk' b H x)) P.p := by exact H) :
     snd' (mk' b H x) H' = H.lift f' g' (by rw [fst_mk'] at H'; simp [H'.w]) ≫ x := by
   simp only [snd', mk', snd_mk]
@@ -864,6 +879,178 @@ theorem mk_comp_left {Δ} (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) (σ: Δ ⟶ 
 --   simp only [← Category.assoc]; congr 1; ext <;> simp
 
 end Equiv
+
+namespace compDomEquiv
+
+variable {Γ E B E' B' : C} {P : UvPoly R E B} {P' : UvPoly R E' B'}
+
+/-
+```
+   Γ
+   |
+   |triple
+   V
+ compDom
+   |⟍
+   |   ⟍
+   |      ⟍
+   V         ↘
+   • -------> E
+   |          |
+   |   (pb)   |p
+   |          |
+   V          V
+P @ B' -----> B
+       fstProj
+```
+This produces a map `fst : Γ ⟶ E`,
+and a map `(triple ≫ P.comp P').p : Γ ⟶ P @ B'`,
+which we can further break up using `UvPoly.Equiv.fst` and `UvPoly.Equiv.snd`.
+```
+  dependent
+B <---- pb ------> E
+        |          |
+        |          |p
+        |          |
+        V          V
+        Γ -------> B
+            base
+```
+-/
+def fst (triple : Γ ⟶ compDom P P') : Γ ⟶ E :=
+  triple ≫ pullback.fst _ _ ≫ pullback.snd _ _
+
+@[simp]
+abbrev base (triple : Γ ⟶ compDom P P') : Γ ⟶ B := Equiv.fst (triple ≫ (P.comp P').p)
+
+theorem fst_comp_p (triple : Γ ⟶ compDom P P') :
+    fst triple ≫ P.p = base triple := by
+  simp [fst, Equiv.fst_eq, pullback.condition]
+
+abbrev dependent (triple : Γ ⟶ compDom P P') {pb} (f : pb ⟶ Γ) (g : pb ⟶ E)
+    (H : IsPullback f g (fst triple ≫ P.p) P.p) : pb ⟶ B' :=
+  Equiv.snd' (triple ≫ (P.comp P').p) (by convert H; simp only [fst_comp_p])
+
+def snd (triple : Γ ⟶ compDom P P') : Γ ⟶ E' :=
+  triple ≫ pullback.snd _ _
+
+theorem snd_comp_p (triple : Γ ⟶ compDom P P')
+    {pb} (f : pb ⟶ Γ) (g : pb ⟶ E) (H : IsPullback f g (fst triple ≫ P.p) P.p) :
+    snd triple ≫ P'.p =
+    H.lift (𝟙 Γ) (fst triple) (by simp) ≫ dependent triple f g H :=
+  calc (triple ≫ pullback.snd _ _) ≫ P'.p
+  _ = triple ≫ pullback.fst _ _ ≫ sndProj P B' := by
+    simp [pullback.condition]
+  _ = H.lift (𝟙 Γ) (fst triple) (by simp) ≫ dependent triple f g H := by
+    simp only [← assoc, dependent, comp_p, Equiv.snd'_eq]
+    congr 1
+    ext <;> simp [fst]
+
+def mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
+    {pb} (f : pb ⟶ Γ) (g : pb ⟶ E) (H : IsPullback f g b P.p)
+    (b' : pb ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H.lift (𝟙 Γ) e (by simp [he]) ≫ b') :
+    Γ ⟶ P.compDom P' :=
+  pullback.lift (pullback.lift (Equiv.mk' b H b') e) e' (by
+    have : b' = Equiv.snd' (Equiv.mk' b H b') (by convert H; simp) := by rw [Equiv.snd'_mk']
+    conv => right; rw [he', this, Equiv.snd'_eq, ← Category.assoc]
+    congr 1
+    ext <;> simp )
+
+@[simp]
+lemma base_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
+    {pb} (f : pb ⟶ Γ) (g : pb ⟶ E) (H : IsPullback f g b P.p)
+    (b' : pb ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H.lift (𝟙 Γ) e (by simp [he]) ≫ b') :
+  base (mk b e he f g H b' e' he') = b := by simp [mk]
+
+@[simp]
+lemma fst_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
+    {pb} (f : pb ⟶ Γ) (g : pb ⟶ E) (H : IsPullback f g b P.p)
+    (b' : pb ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H.lift (𝟙 Γ) e (by simp [he]) ≫ b') :
+  fst (mk b e he f g H b' e' he') = e := by
+  simp [mk, fst]
+
+@[simp]
+lemma dependent_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
+    {pb} (f : pb ⟶ Γ) (g : pb ⟶ E) (H : IsPullback f g b P.p)
+    (b' : pb ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H.lift (𝟙 Γ) e (by simp [he]) ≫ b')
+    {pb'} (f' : pb' ⟶ Γ) (g' : pb' ⟶ E)
+    (H' : IsPullback f' g' (fst (mk b e he f g H b' e' he') ≫ P.p) P.p) :
+  dependent (mk b e he f g H b' e' he') f' g' H' = H.lift f' g' (by simp [← H'.w, he]) ≫ b' := by
+  simp [mk, dependent]
+
+@[simp]
+lemma snd_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
+    {pb} (f : pb ⟶ Γ) (g : pb ⟶ E) (H : IsPullback f g b P.p)
+    (b' : pb ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H.lift (𝟙 Γ) e (by simp [he]) ≫ b') :
+  snd (mk b e he f g H b' e' he') = e' := by
+  simp [mk, snd]
+
+@[simp]
+lemma eta (triple : Γ ⟶ compDom P P') {pb} (f : pb ⟶ Γ) (g : pb ⟶ E)
+    (H : IsPullback f g (base triple) P.p) (b' : pb ⟶ B')
+    (hbase' : b' = Equiv.snd' (triple ≫ (P.comp P').p) H) :
+    mk (base triple) (fst triple) (fst_comp_p ..) f g H b' (snd triple) (by
+      simp only [snd, assoc, ← pullback.condition, base, comp_p]
+      simp only [hbase', Equiv.snd'_eq, ← Category.assoc]
+      congr 1
+      ext <;> simp [fst]) = triple := by
+  apply pullback.hom_ext
+  · ext
+    · simp [mk]
+      conv => right; rw [← Equiv.eta'
+        (triple ≫ pullback.fst (P.sndProj B') P'.p ≫ pullback.fst (P.fstProj B') P.p) H]
+      congr
+    · simp [mk, fst]
+  · simp [mk, snd]
+
+lemma ext (triple triple' : Γ ⟶ compDom P P')
+    (hfst : fst triple = fst triple')
+    (hsnd : snd triple = snd triple')
+    {pb} (f : pb ⟶ Γ) (g : pb ⟶ E)
+    (H : IsPullback f g (fst triple ≫ P.p) P.p)
+    (hd : dependent triple f g H = dependent triple' f g (by rwa [← hfst])) :
+    triple = triple' := by
+  rw [← eta triple f g (by convert H; simp [fst_comp_p]) (dependent triple f g H) rfl,
+    ← eta triple' f g (by rwa [← fst_comp_p, ← hfst])
+    (dependent triple' f g (by rwa [← hfst])) rfl]
+  have : base triple = base triple' := by
+    rw [← fst_comp_p, ← fst_comp_p, hfst]
+  rw! [hsnd, hd, hfst, this]
+
+lemma fst_comp {Δ} (σ : Δ ⟶ Γ) (triple : Γ ⟶ compDom P P') :
+    fst (σ ≫ triple) = σ ≫ fst triple := by
+  simp [fst]
+
+lemma snd_comp {Δ} (σ : Δ ⟶ Γ) (triple : Γ ⟶ compDom P P') :
+    snd (σ ≫ triple) = σ ≫ snd triple := by
+  simp [snd]
+
+lemma dependent_comp {Δ} (σ : Δ ⟶ Γ) (triple : Γ ⟶ compDom P P')
+    {pb'} (f' : pb' ⟶ Γ) (g' : pb' ⟶ E) (H' : IsPullback f' g' (fst triple ≫ P.p) P.p)
+    {pb} (f : pb ⟶ Δ) (g : pb ⟶ E) (H : IsPullback f g (fst (σ ≫ triple) ≫ P.p) P.p) :
+    dependent (σ ≫ triple) f g H = H'.lift (f ≫ σ) g (by simp [← H.w, fst_comp]) ≫
+    dependent triple f' g' H' := by
+  simp only [dependent, comp_p, ← assoc, Equiv.snd'_eq]
+  congr
+  ext <;> simp
+
+lemma mk_comp {Δ} (σ : Δ ⟶ Γ) (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
+    {pb'} (f' : pb' ⟶ Γ) (g' : pb' ⟶ E) (H' : IsPullback f' g' b P.p)
+    {pb} (f : pb ⟶ Δ) (g : pb ⟶ E) (H : IsPullback f g (σ ≫ b) P.p)
+    (b' : pb' ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H'.lift (𝟙 Γ) e (by simp [he]) ≫ b') :
+    σ ≫ mk b e he f' g' H' b' e' he' =
+    mk (σ ≫ b) (σ ≫ e) (by simp [he]) f g H (H'.lift (f ≫ σ) g (by simp[← H.w]) ≫ b') (σ ≫ e')
+    (by simp [he']; simp [← assoc]; congr 1; apply H'.hom_ext <;> simp) := by
+  simp [mk]
+  apply pullback.hom_ext
+  · apply pullback.hom_ext
+    · simp only [assoc, limit.lift_π, PullbackCone.mk_pt, PullbackCone.mk_π_app]
+      rw [Equiv.mk'_comp_left]
+      rfl
+    · simp
+  · simp
+
+end compDomEquiv
 
 instance preservesPullbacks (P : UvPoly R E B) {Pb X Y Z : C} (fst : Pb ⟶ X) (snd : Pb ⟶ Y)
     (f : X ⟶ Z) (g : Y ⟶ Z) (h: IsPullback fst snd f g) :
