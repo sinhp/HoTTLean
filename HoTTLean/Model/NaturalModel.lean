@@ -380,6 +380,7 @@ theorem fst_tp (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) :
     fst ab ≫ M.tp = PtpEquiv.fst M (ab ≫ M.compP N) :=
   UvPoly.compDomEquiv.fst_comp_p ..
 
+@[reassoc]
 theorem fst_comp (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) (σ : Δ ⟶ Γ) :
     fst (σ ≫ ab) = σ ≫ fst ab :=
   UvPoly.compDomEquiv.fst_comp ..
@@ -392,11 +393,16 @@ The map `dependent : (M.ext (fst N ab ≫ M.tp)) ⟶ M.Ty`
 is the `B : A ⟶ Type` in `(a : A) × (b : B a)`.
 Here `A` is implicit, derived by the typing of `fst`, or `(a : A)`.
 -/
-abbrev dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
+def dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     (A := fst ab ≫ M.tp) (eq : fst ab ≫ M.tp = A := by rfl) :
     (M.ext A) ⟶ N.Ty :=
   UvPoly.compDomEquiv.dependent ab (M.disp A) (M.var A) <| by
     simpa [eq] using (M.disp_pullback A).flip
+
+lemma dependent_eq (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
+    (A := fst ab ≫ M.tp) (eq : fst ab ≫ M.tp = A := by rfl) :
+    dependent ab A eq = Universe.PtpEquiv.snd M (ab ≫ M.compP N) A (by simp [← eq, fst_tp]) := by
+  simp [dependent, UvPoly.compDomEquiv.dependent, PtpEquiv.snd]
 
 theorem comp_dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     {A} (eq1 : fst ab ≫ M.tp = A)
@@ -420,6 +426,7 @@ is the `(b : B a)` in `(a : A) × (b : B a)`.
 abbrev snd (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) : Γ ⟶ N.Tm :=
   UvPoly.compDomEquiv.snd ab
 
+@[reassoc]
 theorem snd_comp (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp) (σ : Δ ⟶ Γ) :
     snd (σ ≫ ab) = σ ≫ snd ab :=
   UvPoly.compDomEquiv.snd_comp ..
@@ -432,7 +439,7 @@ The equation `snd_tp` says that the type of `b : B a` agrees with
 the expression for `B a` obtained solely from `dependent`, or `B : A ⟶ Type`.
 -/
 theorem snd_tp (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
-    {A} (eq : fst ab ≫ M.tp = A) :
+    {A} (eq : fst ab ≫ M.tp = A := by rfl) :
     snd ab ≫ N.tp = (M.sec _ (fst ab) eq) ≫ dependent ab A eq := by
   rw [UvPoly.compDomEquiv.snd_comp_p ab (M.disp A) (M.var A) <| by
     simpa [eq] using (M.disp_pullback A).flip]
@@ -454,11 +461,12 @@ theorem fst_mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : (M.ext A) ⟶ 
   simp [mk, fst]
 
 @[simp]
-theorem dependent_mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A)
-    (B : (M.ext A) ⟶ N.Ty) (β : Γ ⟶ N.Tm)
+theorem dependent_mk (α : Γ ⟶ M.Tm) {A A'} (eq : α ≫ M.tp = A) (hA' : A' = A)
+    (B : M.ext A ⟶ N.Ty) (β : Γ ⟶ N.Tm)
     (h : β ≫ N.tp = (M.sec _ α eq) ≫ B) :
-    dependent (mk α eq B β h) A (by simp [fst_mk, eq]) = B := by
-  simp [mk]
+    dependent (mk α eq B β h) A' (by simp [hA', fst_mk, eq]) = eqToHom (by rw [hA']) ≫ B := by
+  subst hA'
+  simp [mk, dependent]
 
 @[simp]
 theorem snd_mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : (M.ext A) ⟶ N.Ty) (β : Γ ⟶ N.Tm)

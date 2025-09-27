@@ -136,8 +136,9 @@ theorem substWk_eq (A : Γ ⟶ U.Ty.{v}) (σA : Δ ⟶ U.Ty.{v}) (eq) :
     simp [Grpd.comp_eq_comp, Functor.assoc]
     erw [pre_comp_forget, ← Functor.assoc, map_forget]
 
-@[simp] theorem sec_eq {Γ : Ctx} (α : Γ ⟶ U.{v}.Tm) :
-    U.sec _ α rfl = sec _ (toCoreAsSmallEquiv α) rfl := by
+@[simp] theorem sec_eq {Γ : Ctx} (α : Γ ⟶ U.{v}.Tm) (A : Γ ⟶ U.{v}.Ty) (hα : α ≫ U.tp = A) :
+    U.sec _ α hα = sec (toCoreAsSmallEquiv A) (toCoreAsSmallEquiv α)
+    (by rw [← hα, Grpd.comp_eq_comp, tp, toCoreAsSmallEquiv_apply_comp_right]) := by
   apply (U.disp_pullback _).hom_ext
   . erw [Universe.sec_var, U_var, var, Grpd.comp_eq_comp,
       ← toCoreAsSmallEquiv_symm_apply_comp_left, Equiv.eq_symm_apply, sec_toPGrpd]
@@ -158,14 +159,17 @@ thought of as a dependent pair `A : Type` and `B : A ⟶ Type` when `C = Grpd`.
 def fst : Γ ⥤ Grpd.{v,v} :=
   toCoreAsSmallEquiv (Universe.PtpEquiv.fst U AB)
 
+variable (A := fst AB) (hA : A = fst AB := by rfl)
+
 /--
 A map `(AB : (Γ) ⟶ U.{v}.Ptp.obj (Ctx.ofCategory C))`
 is equivalent to a pair of functors `A : Γ ⥤ Grpd` and `B : ∫(fst AB) ⥤ C`,
 thought of as a dependent pair `A : Type` and `B : A ⟶ Type` when `C = Grpd`.
 `PtpEquiv.snd` is the `B` in this pair.
 -/
-def snd : ∫(fst AB) ⥤ C :=
-  toCoreAsSmallEquiv (Universe.PtpEquiv.snd U AB)
+def snd : ∫A ⥤ C :=
+  toCoreAsSmallEquiv (Universe.PtpEquiv.snd U AB (toCoreAsSmallEquiv.symm A) (by
+    simp [Universe.PtpEquiv.fst, hA, fst]))
 
 nonrec theorem fst_comp_left : fst (σ ≫ AB) = σ ⋙ fst AB := by
   dsimp only [fst]
@@ -176,15 +180,14 @@ theorem fst_comp_right {D : Type (v + 1)} [Category.{v, v + 1} D] (F : C ⥤ D) 
   dsimp only [fst]
   rw [Universe.PtpEquiv.fst_comp_right]
 
-nonrec theorem snd_comp_left : snd (σ ≫ AB) =
-    map (eqToHom (fst_comp_left σ AB)) ⋙ pre _ σ ⋙ snd AB := by
+nonrec theorem snd_comp_left : snd (σ ≫ AB) (σ ⋙ A) (by rw [hA, fst_comp_left]) =
+    map (eqToHom (by rw [hA])) ⋙ pre _ σ ⋙ snd AB := by
   dsimp only [snd]
-  simp only [eqToHom_refl, map_id_eq, Cat.of_α, Functor.simpIdComp]
-  erw [PtpEquiv.snd_comp_left U (snd._proof_1 AB), toCoreAsSmallEquiv_apply_comp_left]
-  · rw [substWk_eq]
-    · congr 1
-      simp [fst, map_id_eq]
-  · rfl
+  erw [PtpEquiv.snd_comp_left _ rfl
+    (by simp [toCoreAsSmallEquiv_symm_apply_comp_left, Grpd.comp_eq_comp, hA, fst]),
+    toCoreAsSmallEquiv_apply_comp_left]
+  subst hA
+  simp [map_id_eq, substWk_eq]; rfl
 
 /--
 A map `(AB : (Γ) ⟶ U.{v}.Ptp.obj (Ctx.ofCategory C))`
@@ -209,6 +212,7 @@ theorem hext (AB1 AB2 : Γ ⟶ U.{v}.Ptp.obj Ty.{v}) (hfst : fst AB1 = fst AB2)
     simp [← heq_eq_eq]
     exact hsnd
 
+@[simp]
 lemma fst_mk (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ C) :
     fst (mk A B) = A := by
   simp [fst, mk, Universe.PtpEquiv.fst_mk]
@@ -218,14 +222,13 @@ lemma Grpd.eqToHom_comp_heq {A B : Grpd} {C : Type*} [Category C]
   subst h
   simp [Grpd.id_eq_id, Functor.id_comp]
 
-lemma snd_mk (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ C) :
-    snd (mk A B) = map (eqToHom (fst_mk A B)) ⋙ B := by
+lemma snd_mk (A A' : Γ ⥤ Grpd.{v,v}) (hA : A = A') (B : ∫(A) ⥤ C) :
+    snd (mk A B) A' (by rw [fst_mk, hA]) = map (eqToHom hA.symm) ⋙ B := by
   dsimp only [snd, mk]
-  rw! (castMode := .all) [Universe.PtpEquiv.fst_mk, Universe.PtpEquiv.snd_mk]
-  simp only [U_ext, U_Ty, Equiv.apply_eq_iff_eq_symm_apply, toCoreAsSmallEquiv_symm_apply_comp_left]
-  simp only [← heq_eq_eq, eqRec_heq_iff_heq, ← eqToHom_eq_homOf_map (fst_mk A B)]
-  symm
-  apply Grpd.eqToHom_comp_heq
+  subst hA
+  rw [Universe.PtpEquiv.snd_mk U (toCoreAsSmallEquiv.symm A) (toCoreAsSmallEquiv.symm B)]
+  erw [Equiv.apply_symm_apply toCoreAsSmallEquiv B]
+  simp [map_id_eq]
 
 lemma snd_mk_heq (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ C) :
     snd (mk A B) ≍ B := by
@@ -236,8 +239,8 @@ end PtpEquiv
 def compDom := U.{v}.uvPolyTp.compDom U.{v}.uvPolyTp
 
 @[simp]
-def comp : compDom.{v} ⟶ U.{v}.Ptp.obj Ty.{v} :=
-  U.uvPolyTp.compP U.uvPolyTp
+abbrev compP : compDom.{v} ⟶ U.{v}.Ptp.obj Ty.{v} :=
+  Universe.compP U U
 
 namespace compDom
 
@@ -258,8 +261,12 @@ A map `ab : (Γ) ⟶ compDom` is equivalently three functors
 `fst, dependent, snd` such that `snd_forgetToGrpd`. The functor `dependent : Γ ⥤ Grpd`
 is `B : A → Type` in `(a : A) × (b : B a)`.
 -/
-def dependent : ∫(fst ab ⋙ PGrpd.forgetToGrpd) ⥤ Grpd.{v,v} :=
-  toCoreAsSmallEquiv (Universe.compDomEquiv.dependent ab)
+def dependent (A := fst ab ⋙ PGrpd.forgetToGrpd) (eq : fst ab ⋙ PGrpd.forgetToGrpd = A := by rfl) :
+    ∫(A) ⥤ Grpd.{v,v} :=
+  toCoreAsSmallEquiv (Universe.compDomEquiv.dependent ab (toCoreAsSmallEquiv.symm A) (by
+    simp only [U_Ty, U_Tm, compDomEquiv.fst, U_tp, ← eq]
+    erw [toCoreAsSmallEquiv_symm_apply_comp_right]
+    simp [fst]; rfl))
 
 /-- Universal property of `compDom`, decomposition (part 3).
 
@@ -270,7 +277,6 @@ is `(b : B a)` in `(a : A) × (b : B a)`.
 def snd : Γ ⥤ PGrpd.{v,v} :=
   toCoreAsSmallEquiv (Universe.compDomEquiv.snd ab)
 
-/-
 /-- Universal property of `compDom`, decomposition (part 4).
 
 A map `ab : (Γ) ⟶ compDom` is equivalently three functors
@@ -284,101 +290,131 @@ theorem snd_forgetToGrpd : snd ab ⋙ PGrpd.forgetToGrpd = sec _ (fst ab) rfl �
   rfl
 
 /-- Universal property of `compDom`, constructing a map into `compDom`. -/
-def mk (α : Γ ⥤ PGrpd.{v,v}) (B : ∫(α ⋙ PGrpd.forgetToGrpd) ⥤ Grpd.{v,v})
-    (β : Γ ⥤ PGrpd.{v,v}) (h : β ⋙ PGrpd.forgetToGrpd = sec _ α rfl ⋙ B)
-    : (Γ) ⟶ compDom.{v} :=
-  Universe.compDomEquiv.mk (toCoreAsSmallEquiv.symm α) rfl
-    (toCoreAsSmallEquiv.symm B) (toCoreAsSmallEquiv.symm β) (by
-      simp only [U_Ty, U_Tm, U_tp, tp, Grpd.comp_eq_comp, U_ext]
-      erw [← toCoreAsSmallEquiv_symm_apply_comp_right, h,
-        ← toCoreAsSmallEquiv_symm_apply_comp_left, sec_eq]
-      rfl
+def mk (α : Γ ⥤ PGrpd.{v,v}) (A := α ⋙ PGrpd.forgetToGrpd)
+    (hA : α ⋙ PGrpd.forgetToGrpd = A := by rfl)
+    (B : ∫(A) ⥤ Grpd.{v,v})
+    (β : Γ ⥤ PGrpd.{v,v}) (h : β ⋙ PGrpd.forgetToGrpd = sec _ α hA ⋙ B) :
+    Γ ⟶ compDom.{v} :=
+  Universe.compDomEquiv.mk (toCoreAsSmallEquiv.symm α) (A := toCoreAsSmallEquiv.symm A)
+    (by rw [← hA, toCoreAsSmallEquiv_symm_apply_comp_right]; rfl)
+    (toCoreAsSmallEquiv.symm B) (toCoreAsSmallEquiv.symm β)
+    (by
+      dsimp [U_tp, tp, Grpd.comp_eq_comp]
+      rw [← toCoreAsSmallEquiv_symm_apply_comp_right β PGrpd.forgetToGrpd, h,
+        toCoreAsSmallEquiv_symm_apply_comp_left]
+      congr 1
+      simp only [sec_eq, Equiv.apply_symm_apply]
+      rw! (castMode := .all) [toCoreAsSmallEquiv.apply_symm_apply]
       )
 
 theorem fst_forgetToGrpd : fst ab ⋙ PGrpd.forgetToGrpd =
-    U.PtpEquiv.fst (ab ≫ comp.{v}) := by
+    U.PtpEquiv.fst (ab ≫ compP.{v}) := by
   erw [U.PtpEquiv.fst, ← compDomEquiv.fst_tp ab, ← toCoreAsSmallEquiv_apply_comp_right]
   rfl
 
-theorem dependent_eq : dependent ab =
-    map (eqToHom (fst_forgetToGrpd ab)) ⋙ U.PtpEquiv.snd (ab ≫ comp.{v}) := by
-  dsimp only [dependent]
-  rw! [compDomEquiv.dependent_eq]
-  rw [Grpd.comp_eq_comp, toCoreAsSmallEquiv_apply_comp_left, eqToHom_eq_homOf_map, PtpEquiv.snd]
-  rfl
+theorem dependent_eq (A := fst ab ⋙ PGrpd.forgetToGrpd)
+    (eq : fst ab ⋙ PGrpd.forgetToGrpd = A := by rfl) : dependent ab A eq =
+    map (eqToHom (by rw [← eq, fst_forgetToGrpd])) ⋙ U.PtpEquiv.snd (ab ≫ compP.{v}) := by
+  dsimp only [dependent, PtpEquiv.snd]
+  rw [Universe.compDomEquiv.dependent_eq _ _ _, ← toCoreAsSmallEquiv_apply_comp_left]
+  subst eq
+  rw! [← fst_forgetToGrpd]
+  simp [map_id_eq]
 
-theorem dependent_heq : HEq (dependent ab) (U.PtpEquiv.snd (ab ≫ comp.{v})) := by
+theorem dependent_heq : HEq (dependent ab) (U.PtpEquiv.snd (ab ≫ compP.{v})) := by
   rw [dependent_eq]
   apply Functor.precomp_heq_of_heq_id
   · rw [fst_forgetToGrpd]
   · rw [fst_forgetToGrpd]
   · apply map_eqToHom_heq_id_cod
 
-theorem fst_naturality : fst ((σ) ≫ ab) = σ ⋙ fst ab := by
+theorem fst_naturality : fst (σ ≫ ab) = σ ⋙ fst ab := by
   dsimp only [fst]
-  rw [← Universe.compDomEquiv.comp_fst, Grpd.comp_eq_comp,
+  rw [Universe.compDomEquiv.fst_comp, Grpd.comp_eq_comp,
     toCoreAsSmallEquiv_apply_comp_left]
 
-theorem dependent_naturality : dependent ((σ) ≫ ab) =
+theorem dependent_comp : dependent (σ ≫ ab) =
     map (eqToHom (by rw [fst_naturality, Functor.assoc]))
     ⋙ pre _ σ ⋙ dependent ab := by
   rw [dependent, dependent,
     ← Universe.compDomEquiv.comp_dependent (eq1 := rfl)
-      (eq2 := by simp [← compDomEquiv.comp_fst]),
+      (eq2 := by erw [← compDomEquiv.fst_comp_assoc, fst, toCoreAsSmallEquiv.eq_symm_apply]; rfl),
     substWk_eq]
-  rw! [Grpd.comp_eq_comp, toCoreAsSmallEquiv_apply_comp_left]
   rfl
 
-theorem snd_naturality : snd (σ ≫ ab) = σ ⋙ snd ab := by
+theorem snd_comp : snd (σ ≫ ab) = σ ⋙ snd ab := by
   dsimp only [snd]
-  rw [← Universe.compDomEquiv.comp_snd, Grpd.comp_eq_comp,
+  rw [Universe.compDomEquiv.snd_comp, Grpd.comp_eq_comp,
     toCoreAsSmallEquiv_apply_comp_left]
 
 /-- First component of the computation rule for `mk`. -/
-theorem fst_mk (α : Γ ⥤ PGrpd.{v,v})
-    (B : ∫(α ⋙ PGrpd.forgetToGrpd) ⥤ Grpd.{v,v}) (β : Γ ⥤ PGrpd.{v,v})
-    (h : β ⋙ PGrpd.forgetToGrpd = sec _ α rfl ⋙ B)
-    : fst (mk α B β h) = α := by
+theorem fst_mk (α : Γ ⥤ PGrpd.{v,v}) (A := α ⋙ PGrpd.forgetToGrpd)
+    (hA : α ⋙ PGrpd.forgetToGrpd = A := by rfl)
+    (B : ∫(A) ⥤ Grpd.{v,v})
+    (β : Γ ⥤ PGrpd.{v,v}) (h : β ⋙ PGrpd.forgetToGrpd = sec _ α hA ⋙ B) :
+    fst (mk α A hA B β h) = α := by
   simp [fst, mk, Universe.compDomEquiv.fst_mk]
 
 /-- Second component of the computation rule for `mk`. -/
-theorem dependent_mk (α : Γ ⥤ PGrpd.{v,v})
-    (B : ∫(α ⋙ PGrpd.forgetToGrpd) ⥤ Grpd.{v,v}) (β : Γ ⥤ PGrpd.{v,v})
-    (h : β ⋙ PGrpd.forgetToGrpd = sec _ α rfl ⋙ B)
-    : dependent (mk α B β h) = map (eqToHom (by rw [fst_mk])) ⋙ B := by
+theorem dependent_mk (α : Γ ⥤ PGrpd.{v,v}) (A := α ⋙ PGrpd.forgetToGrpd)
+    (hA : α ⋙ PGrpd.forgetToGrpd = A := by rfl)
+    (B : ∫(A) ⥤ Grpd.{v,v})
+    (β : Γ ⥤ PGrpd.{v,v}) (h : β ⋙ PGrpd.forgetToGrpd = sec _ α hA ⋙ B) :
+    dependent (mk α A hA B β h) = map (eqToHom (by subst hA; rw [fst_mk])) ⋙ B := by
   dsimp [dependent, mk]
-  rw [Equiv.apply_eq_iff_eq_symm_apply, toCoreAsSmallEquiv_symm_apply_comp_left]
-  rw! (castMode := .all) [compDomEquiv.fst_mk, compDomEquiv.dependent_mk]
-  simp only [U_Tm, U_ext, U_Ty, ← heq_eq_eq, eqRec_heq_iff_heq]
-  symm
-  apply map_eqToHom_comp_heq
+  rw [Equiv.apply_eq_iff_eq_symm_apply]
+  rw [compDomEquiv.dependent_mk]
+  · rw [toCoreAsSmallEquiv_symm_apply_comp_left]
+    erw [eqToHom_eq_homOf_map]
+    rfl
+  · simp [fst, compDomEquiv.fst_mk, hA]
 
 /-- Second component of the computation rule for `mk`. -/
-theorem snd_mk (α : Γ ⥤ PGrpd.{v,v})
-    (B : ∫(α ⋙ PGrpd.forgetToGrpd) ⥤ Grpd.{v,v}) (β : Γ ⥤ PGrpd.{v,v})
-    (h : β ⋙ PGrpd.forgetToGrpd = sec _ α rfl ⋙ B)
-    : snd (mk α B β h) = β := by
+theorem snd_mk (α : Γ ⥤ PGrpd.{v,v}) (A := α ⋙ PGrpd.forgetToGrpd)
+    (hA : α ⋙ PGrpd.forgetToGrpd = A := by rfl)
+    (B : ∫(A) ⥤ Grpd.{v,v})
+    (β : Γ ⥤ PGrpd.{v,v}) (h : β ⋙ PGrpd.forgetToGrpd = sec _ α hA ⋙ B) :
+    snd (mk α A hA B β h) = β := by
   dsimp [snd, mk]
   rw [Universe.compDomEquiv.snd_mk]
   simp
 
-theorem hext (ab1 ab2 : Γ ⟶ U.compDom.{v})
-    (hfst : fst ab1 = fst ab2) (hdependent : HEq (dependent ab1) (dependent ab2))
+theorem ext (ab1 ab2 : Γ ⟶ U.compDom.{v})
+    (hfst : fst ab1 = fst ab2)
+    (hdependent : dependent ab1 = map (eqToHom (by rw [hfst])) ⋙ dependent ab2)
     (hsnd : snd ab1 = snd ab2) : ab1 = ab2 := by
   dsimp only [compDom] at ab1
   have h1 : compDomEquiv.fst ab1 = compDomEquiv.fst ab2 := by
     apply toCoreAsSmallEquiv.injective
     assumption
   fapply compDomEquiv.ext rfl h1
-  · dsimp [dependent] at hdependent
+  · dsimp [dependent, fst] at hdependent
     apply toCoreAsSmallEquiv.injective
-    rw! (castMode := .all) [hdependent, h1]
-    simp [← heq_eq_eq]; rfl
+    convert hdependent
+    · rw [toCoreAsSmallEquiv_symm_apply_comp_right]
+      simp; rfl
+    rw! (castMode := .all) [toCoreAsSmallEquiv_symm_apply_comp_right,
+      Equiv.symm_apply_apply, h1, hfst]
+    simp [map_id_eq]
+    congr 1
+    simp [← heq_eq_eq]
+    rfl
   · apply toCoreAsSmallEquiv.injective
     assumption
 
+theorem hext (ab1 ab2 : Γ ⟶ U.compDom.{v})
+    (hfst : fst ab1 = fst ab2) (hdependent : HEq (dependent ab1) (dependent ab2))
+    (hsnd : snd ab1 = snd ab2) : ab1 = ab2 := by
+  apply ext
+  · rw! [hdependent]
+    simp [← heq_eq_eq]
+    conv => right; rw! (castMode := .all) [hfst]
+    simp [map_id_eq]
+  · assumption
+  · assumption
+
 end compDom
--/
+
 end U
 end
 
