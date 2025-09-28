@@ -483,12 +483,8 @@ theorem ext {ab₁ ab₂ : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp}
   subst eq
   rw! [h2]
 
-theorem comp_mk
-    (α : Γ ⟶ M.Tm) {A} (e1 : α ≫ M.tp = A)
-    (B : (M.ext A) ⟶ N.Ty)
-    (β : Γ ⟶ N.Tm)
-    (e2 : β ≫ N.tp = (M.sec A α e1) ≫ B)
-    (σ : Δ ⟶ Γ) {σA} (e3 : σ ≫ A = σA) :
+theorem comp_mk (α : Γ ⟶ M.Tm) {A} (e1 : α ≫ M.tp = A) (B : (M.ext A) ⟶ N.Ty)
+    (β : Γ ⟶ N.Tm) (e2 : β ≫ N.tp = (M.sec A α e1) ≫ B) (σ : Δ ⟶ Γ) {σA} (e3 : σ ≫ A = σA) :
     σ ≫ mk α e1 B β e2 =
     mk (σ ≫ α) (by simp [e1, e3])
       ((M.substWk σ A _ e3) ≫ B) (σ ≫ β)
@@ -500,6 +496,12 @@ theorem comp_mk
   congr 2
   apply (disp_pullback ..).hom_ext <;> simp [substWk_disp]
 
+@[reassoc]
+lemma mk_comp (α : Γ ⟶ M.Tm) {A} (e1 : α ≫ M.tp = A) (B : (M.ext A) ⟶ N.Ty)
+    (β : Γ ⟶ N.Tm) (e2 : β ≫ N.tp = (M.sec A α e1) ≫ B) :
+    mk α e1 B β e2 ≫ M.compP N = PtpEquiv.mk M A B := by
+  erw [PtpEquiv.mk, UvPoly.compDomEquiv.mk_comp]
+
 theorem eta (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     {A} (eq : fst ab ≫ M.tp = A) :
     mk (fst ab) eq (dependent ab A eq) (snd ab) (snd_tp ab eq) = ab := by
@@ -507,22 +509,15 @@ theorem eta (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
 
 end compDomEquiv
 
-/-! ## Pi and Sigma types -/
+/-! ## Pi types -/
 
 /-- The structure on three universes that for
 `A : Γ ⟶ U0.Ty` and `B : Γ.A ⟶ U1.Ty` constructs a Π-type `Π_A B : Γ ⟶ U2.Ty`.
 -/
-structure PiAux (U0 U1 U2 : Universe R) where
+structure PolymorphicPi (U0 U1 U2 : Universe R) where
   Pi : U0.Ptp.obj U1.Ty ⟶ U2.Ty
   lam : U0.Ptp.obj U1.Tm ⟶ U2.Tm
   Pi_pullback : IsPullback lam (U0.Ptp.map U1.tp) U2.tp Pi
-
-/-- The structure on three universes that for
-`A : Γ ⟶ U0.Ty` and `B : Γ.A ⟶ U1.Ty` constructs a Π-type `Σ_A B : Γ ⟶ U2.Ty`. -/
-structure SigmaAux (U0 U1 U2 : Universe R) where
-  Sig : U0.Ptp.obj U1.Ty ⟶ U2.Ty
-  pair : U0.compDom U1 ⟶ U2.Tm
-  Sig_pullback : IsPullback pair (U0.compP U1) U2.tp Sig
 
 set_option linter.dupNamespace false in
 /-- A universe `M` has Π-type structure. This is the data of a pullback square
@@ -537,7 +532,16 @@ Ptp Ty ------> Ty
         Pi
 ```
 -/
-protected abbrev Pi := PiAux M M M
+protected abbrev Pi := PolymorphicPi M M M
+
+/-! ## Sigma types -/
+
+/-- The structure on three universes that for
+`A : Γ ⟶ U0.Ty` and `B : Γ.A ⟶ U1.Ty` constructs a Π-type `Σ_A B : Γ ⟶ U2.Ty`. -/
+structure PolymorphicSigma (U0 U1 U2 : Universe R) where
+  Sig : U0.Ptp.obj U1.Ty ⟶ U2.Ty
+  pair : U0.compDom U1 ⟶ U2.Tm
+  Sig_pullback : IsPullback pair (U0.compP U1) U2.tp Sig
 
 /-- A universe `M` has Σ-type structure. This is the data of a pullback square
 ```
@@ -551,7 +555,184 @@ Ptp Ty ------> Ty
         pair
 ```
 -/
-protected abbrev Sigma := SigmaAux M M M
+protected abbrev Sigma := PolymorphicSigma M M M
+
+namespace PolymorphicSigma
+
+variable {U0 U1 U2 : Universe R} {Γ : Ctx}
+
+section
+variable (S : PolymorphicSigma U0 U1 U2)
+
+/--
+```
+Γ ⊢₀ A  Γ.A ⊢₁ B
+-----------------
+Γ ⊢₂ ΣA. B
+``` -/
+def mkSig {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty) :
+    Γ ⟶ U2.Ty :=
+  PtpEquiv.mk U0 A B ≫ S.Sig
+
+theorem comp_mkSig {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty) :
+    σ ≫ S.mkSig A B =
+      S.mkSig (σ ≫ A) ((U0.substWk σ A) ≫ B) := by
+  simp [mkSig, ← Category.assoc, PtpEquiv.mk_comp_left]
+
+/--
+```
+Γ ⊢₀ t : A  Γ ⊢₁ u : B[t]
+--------------------------
+Γ ⊢₂ ⟨t, u⟩ : ΣA. B
+``` -/
+def mkPair {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (t : Γ ⟶ U0.Tm) (t_tp : t ≫ U0.tp = A)
+    (u : Γ ⟶ U1.Tm) (u_tp : u ≫ U1.tp = U0.sec A t t_tp ≫ B) :
+    (Γ) ⟶ U2.Tm :=
+  compDomEquiv.mk t t_tp B u u_tp ≫ S.pair
+
+theorem comp_mkPair {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (t : Γ ⟶ U0.Tm) (t_tp : t ≫ U0.tp = A)
+    (u : Γ ⟶ U1.Tm) (u_tp : u ≫ U1.tp = U0.sec A t t_tp ≫ B) :
+    σ ≫ S.mkPair A B t t_tp u u_tp =
+      S.mkPair (σ ≫ A) ((U0.substWk σ A) ≫ B)
+        (σ ≫ t) (by simp [t_tp])
+        (σ ≫ u) (by simp [u_tp, comp_sec_assoc]) := by
+  simp only [← Category.assoc, mkPair]; rw [compDomEquiv.comp_mk]
+
+@[simp]
+theorem mkPair_tp {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (t : Γ ⟶ U0.Tm) (t_tp : t ≫ U0.tp = A)
+    (u : Γ ⟶ U1.Tm) (u_tp : u ≫ U1.tp = U0.sec A t t_tp ≫ B) :
+    S.mkPair A B t t_tp u u_tp ≫ U2.tp = S.mkSig A B := by
+  simp [mkPair, Category.assoc, S.Sig_pullback.w, mkSig, compDomEquiv.mk_comp_assoc]
+
+def mkFst {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (p : Γ ⟶ U2.Tm) (p_tp : p ≫ U2.tp = S.mkSig A B) :
+    Γ ⟶ U0.Tm :=
+  compDomEquiv.fst (S.Sig_pullback.lift p (PtpEquiv.mk _ A B) p_tp)
+
+@[simp]
+theorem mkFst_tp {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (p : Γ ⟶ U2.Tm) (p_tp : p ≫ U2.tp = S.mkSig A B) :
+    S.mkFst A B p p_tp ≫ U0.tp = A := by
+  simp [mkFst, compDomEquiv.fst_tp]
+
+@[simp]
+theorem mkFst_mkPair {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (t : Γ ⟶ U0.Tm) (t_tp : t ≫ U0.tp = A)
+    (u : Γ ⟶ U1.Tm) (u_tp : u ≫ U1.tp = U0.sec A t t_tp ≫ B) :
+    S.mkFst A B (S.mkPair A B t t_tp u u_tp) (by simp) = t := by
+  simp [mkFst, mkPair]
+  convert compDomEquiv.fst_mk t t_tp B u u_tp using 2
+  apply (S.Sig_pullback).hom_ext <;> simp [compDomEquiv.mk_comp]
+
+theorem comp_mkFst {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (p : Γ ⟶ U2.Tm) (p_tp : p ≫ U2.tp = S.mkSig A B) :
+    (σ) ≫ S.mkFst A B p p_tp =
+      S.mkFst (σ ≫ A) (U0.substWk σ A ≫ B) (σ ≫ p)
+        (by simp [p_tp, comp_mkSig]) := by
+  simp [mkFst]
+  rw [← compDomEquiv.fst_comp]; congr 1
+  apply S.Sig_pullback.hom_ext <;> simp [PtpEquiv.mk_comp_left]
+
+def mkSnd {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (p : Γ ⟶ U2.Tm) (p_tp : p ≫ U2.tp = S.mkSig A B) :
+    Γ ⟶ U1.Tm :=
+  compDomEquiv.snd (S.Sig_pullback.lift p (PtpEquiv.mk _ A B) p_tp)
+
+@[simp]
+theorem mkSnd_mkPair {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (t : Γ ⟶ U0.Tm) (t_tp : t ≫ U0.tp = A)
+    (u : Γ ⟶ U1.Tm) (u_tp : u ≫ U1.tp = U0.sec A t t_tp ≫ B) :
+    S.mkSnd A B (S.mkPair A B t t_tp u u_tp) (by simp) = u := by
+  simp [mkSnd, mkPair]
+  convert compDomEquiv.snd_mk t t_tp B u u_tp using 2
+  apply (S.Sig_pullback).hom_ext <;> simp [compDomEquiv.mk_comp]
+
+protected theorem dependent_eq {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (p : Γ ⟶ U2.Tm) (p_tp : p ≫ U2.tp = S.mkSig A B) :
+    compDomEquiv.dependent ((S.Sig_pullback).lift p (PtpEquiv.mk U0 A B) p_tp) A
+      (by simp [compDomEquiv.fst_tp]) = B := by
+  convert PtpEquiv.snd_mk U0 A B using 2
+  simp only [compDomEquiv.dependent, UvPoly.compDomEquiv.dependent, PtpEquiv.snd_mk]
+  simp [PtpEquiv.mk]
+
+@[simp]
+theorem mkSnd_tp {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (p : Γ ⟶ U2.Tm) (p_tp : p ≫ U2.tp = S.mkSig A B) :
+    S.mkSnd A B p p_tp ≫ U1.tp =
+      (U0.sec A (S.mkFst A B p p_tp) (by simp)) ≫ B := by
+  generalize_proofs h
+  simp [mkSnd, compDomEquiv.snd_tp (eq := h), S.dependent_eq]; rfl
+
+theorem comp_mkSnd {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (p : Γ ⟶ U2.Tm) (p_tp : p ≫ U2.tp = S.mkSig A B) :
+    σ ≫ S.mkSnd A B p p_tp =
+      S.mkSnd (σ ≫ A) (U0.substWk σ A ≫ B) (σ ≫ p)
+        (by simp [p_tp, comp_mkSig]) := by
+  simp [mkSnd, ← compDomEquiv.snd_comp]; congr 1
+  apply (S.Sig_pullback).hom_ext <;> simp
+  rw [PtpEquiv.mk_comp_left]
+
+@[simp]
+theorem mkPair_mkFst_mkSnd {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (p : Γ ⟶ U2.Tm) (p_tp : p ≫ U2.tp = S.mkSig A B) :
+    S.mkPair A B
+      (S.mkFst A B p p_tp) (by simp)
+      (S.mkSnd A B p p_tp) (by simp) = p := by
+  simp [mkFst, mkSnd, mkPair]
+  have := compDomEquiv.eta ((S.Sig_pullback).lift p (PtpEquiv.mk _ A B) p_tp)
+    (eq := by rw [← mkFst.eq_def, mkFst_tp])
+  conv at this => enter [1, 3]; apply S.dependent_eq
+  simp [this]
+
+end
+
+def Hom.ofYoneda {C : Type*} [Category C] {X Y : C}
+    (app : ∀ {Γ}, (Γ ⟶ X) ⟶ (Γ ⟶ Y))
+    (naturality : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), app (σ ≫ A) = σ ≫ app A) :
+    X ⟶ Y :=
+  Yoneda.fullyFaithful.preimage {
+    app Γ := app
+    naturality Δ Γ σ := by ext; simp [naturality] }
+
+lemma Hom.ofYoneda_comp {C : Type*} [Category C] {TL TR BL BR : C} (left : TL ⟶ BL) (right : TR ⟶ BR)
+    (bottom : ∀ {Γ}, (Γ ⟶ BL) ⟶ (Γ ⟶ BR))
+    (bottom_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), bottom (σ ≫ A) = σ ≫ bottom A)
+    (top : ∀ {Γ}, (Γ ⟶ TL) ⟶ (Γ ⟶ TR))
+    (top_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (ab), top (σ ≫ ab) = σ ≫ top ab)
+    (comm_sq : ∀ {Γ} (ab : Γ ⟶ TL), top ab ≫ right = bottom (ab ≫ left)) :
+  (ofYoneda top top_comp) ≫ right = left ≫ (ofYoneda bottom bottom_comp) := by
+  apply Yoneda.fullyFaithful.map_injective
+  ext Γ ab
+  simp [comm_sq, ofYoneda]
+
+lemma IsPullback.ofYoneda {C : Type u} [Category.{v} C]
+    {P X Y Z : C} (fst : P ⟶ X) (snd : P ⟶ Y) (f : X ⟶ Z) (g : Y ⟶ Z) (w : fst ≫ f = snd ≫ g)
+    (h : IsPullback ym(fst) ym(snd) ym(f) ym(g)) : IsPullback fst snd f g :=
+  IsPullback.of_isLimit (c := PullbackCone.mk fst snd w) (by
+    have : Nonempty (IsLimit (PullbackCone.mk fst snd w)) := by
+      apply Limits.ReflectsLimit.reflects (F := yoneda)
+      sorry
+    apply Classical.ofNonempty)
+
+#check IsPullback.isLimit
+
+def ofYoneda (S : ∀ {Γ}, (Γ ⟶ U0.Ptp.obj U1.Ty) ⟶ (Γ ⟶ U2.Ty))
+    (S_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), S (σ ≫ A) = σ ≫ S A)
+    (pr : ∀ {Γ}, (Γ ⟶ U0.compDom U1) ⟶ (Γ ⟶ U2.Tm))
+    (pr_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (ab), pr (σ ≫ ab) = σ ≫ pr ab)
+    (comm_sq : ∀ {Γ} (ab : Γ ⟶ U0.compDom U1), pr ab ≫ U2.tp = S (ab ≫ U0.compP U1)) :
+    PolymorphicSigma U0 U1 U2 where
+  Sig := Hom.ofYoneda S S_comp
+  pair := Hom.ofYoneda pr pr_comp
+  Sig_pullback := IsPullback.ofYoneda _ _ _ _ (Hom.ofYoneda_comp _ _ _ _ _ _ comm_sq) sorry
+
+end PolymorphicSigma
 
 /--
 Universe.IdIntro consists of the following commutative square
@@ -1253,8 +1434,6 @@ def toId' : M.Id' ii N where
   j_tp := i.j_tp
   comp_j := i.comp_j
   reflSubst_j := i.reflSubst_j
--- TODO: prove the other half of the equivalence.
--- Generalize this version so that the universe for elimination is not also `M`
 
 end Id
 

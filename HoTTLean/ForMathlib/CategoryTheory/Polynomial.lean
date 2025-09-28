@@ -637,7 +637,6 @@ p' |   (pb)    |
              P @ B' -----> B
                     fstProj
 -/
-@[simps!]
 def comp {E B E' B' : C} (P : UvPoly R E B) (P' : UvPoly R E' B') :
     UvPoly R (compDom P P') (P @ B') where
   p := Limits.pullback.fst (sndProj P B') P'.p ≫ pullback.fst (fstProj P B') P.p
@@ -925,7 +924,7 @@ abbrev base (triple : Γ ⟶ compDom P P') : Γ ⟶ B := Equiv.fst (triple ≫ (
 
 theorem fst_comp_p (triple : Γ ⟶ compDom P P') :
     fst triple ≫ P.p = base triple := by
-  simp [fst, Equiv.fst_eq, pullback.condition]
+  simp [fst, Equiv.fst_eq, pullback.condition, comp]
 
 abbrev dependent (triple : Γ ⟶ compDom P P') {pb} (f : pb ⟶ Γ) (g : pb ⟶ E)
     (H : IsPullback f g (fst triple ≫ P.p) P.p) : pb ⟶ B' :=
@@ -942,7 +941,7 @@ theorem snd_comp_p (triple : Γ ⟶ compDom P P')
   _ = triple ≫ pullback.fst _ _ ≫ sndProj P B' := by
     simp [pullback.condition]
   _ = H.lift (𝟙 Γ) (fst triple) (by simp) ≫ dependent triple f g H := by
-    simp only [← assoc, dependent, comp_p, Equiv.snd'_eq]
+    simp only [← assoc, dependent, comp, Equiv.snd'_eq]
     congr 1
     ext <;> simp [fst]
 
@@ -956,11 +955,17 @@ def mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
     congr 1
     ext <;> simp )
 
+lemma mk_comp (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
+    {pb} (f : pb ⟶ Γ) (g : pb ⟶ E) (H : IsPullback f g b P.p)
+    (b' : pb ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H.lift (𝟙 Γ) e (by simp [he]) ≫ b') :
+    mk b e he f g H b' e' he' ≫ (P.comp P').p = Equiv.mk' b H b' := by
+  simp [mk, comp]
+
 @[simp]
 lemma base_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
     {pb} (f : pb ⟶ Γ) (g : pb ⟶ E) (H : IsPullback f g b P.p)
     (b' : pb ⟶ B') (e' : Γ ⟶ E') (he' : e' ≫ P'.p = H.lift (𝟙 Γ) e (by simp [he]) ≫ b') :
-  base (mk b e he f g H b' e' he') = b := by simp [mk]
+  base (mk b e he f g H b' e' he') = b := by simp [mk, comp]
 
 @[simp]
 lemma fst_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
@@ -976,7 +981,7 @@ lemma dependent_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
     {pb'} (f' : pb' ⟶ Γ) (g' : pb' ⟶ E)
     (H' : IsPullback f' g' (fst (mk b e he f g H b' e' he') ≫ P.p) P.p) :
   dependent (mk b e he f g H b' e' he') f' g' H' = H.lift f' g' (by simp [← H'.w, he]) ≫ b' := by
-  simp [mk, dependent]
+  simp [mk, dependent, comp]
 
 @[simp]
 lemma snd_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
@@ -990,10 +995,10 @@ lemma eta (triple : Γ ⟶ compDom P P') {pb} (f : pb ⟶ Γ) (g : pb ⟶ E)
     (H : IsPullback f g (base triple) P.p) (b' : pb ⟶ B')
     (hbase' : b' = Equiv.snd' (triple ≫ (P.comp P').p) H) :
     mk (base triple) (fst triple) (fst_comp_p ..) f g H b' (snd triple) (by
-      simp only [snd, assoc, ← pullback.condition, base, comp_p]
+      simp only [snd, assoc, ← pullback.condition, base, comp]
       simp only [hbase', Equiv.snd'_eq, ← Category.assoc]
       congr 1
-      ext <;> simp [fst]) = triple := by
+      ext <;> simp [fst, comp]) = triple := by
   apply pullback.hom_ext
   · ext
     · simp [mk]
@@ -1030,7 +1035,7 @@ lemma dependent_comp {Δ} (σ : Δ ⟶ Γ) (triple : Γ ⟶ compDom P P')
     {pb} (f : pb ⟶ Δ) (g : pb ⟶ E) (H : IsPullback f g (fst (σ ≫ triple) ≫ P.p) P.p) :
     dependent (σ ≫ triple) f g H = H'.lift (f ≫ σ) g (by simp [← H.w, fst_comp]) ≫
     dependent triple f' g' H' := by
-  simp only [dependent, comp_p, ← assoc, Equiv.snd'_eq]
+  simp only [dependent, comp, ← assoc, Equiv.snd'_eq]
   congr
   ext <;> simp
 
