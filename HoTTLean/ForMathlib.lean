@@ -624,6 +624,63 @@ end CategoryTheory.IsPullback
 
 namespace CategoryTheory
 
+def ofYoneda {C : Type*} [Category C] {X Y : C}
+    (app : ∀ {Γ}, (Γ ⟶ X) ⟶ (Γ ⟶ Y))
+    (naturality : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), app (σ ≫ A) = σ ≫ app A) :
+    X ⟶ Y :=
+  Yoneda.fullyFaithful.preimage {
+    app Γ := app
+    naturality Δ Γ σ := by ext; simp [naturality] }
+
+@[simp]
+lemma ofYoneda_comp_left {C : Type*} [Category C] {X Y : C}
+    (app : ∀ {Γ}, (Γ ⟶ X) ⟶ (Γ ⟶ Y))
+    (naturality : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), app (σ ≫ A) = σ ≫ app A)
+    {Γ} (A : Γ ⟶ X) : A ≫ ofYoneda app naturality = app A := by
+  apply Yoneda.fullyFaithful.map_injective
+  ext
+  simp [ofYoneda, naturality]
+
+lemma ofYoneda_comm_sq {C : Type*} [Category C] {TL TR BL BR : C}
+    (left : TL ⟶ BL) (right : TR ⟶ BR)
+    (top : ∀ {Γ}, (Γ ⟶ TL) ⟶ (Γ ⟶ TR))
+    (top_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (tr), top (σ ≫ tr) = σ ≫ top tr)
+    (bottom : ∀ {Γ}, (Γ ⟶ BL) ⟶ (Γ ⟶ BR))
+    (bottom_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (br), bottom (σ ≫ br) = σ ≫ bottom br)
+    (comm_sq : ∀ {Γ} (ab : Γ ⟶ TL), top ab ≫ right = bottom (ab ≫ left)) :
+  (ofYoneda top top_comp) ≫ right = left ≫ (ofYoneda bottom bottom_comp) := by
+  apply Yoneda.fullyFaithful.map_injective
+  ext Γ ab
+  simp [comm_sq, ofYoneda]
+
+open Limits in
+lemma ofYoneda_isPullback {C : Type u} [Category.{v} C] {TL TR BL BR : C}
+    (left : TL ⟶ BL) (right : TR ⟶ BR)
+    (top : ∀ {Γ}, (Γ ⟶ TL) ⟶ (Γ ⟶ TR))
+    (top_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (tr), top (σ ≫ tr) = σ ≫ top tr)
+    (bot : ∀ {Γ}, (Γ ⟶ BL) ⟶ (Γ ⟶ BR))
+    (bot_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (br), bot (σ ≫ br) = σ ≫ bot br)
+    (comm_sq : ∀ {Γ} (ab : Γ ⟶ TL), top ab ≫ right = bot (ab ≫ left))
+    (lift : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), Γ ⟶ TL)
+    (top_lift : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), top (lift t p ht) = t)
+    (lift_comp_left : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), lift t p ht ≫ left = p)
+    (lift_uniq : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p) (m : Γ ⟶ TL),
+      top m = t → m ≫ left = p → m = lift t p ht) :
+    IsPullback (ofYoneda top top_comp) left right (ofYoneda bot bot_comp) := by
+  let c : PullbackCone right (ofYoneda bot bot_comp) :=
+    PullbackCone.mk (ofYoneda top top_comp) left
+    (ofYoneda_comm_sq _ _ _ _ _ _ comm_sq)
+  apply IsPullback.of_isLimit (c := c)
+  apply c.isLimitAux (fun s => lift (PullbackCone.fst s) (PullbackCone.snd s) (by
+      simp [PullbackCone.condition s]))
+  · simp [c, top_lift]
+  · simp [c, lift_comp_left]
+  · intro s m h
+    apply lift_uniq
+    · specialize h (some .left)
+      simpa [c] using h
+    · specialize h (some .right)
+      exact h
 variable {C : Type u₁} [SmallCategory C] {F G : Cᵒᵖ ⥤ Type u₁}
   (app : ∀ {X : C}, (yoneda.obj X ⟶ F) → (yoneda.obj X ⟶ G))
   (naturality : ∀ {X Y : C} (f : X ⟶ Y) (α : yoneda.obj Y ⟶ F),

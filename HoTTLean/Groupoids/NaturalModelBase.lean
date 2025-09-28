@@ -328,13 +328,13 @@ theorem dependent_heq : HEq (dependent ab) (U.PtpEquiv.snd (ab ≫ compP.{v})) :
   · rw [fst_forgetToGrpd]
   · apply map_eqToHom_heq_id_cod
 
-theorem fst_naturality : fst (σ ≫ ab) = σ ⋙ fst ab := by
+theorem fst_comp : fst (σ ≫ ab) = σ ⋙ fst ab := by
   dsimp only [fst]
   rw [Universe.compDomEquiv.fst_comp, Grpd.comp_eq_comp,
     toCoreAsSmallEquiv_apply_comp_left]
 
 theorem dependent_comp : dependent (σ ≫ ab) =
-    map (eqToHom (by rw [fst_naturality, Functor.assoc]))
+    map (eqToHom (by rw [fst_comp, Functor.assoc]))
     ⋙ pre _ σ ⋙ dependent ab := by
   rw [dependent, dependent,
     ← Universe.compDomEquiv.comp_dependent (eq1 := rfl)

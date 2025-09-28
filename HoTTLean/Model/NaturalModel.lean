@@ -692,47 +692,20 @@ theorem mkPair_mkFst_mkSnd {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty
 
 end
 
-def Hom.ofYoneda {C : Type*} [Category C] {X Y : C}
-    (app : ∀ {Γ}, (Γ ⟶ X) ⟶ (Γ ⟶ Y))
-    (naturality : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), app (σ ≫ A) = σ ≫ app A) :
-    X ⟶ Y :=
-  Yoneda.fullyFaithful.preimage {
-    app Γ := app
-    naturality Δ Γ σ := by ext; simp [naturality] }
-
-lemma Hom.ofYoneda_comp {C : Type*} [Category C] {TL TR BL BR : C} (left : TL ⟶ BL) (right : TR ⟶ BR)
-    (bottom : ∀ {Γ}, (Γ ⟶ BL) ⟶ (Γ ⟶ BR))
-    (bottom_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), bottom (σ ≫ A) = σ ≫ bottom A)
-    (top : ∀ {Γ}, (Γ ⟶ TL) ⟶ (Γ ⟶ TR))
-    (top_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (ab), top (σ ≫ ab) = σ ≫ top ab)
-    (comm_sq : ∀ {Γ} (ab : Γ ⟶ TL), top ab ≫ right = bottom (ab ≫ left)) :
-  (ofYoneda top top_comp) ≫ right = left ≫ (ofYoneda bottom bottom_comp) := by
-  apply Yoneda.fullyFaithful.map_injective
-  ext Γ ab
-  simp [comm_sq, ofYoneda]
-
-lemma IsPullback.ofYoneda {C : Type u} [Category.{v} C]
-    {P X Y Z : C} (fst : P ⟶ X) (snd : P ⟶ Y) (f : X ⟶ Z) (g : Y ⟶ Z) (w : fst ≫ f = snd ≫ g)
-    (h : IsPullback ym(fst) ym(snd) ym(f) ym(g)) : IsPullback fst snd f g :=
-  IsPullback.of_isLimit (c := PullbackCone.mk fst snd w) (by
-    have : Nonempty (IsLimit (PullbackCone.mk fst snd w)) := by
-      apply Limits.ReflectsLimit.reflects (F := yoneda)
-      sorry
-    apply Classical.ofNonempty)
-
-#check IsPullback.isLimit
-
-def ofYoneda (S : ∀ {Γ}, (Γ ⟶ U0.Ptp.obj U1.Ty) ⟶ (Γ ⟶ U2.Ty))
-    (S_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), S (σ ≫ A) = σ ≫ S A)
-    (pr : ∀ {Γ}, (Γ ⟶ U0.compDom U1) ⟶ (Γ ⟶ U2.Tm))
-    (pr_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (ab), pr (σ ≫ ab) = σ ≫ pr ab)
-    (comm_sq : ∀ {Γ} (ab : Γ ⟶ U0.compDom U1), pr ab ≫ U2.tp = S (ab ≫ U0.compP U1)) :
-    PolymorphicSigma U0 U1 U2 where
-  Sig := Hom.ofYoneda S S_comp
-  pair := Hom.ofYoneda pr pr_comp
-  Sig_pullback := IsPullback.ofYoneda _ _ _ _ (Hom.ofYoneda_comp _ _ _ _ _ _ comm_sq) sorry
-
 end PolymorphicSigma
+
+def Sigma.mk'
+    (Sig : ∀ {Γ} {A : Γ ⟶ M.Ty}, (M.ext A ⟶ M.Ty) → (Γ ⟶ M.Ty))
+    (comp_Sig : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) {σA} (eq) (B : M.ext A ⟶ M.Ty),
+      σ ≫ Sig B = Sig (M.substWk σ A σA eq ≫ B))
+    (assoc : ∀ {Γ} {A : Γ ⟶ M.Ty} (B : M.ext A ⟶ M.Ty), M.ext B ≅ M.ext (Sig B))
+    (comp_assoc : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ M.Ty} {σA} (eq) (B : M.ext A ⟶ M.Ty),
+      substWk _ (substWk _ σ _ _ eq) _ ≫ (assoc B).hom =
+      (assoc (substWk M σ A σA eq ≫ B)).hom ≫ substWk M σ _ _ (comp_Sig ..))
+    (assoc_disp : ∀ {Γ} {A : Γ ⟶ M.Ty} (B : M.ext A ⟶ M.Ty),
+      (assoc B).hom ≫ M.disp _ = M.disp _ ≫ M.disp _) :
+    M.Sigma := sorry
+
 
 /--
 Universe.IdIntro consists of the following commutative square
