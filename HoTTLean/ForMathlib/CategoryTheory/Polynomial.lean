@@ -22,6 +22,32 @@ variable {C : Type u} [Category.{v} C]
 
 namespace MorphismProperty
 
+/-- The Beck-Chevalley natural transformation
+`pushforward g ⋙ pullback k ⟶ pullback h ⋙ pushforward f` constructed as a mate of
+`pullbackMapTwoSquare`.
+```
+      R.Over ⊤ Z - pushforward g → R.Over ⊤ W
+           |                           |
+pullback h |           ↙              | pullback k
+           V                           V
+      R.Over ⊤ X - pushforward f → R.Over ⊤ Y
+```
+-/
+def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProperty T}
+    [R.HasPullbacks] [R.IsStableUnderBaseChange] {Q : MorphismProperty T} [Q.HasPullbacks]
+    [R.HasPushforwards Q] [R.IsStableUnderPushforward Q]
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶(Q) Y) (g : Z ⟶(Q) W) (k : Y ⟶ W)
+    (sq : h ≫ g.1 = f.1 ≫ k) :
+    TwoSquare (MorphismProperty.pushforward (P := R) (Q := Q) g)
+    (MorphismProperty.Over.pullback R ⊤ h)
+    (MorphismProperty.Over.pullback R ⊤ k)
+    (MorphismProperty.pushforward (P := R) (Q := Q) f) :=
+  mateEquiv (MorphismProperty.pullbackPushforwardAdjunction R Q g)
+  (MorphismProperty.pullbackPushforwardAdjunction R Q f)
+  ((MorphismProperty.Over.pullbackComp _ _).inv ≫
+  eqToHom (by rw! [sq]) ≫
+  (MorphismProperty.Over.pullbackComp _ _).hom)
+
 namespace PolynomialPartialAdjunction
 
 variable {T : Type u} [Category.{v} T] {R : MorphismProperty T}
@@ -109,6 +135,42 @@ def counit :
     conv => left; erw [← homEquiv_comp_symm]
     conv => right; erw [← homEquiv_symm_comp]
     simp
+
+/-- A commutative diagram
+```
+      I
+    ↗  ↖
+ i /      \ i'
+  /   ρ    \
+ E -------> E'
+  \        /
+ p \      / p'
+    ↘  ↙
+      B
+```
+induces a natural transformation `partialRightAdjoint i p ⟶ partialRightAdjoint i' p'`
+obtained by pasting the following 2-cells
+```
+        pullback i'        pushforward p'
+R.Over ⊤ I ---->  R.Over ⊤ E' ----> R.Over ⊤ B
+    ‖                 |                  |
+    ‖                 |                  |
+    ‖       ≅         |ρ*      ↙        |
+    ‖                 |                  |
+    ‖                 V                  V
+R.Over ⊤ I ---->  R.Over ⊤ E  ----> R.Over ⊤ B
+        pullback i         pushforward p
+```
+-/
+def partialRightAdjointMap {E' : T} (i' : E' ⟶ I) (p' : E' ⟶(Q) B) (ρ)
+    (hi : i = ρ ≫ i') (hp : p.1 = ρ ≫ p'.1) :
+    partialRightAdjoint (R := R) i p ⟶ partialRightAdjoint i' p' :=
+  let cellLeftIso : Over.pullback R ⊤ i' ⋙ Over.pullback R ⊤ ρ ≅ Over.pullback R ⊤ i :=
+    (Over.pullbackComp ρ i').symm ≪≫ eqToIso (by rw [hi])
+  let cellLeft : Over.pullback R ⊤ i' ⋙ Over.pullback R ⊤ ρ ⟶ Over.pullback R ⊤ i :=
+    (cellLeftIso).hom
+  let cellMid := push
+  sorry
 
 end PolynomialPartialAdjunction
 
@@ -215,8 +277,7 @@ This will typically be used with the following instances
   which is strictly stronger than just having a left adjoint to `R`-restricted pullback
   `(pullback : R.Over B ⥤ R.Over E) ⊣ (pushforward : R.Over E ⥤ R.Over B)`.
 -/
-structure MvPoly (R : MorphismProperty C) (H : MorphismProperty C) (I O : C) where
-  (E B : C)
+structure MvPoly (R : MorphismProperty C) (H : MorphismProperty C) (I O E B : C) where
   (i : E ⟶(R) I)
   (p : E ⟶(H) B)
   (o : B ⟶(R) O)
@@ -232,7 +293,7 @@ instance {B O : C} (i : B ⟶(R) O) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     [R.IsStableUnderComposition] : (pullback R ⊤ i.1).IsRightAdjoint :=
   (mapPullbackAdj R ⊤ i.1 i.2 ⟨⟩).isRightAdjoint
 
-variable {I O : C} (P : MvPoly R H I O) [R.HasPullbacks] [R.IsStableUnderBaseChange]
+variable {I O E B : C} (P : MvPoly R H I O E B) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     [H.HasPullbacks] [R.HasPushforwards H]
     [R.IsStableUnderPushforward H]
 
@@ -241,7 +302,7 @@ open PolynomialPartialAdjunction
 /-- (Ignoring the indexing from `i` and `o`)
 This is the first projection morphism from `P @ X = ∑ b : B, X ^ (E b)` to `B`,
 as an object in the `P`-restricted slice over `B`. -/
-abbrev fstProj (P : MvPoly R H I O) (X : R.Over ⊤ I) : R.Over ⊤ P.B :=
+abbrev fstProj (P : MvPoly R H I O E B) (X : R.Over ⊤ I) : R.Over ⊤ B :=
   (partialRightAdjoint P.i.1 P.p).obj X
 
 /-- The counit of the adjunction `pullback p ⋙ map i ⊣ pullback i ⋙ pushforward p` evaluated at `X`.
@@ -268,13 +329,13 @@ to `X^ (E b)`.
                    O
 ```
 -/
-def sndProj (P : MvPoly R H I O) (X : R.Over ⊤ I) :
+def sndProj (P : MvPoly R H I O E B) (X : R.Over ⊤ I) :
     (leftAdjoint P.i.1 P.p).obj (fstProj P X).toComma ⟶ X.toComma :=
   (counit P.i.1 P.p).app X
 
 section
 
-variable (P : MvPoly R H I O) {X Y : R.Over ⊤ I} (f : X ⟶ Y)
+variable (P : MvPoly R H I O E B) {X Y : R.Over ⊤ I} (f : X ⟶ Y)
 
 @[reassoc (attr := simp)]
 lemma map_fstProj :
@@ -315,16 +376,16 @@ def functor : R.Over ⊤ I ⥤ R.Over ⊤ O :=
   pullback R ⊤ P.i.1 ⋙ MorphismProperty.pushforward R P.p ⋙ map ⊤ P.o.2
 
 /-- The action of a univariate polynomial on objects. -/
-def apply (P : MvPoly R H I O) : R.Over ⊤ I → R.Over ⊤ O := (functor P).obj
+def apply (P : MvPoly R H I O E B) : R.Over ⊤ I → R.Over ⊤ O := (functor P).obj
 
 @[inherit_doc]
 infix:90 " @ " => apply
 
 namespace Equiv
 
-variable {P : MvPoly R H I O} {Γ : Over O} {X : R.Over ⊤ I}
+variable {P : MvPoly R H I O E B} {Γ : Over O} {X : R.Over ⊤ I}
 
-def fst (pair : Γ ⟶ (P @ X).toComma) : Over P.B := Over.mk (pair.left ≫ (fstProj P X).hom)
+def fst (pair : Γ ⟶ (P @ X).toComma) : Over B := Over.mk (pair.left ≫ (fstProj P X).hom)
 
 abbrev sndDom (pair : Γ ⟶ (P @ X).toComma) : Over I := (leftAdjoint P.i.1 P.p).obj (fst pair)
 
@@ -336,17 +397,17 @@ lemma snd_eq (pair : Γ ⟶ (P @ X).toComma) : snd pair =
   erw [Equiv.apply_eq_iff_eq_symm_apply, ← homEquiv_comp_symm]
   simp [sndProj, counit]
 
-def mk (f : Over P.B) (hf : Γ = (Over.map P.o.1).obj f)
+def mk (f : Over B) (hf : Γ = (Over.map P.o.1).obj f)
     (s : (leftAdjoint P.i.1 P.p).obj f ⟶ X.toComma) :
     Γ ⟶ (P @ X).toComma :=
   eqToHom hf ≫ (Over.map P.o.fst).map ((homEquiv P.i.1 P.p).symm s)
 
 @[simp]
-lemma fst_mk (f : Over P.B) (hf : Γ = (Over.map P.o.1).obj f)
+lemma fst_mk (f : Over B) (hf : Γ = (Over.map P.o.1).obj f)
     (s : (leftAdjoint P.i.1 P.p).obj f ⟶ X.toComma) : fst (mk f hf s) = f := by
   subst hf; simp [fst, mk]; rfl
 
-lemma snd_mk (f : Over P.B) (hf : Γ = (Over.map P.o.1).obj f)
+lemma snd_mk (f : Over B) (hf : Γ = (Over.map P.o.1).obj f)
     (s : (leftAdjoint P.i.1 P.p).obj f ⟶ X.toComma) : snd (mk f hf s) =
     eqToHom (by simp) ≫ s := calc snd (mk f hf s)
   _ = (leftAdjoint P.i.1 P.p).map (eqToHom (fst_mk f hf s)) ≫ s := by
@@ -371,15 +432,43 @@ lemma eta (pair : Γ ⟶ (P @ X).toComma) : mk (fst pair) (by simp) (snd pair) =
 
 end Equiv
 
-instance (P : MvPoly R H I O) : Limits.PreservesLimitsOfShape WalkingCospan
+instance (P : MvPoly R H I O E B) : Limits.PreservesLimitsOfShape WalkingCospan
     (MorphismProperty.Over.map ⊤ P.o.2) := by sorry
 
-instance (P : MvPoly R H I O) :
+instance (P : MvPoly R H I O E B) :
     Limits.PreservesLimitsOfShape WalkingCospan (MvPoly.functor P) := by
   dsimp [functor]
   have : (MorphismProperty.Over.pullback R ⊤ P.i.1).IsRightAdjoint :=
     Adjunction.isRightAdjoint (MorphismProperty.Over.mapPullbackAdj R ⊤ P.i.1 P.i.2 trivial)
   infer_instance
+
+/-- A commutative triangle
+```
+      I
+    ↗  ↖
+P.i/      \Q.i
+  /    ρ   \
+ E -------> F
+  \        /
+P.p\      / Q.p
+    ↘  ↙
+      B
+```
+induces a natural transformation `Q.functor ⟶ P.functor ` obtained by pasting the following 2-cells
+```
+        pullback Q.i     pushforward Q.p.1     map Q.o.1
+R.Over ⊤ I ---->  R.Over ⊤ F ----> R.Over ⊤ B -----> R.Over ⊤ O
+    ‖                 |                  |                ‖
+    ‖                 |                  |                ‖
+    ‖       ↙        |ρ*      ≅         |       =        ‖
+    ‖                 |                  |                ‖
+    ‖                 V                  V                ‖
+R.Over ⊤ I ---->  R.Over ⊤ E ----> R.Over ⊤ B -----> R.Over ⊤ O
+                             P.p.1
+```
+-/
+def verticalNatTrans {F : C} (P : MvPoly R H I O E B) (Q : MvPoly R H I O F B) (ρ : E ⟶ F)
+    (h : P.p.1 = ρ ≫ Q.p.1) : Q.functor ⟶ P.functor := sorry
 
 end MvPoly
 
@@ -452,9 +541,7 @@ abbrev fromOverTerminal : R.Over ⊤ (⊤_ C) ⥤ C :=
   (equivalenceOfHasObjects R terminalIsTerminal).functor
 
 @[simps]
-def mvPoly (P : UvPoly R E B) : MvPoly R R (⊤_ C) (⊤_ C) where
-  E := E
-  B := B
+def mvPoly (P : UvPoly R E B) : MvPoly R R (⊤_ C) (⊤_ C) E B where
   i := object E
   p := ⟨P.p, P.morphismProperty⟩
   o := object B
@@ -509,29 +596,32 @@ lemma sndProj_comp (P : UvPoly R E B) {X Y : C} (f : X ⟶ Y) :
 
 open TwoSquare
 
-/-- A vertical map `ρ : P.p.1 ⟶ Q.p.1` of polynomials (i.e. a commutative triangle)
+/-- A commutative triangle
 ```
-    ρ
-E ----> F
- \     /
-  \   / \ /
-    B
+     ρ
+E -------> F
+ \        /
+p \      / q
+   ↘  ↙
+     B
 ```
-induces a natural transformation `Q.functor ⟶ P.functor ` obtained by pasting the following 2-cells
+induces a natural transformation `Q.functor ⟶ P.functor`
+obtained by pasting the following 2-cells
 ```
               Q.p.1
 C --- >  C/F ----> C/B -----> C
 |         |          |        |
-|   ↙     | ρ*  ≅    |   =    |
+|   ↙    | ρ*  ≅    |   =    |
 |         v          v        |
 C --- >  C/E ---->  C/B ----> C
               P.p.1
 ```
 -/
 def verticalNatTrans {F : C} (P : UvPoly R E B) (Q : UvPoly R F B) (ρ : E ⟶ F)
-    (h : P.p = ρ ≫ Q.p) : Q.functor ⟶ P.functor := sorry --by
-  -- have sq : CommSq ρ P.p.1 Q.p.1 (𝟙 _) := by simp [h]
+    (h : P.p = ρ ≫ Q.p) : Q.functor ⟶ P.functor :=
   -- let cellLeft := (Over.starPullbackIsoStar ρ).hom
+  sorry --by
+  -- have sq : CommSq ρ P.p.1 Q.p.1 (𝟙 _) := by simp [h]
   -- let cellMid := (pushforwardPullbackTwoSquare ρ P.p Q.p (𝟙 _) sq)
   -- let cellLeftMidPasted := TwoSquare.whiskerRight (cellLeft ≫ₕ cellMid) (Over.pullbackId).inv
   -- simpa using (cellLeftMidPasted ≫ₕ (vId (forget B)))

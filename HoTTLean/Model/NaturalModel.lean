@@ -334,17 +334,6 @@ theorem PtpEquiv.mk_map {Γ : Ctx} {X Y : Ctx}
 
 /-! ## Polynomial composition `M.tp ▸ N.tp` -/
 
--- -- `private` lemma for the equivalence below.
--- private lemma lift_ev {Γ : Ctx} {N : Universe Ctx}
---     {AB : Γ ⟶ M.Ptp.obj N.Ty} {α : Γ ⟶ M.Tm}
---     (hA : AB ≫ M.uvPolyTp.fstProj N.Ty = α ≫ M.tp) :
---     pullback.lift AB α hA ≫ (UvPoly.PartialProduct.fan M.uvPolyTp N.Ty).snd =
---       (M.sec (α ≫ M.tp) α rfl) ≫
---         (M.disp_pullback _).lift (M.var _) (M.disp _)
---           (by dsimp; rw [hA, (M.disp_pullback _).w]) ≫
---         (M.Ptp_equiv AB).2 :=
---   sorry
-
 abbrev compDom (M N : Universe R) : Ctx := M.uvPolyTp.compDom N.uvPolyTp
 
 abbrev compP (M N : Universe R) : M.compDom N ⟶ M.uvPolyTp @ N.Ty :=
