@@ -22,6 +22,19 @@ variable {C : Type u} [Category.{v} C]
 
 namespace MorphismProperty
 
+instance (P : MorphismProperty C) {X} : P.HasPullback (𝟙 X) where
+  hasPullback g hg :=
+  have : IsPullback (𝟙 _) g g (𝟙 X) := IsPullback.of_horiz_isIso (by simp)
+  IsPullback.hasPullback this
+
+/-- `Over.pullback` commutes with composition. -/
+@[simps! hom_app_left inv_app_left]
+noncomputable def Over.pullbackId (P Q : MorphismProperty C) (X)
+    [Q.IsMultiplicative] [P.IsStableUnderBaseChange] [Q.IsStableUnderBaseChange]
+    [Q.RespectsIso] : Over.pullback P Q (𝟙 X) ≅ 𝟭 _ :=
+  NatIso.ofComponents (fun X ↦ Over.isoMk (asIso (pullback.fst X.hom (𝟙 _)))
+    (by simp [pullback.condition]))
+
 /-- The Beck-Chevalley natural transformation
 `pushforward g ⋙ pullback k ⟶ pullback h ⋙ pushforward f` constructed as a mate of
 `pullbackMapTwoSquare`.
@@ -164,13 +177,14 @@ R.Over ⊤ I ---->  R.Over ⊤ E  ----> R.Over ⊤ B
 -/
 def partialRightAdjointMap {E' : T} (i' : E' ⟶ I) (p' : E' ⟶(Q) B) (ρ)
     (hi : i = ρ ≫ i') (hp : p.1 = ρ ≫ p'.1) :
-    partialRightAdjoint (R := R) i p ⟶ partialRightAdjoint i' p' :=
+    partialRightAdjoint (R := R) i' p' ⟶ partialRightAdjoint i p :=
   let cellLeftIso : Over.pullback R ⊤ i' ⋙ Over.pullback R ⊤ ρ ≅ Over.pullback R ⊤ i :=
     (Over.pullbackComp ρ i').symm ≪≫ eqToIso (by rw [hi])
-  let cellLeft : Over.pullback R ⊤ i' ⋙ Over.pullback R ⊤ ρ ⟶ Over.pullback R ⊤ i :=
-    (cellLeftIso).hom
-  let cellMid := push
-  sorry
+  let cellLeft : TwoSquare (Over.pullback R ⊤ i') (𝟭 _) (Over.pullback R ⊤ ρ) (Over.pullback R ⊤ i) :=
+    ((Over.pullbackComp ρ i').symm ≪≫ eqToIso (by simp [hi, Functor.id_comp])).hom
+  let cellMid := pushforwardPullbackTwoSquare (R := R) (Q := Q) ρ p p' (𝟙 _) (by simp [← hp])
+  Functor.whiskerLeft (partialRightAdjoint i' p') (Over.pullbackId R ⊤ B).inv ≫
+  cellLeft.hComp cellMid
 
 end PolynomialPartialAdjunction
 
@@ -454,21 +468,28 @@ P.p\      / Q.p
     ↘  ↙
       B
 ```
-induces a natural transformation `Q.functor ⟶ P.functor ` obtained by pasting the following 2-cells
+induces a natural transformation `Q.functor ⟶ P.functor` when `Q.o = P.o`,
+obtained by pasting the following 2-cells
 ```
         pullback Q.i     pushforward Q.p.1     map Q.o.1
 R.Over ⊤ I ---->  R.Over ⊤ F ----> R.Over ⊤ B -----> R.Over ⊤ O
     ‖                 |                  |                ‖
     ‖                 |                  |                ‖
-    ‖       ↙        |ρ*      ≅         |       =        ‖
+    ‖       ≅         |ρ*      ↙        |       =        ‖
     ‖                 |                  |                ‖
     ‖                 V                  V                ‖
 R.Over ⊤ I ---->  R.Over ⊤ E ----> R.Over ⊤ B -----> R.Over ⊤ O
-                             P.p.1
+        pullback P.i     pushforward P.p.1     map P.o.1
 ```
 -/
 def verticalNatTrans {F : C} (P : MvPoly R H I O E B) (Q : MvPoly R H I O F B) (ρ : E ⟶ F)
-    (h : P.p.1 = ρ ≫ Q.p.1) : Q.functor ⟶ P.functor := sorry
+    (hi : P.i.1 = ρ ≫ Q.i.1)
+    (hp : P.p.1 = ρ ≫ Q.p.1)
+    (ho : P.o.1 = Q.o.1) : Q.functor ⟶ P.functor :=
+  (Functor.associator _ _ _).inv ≫
+  ((PolynomialPartialAdjunction.partialRightAdjointMap P.i.1 P.p Q.i.1 Q.p ρ hi hp) ◫
+  (eqToHom (by rw! [ho]))) ≫
+  (Functor.associator _ _ _).hom
 
 end MvPoly
 
@@ -521,9 +542,10 @@ variable [HasTerminal C]
 variable [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderBaseChange] [R.HasObjects]
   [R.IsStableUnderPushforward R] [R.HasPushforwards R]
 
+abbrev morphismProperty' (P : UvPoly R E B) : E ⟶(R) B := ⟨ P.p, P.morphismProperty ⟩
+
 instance (P : UvPoly R E B) {Γ : C} (A : Γ ⟶ B) : HasPullback A P.p := by
-  let p : E ⟶(R) B := ⟨ P.p, P.morphismProperty ⟩
-  convert_to HasPullback A p.1
+  convert_to HasPullback A (morphismProperty' P).1
   apply MorphismProperty.instHasPullbackFstHomOfHasPullbacks
 
 instance (P : UvPoly R E B) {Γ : C} (A : Γ ⟶ B) : HasPullback P.p A :=
@@ -543,7 +565,7 @@ abbrev fromOverTerminal : R.Over ⊤ (⊤_ C) ⥤ C :=
 @[simps]
 def mvPoly (P : UvPoly R E B) : MvPoly R R (⊤_ C) (⊤_ C) E B where
   i := object E
-  p := ⟨P.p, P.morphismProperty⟩
+  p := morphismProperty' P
   o := object B
 
 def functor (P : UvPoly R E B) : C ⥤ C :=
@@ -598,33 +620,34 @@ open TwoSquare
 
 /-- A commutative triangle
 ```
-     ρ
-E -------> F
- \        /
-p \      / q
-   ↘  ↙
-     B
+      I
+    ↗  ↖
+P.i/      \Q.i
+  /    ρ   \
+ E -------> F
+  \        /
+P.p\      / Q.p
+    ↘  ↙
+      B
 ```
-induces a natural transformation `Q.functor ⟶ P.functor`
-obtained by pasting the following 2-cells
+induces a natural transformation `Q.functor ⟶ P.functor ` obtained by pasting the following 2-cells
 ```
-              Q.p.1
-C --- >  C/F ----> C/B -----> C
-|         |          |        |
-|   ↙    | ρ*  ≅    |   =    |
-|         v          v        |
-C --- >  C/E ---->  C/B ----> C
-              P.p.1
+                  Q.mvPoly.functor
+C --- ≅ ---> R.Over ⊤ 1 ----> R.Over ⊤ 1 --- ≅ ---> C
+‖                ‖                 ‖                ‖
+‖                ‖                 ‖                ‖
+‖                ‖        ↓       ‖                ‖
+‖                ‖                 ‖                ‖
+‖                ‖                 ‖                ‖
+C --- ≅ ---> R.Over ⊤ 1 ----> R.Over ⊤ 1 --- ≅ ---> C
+                 P.mvPoly.functor
 ```
 -/
 def verticalNatTrans {F : C} (P : UvPoly R E B) (Q : UvPoly R F B) (ρ : E ⟶ F)
     (h : P.p = ρ ≫ Q.p) : Q.functor ⟶ P.functor :=
-  -- let cellLeft := (Over.starPullbackIsoStar ρ).hom
-  sorry --by
-  -- have sq : CommSq ρ P.p.1 Q.p.1 (𝟙 _) := by simp [h]
-  -- let cellMid := (pushforwardPullbackTwoSquare ρ P.p Q.p (𝟙 _) sq)
-  -- let cellLeftMidPasted := TwoSquare.whiskerRight (cellLeft ≫ₕ cellMid) (Over.pullbackId).inv
-  -- simpa using (cellLeftMidPasted ≫ₕ (vId (forget B)))
+  (toOverTerminal).whiskerLeft (Functor.whiskerRight
+    (MvPoly.verticalNatTrans P.mvPoly Q.mvPoly ρ (terminal.hom_ext _ _) h (terminal.hom_ext _ _))
+    fromOverTerminal)
 
 /-- A cartesian map of polynomials
 ```
@@ -642,7 +665,7 @@ induces a natural transformation between their associated functors obtained by p
               Q.p
 C --- >  C/F ----> C/D -----> C
 |         |          |        |
-|   ↗     | φ*  ≅    | δ* ↗   |
+|   ↗    | φ*  ≅    | δ* ↗  |
 |         v          v        |
 C --- >  C/E ---->  C/B ----> C
               P.p
