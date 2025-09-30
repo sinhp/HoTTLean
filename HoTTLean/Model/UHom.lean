@@ -15,6 +15,8 @@ namespace NaturalModel
 
 namespace Universe
 
+open UnstructuredModel.Universe
+
 variable {Ctx : Type u} [Category Ctx]
   {R : MorphismProperty Ctx} (M : Universe R)
   [R.HasPullbacks] [R.IsStableUnderBaseChange]

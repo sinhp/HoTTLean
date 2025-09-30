@@ -1,12 +1,10 @@
 import Mathlib.CategoryTheory.Limits.Shapes.KernelPair
--- import Poly.ForMathlib.CategoryTheory.LocallyCartesianClosed.Presheaf
--- import Poly.UvPoly.UPFan
-
 import HoTTLean.ForMathlib
 import HoTTLean.ForMathlib.Tactic.CategoryTheory.FunctorMap
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 import HoTTLean.ForMathlib.CategoryTheory.WeakPullback
 import HoTTLean.ForMathlib.CategoryTheory.Polynomial
+import HoTTLean.Model.Unstructured
 
 universe v u
 
@@ -19,18 +17,13 @@ namespace NaturalModel
 /-- A natural model with support for dependent types (and nothing more).
 The data is a natural transformation with representable fibers,
 stored as a choice of representative for each fiber. -/
-structure Universe {Ctx : Type u} [Category Ctx] (R : MorphismProperty Ctx) where
-  Tm : Ctx
-  Ty : Ctx
-  tp : Tm ⟶ Ty
+structure Universe {Ctx : Type u} [Category Ctx] (R : MorphismProperty Ctx)
+    extends UnstructuredModel.Universe Ctx where
   morphismProperty : R tp
-  ext {Γ : Ctx} (A : Γ ⟶ Ty) : Ctx
-  disp {Γ : Ctx} (A : Γ ⟶ Ty) : ext A ⟶ Γ
-  var {Γ : Ctx} (A : Γ ⟶ Ty) : ext A ⟶ Tm
-  disp_pullback {Γ : Ctx} (A : Γ ⟶ Ty) :
-    IsPullback (var A) (disp A) tp A
 
 namespace Universe
+
+open UnstructuredModel.Universe
 
 variable {Ctx : Type u} [Category Ctx] {R : MorphismProperty Ctx} (M : Universe R)
   [R.HasPullbacks] [R.IsStableUnderBaseChange]
@@ -49,16 +42,8 @@ def pullbackIsoExt {Γ : Ctx} (A : Γ ⟶ M.Ty) :
 
 /-- Pull a natural model back along a type. -/
 protected def pullback {Γ : Ctx} (A : Γ ⟶ M.Ty) : Universe R where
-  Tm := M.ext A
-  Ty := Γ
-  tp := M.disp A
+  __ := UnstructuredModel.Universe.pullback M.toUniverse A
   morphismProperty := R.of_isPullback (disp_pullback ..) M.morphismProperty
-  ext := fun B => M.ext (B ≫ A)
-  disp := fun B => M.disp (B ≫ A)
-  var := fun B => (M.disp_pullback A).lift (M.var (B ≫ A))
-    (M.disp (B ≫ A) ≫ B) (by simp [(M.disp_pullback (B ≫ A)).w])
-  disp_pullback := fun B =>
-    IsPullback.of_right' (M.disp_pullback (B ≫ A)) (M.disp_pullback A)
 
 /--
   Given the pullback square on the right,
@@ -80,141 +65,8 @@ def ofIsPullback {U E : Ctx} {π : E ⟶ U}
     {toTy : U ⟶ M.Ty} {toTm : E ⟶ M.Tm}
     (pb : IsPullback toTm π M.tp toTy) :
     Universe R where
-  Ty := U
-  Tm := E
-  tp := π
+  __ := UnstructuredModel.Universe.ofIsPullback M.toUniverse pb
   morphismProperty := R.of_isPullback pb M.morphismProperty
-  ext A := M.ext (A ≫ toTy)
-  disp A := M.disp (A ≫ toTy)
-  var A := pb.lift (M.var (A ≫ toTy)) (M.disp (A ≫ toTy) ≫ A)
-    (by simp [(M.disp_pullback (A ≫ toTy)).w])
-  disp_pullback A := IsPullback.of_right' (M.disp_pullback (A ≫ toTy)) pb
-
-/-! ## Substitutions -/
-
-/--
-```
-Δ ⊢ σ : Γ  Γ ⊢ A type  Δ ⊢ t : A[σ]
------------------------------------
-Δ ⊢ σ.t : Γ.A
-```
- ------ Δ ------ t --------¬
- |      ↓ substCons         ↓
- |   M.ext A ---var A---> M.Tm
- |      |                  |
- σ      |                  |
- |    disp A              M.tp
- |      |                  |
- |      V                  V
-  ---> Γ ------ A -----> M.Ty
--/
-def substCons {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty)
-    (t : Δ ⟶ M.Tm) (t_tp : t ≫ M.tp = σ ≫ A) :
-    Δ ⟶ M.ext A :=
-  (M.disp_pullback A).lift t σ t_tp
-
-@[reassoc (attr := simp)]
-theorem substCons_disp {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (t : Δ ⟶ M.Tm)
-    (tTp : t ≫ M.tp = σ ≫ A) :
-    M.substCons σ A t tTp ≫ M.disp A = σ := by
-  simp [substCons]
-
-@[reassoc (attr := simp)]
-theorem substCons_var {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (t : Δ ⟶ M.Tm)
-    (aTp : t ≫ M.tp = σ ≫ A) :
-    M.substCons σ A t aTp ≫ M.var A = t := by
-  simp [substCons]
-
-@[simp]
-theorem comp_substCons {Θ Δ Γ : Ctx} (τ : Θ ⟶ Δ) (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (t : Δ ⟶ M.Tm)
-    (aTp : t ≫ M.tp = σ ≫ A) :
-    τ ≫ M.substCons σ A t aTp = M.substCons (τ ≫ σ) A (τ ≫ t) (by simp [*]) := by
-  apply (M.disp_pullback A).hom_ext
-  · simp
-  · simp
-
-/--
-```
-Δ ⊢ σ : Γ.A
-------------
-Δ ⊢ ↑∘σ : Γ
-```
--/
-def substFst {Δ Γ : Ctx} {A : Γ ⟶ M.Ty} (σ : Δ ⟶ M.ext A) : Δ ⟶ Γ :=
-  σ ≫ M.disp A
-
-/--
-```
-Δ ⊢ σ : Γ.A
--------------------
-Δ ⊢ v₀[σ] : A[↑∘σ]
-```
--/
-def substSnd {Δ Γ : Ctx} {A : Γ ⟶ M.Ty} (σ : Δ ⟶ M.ext A) : Δ ⟶ M.Tm :=
-  σ ≫ M.var A
-
-theorem substSnd_tp {Δ Γ : Ctx} {A : Γ ⟶ M.Ty} (σ : Δ ⟶ M.ext A) :
-    M.substSnd σ ≫ M.tp = (M.substFst σ) ≫ A := by
-  simp [substSnd, substFst]; rw [(M.disp_pullback _).w]
-
-@[reassoc (attr := simp)]
-theorem var_tp {Γ : Ctx} (A : Γ ⟶ M.Ty) : M.var A ≫ M.tp = (M.disp A) ≫ A := by
-  simp [(M.disp_pullback A).w]
-
-/--
-Weaken a substitution.
-```
-Δ ⊢ σ : Γ  Γ ⊢ A type  A' = A[σ]
-------------------------------------
-Δ.A' ⊢ ↑≫σ : Γ  Δ.A' ⊢ v₀ : A[↑≫σ]
-------------------------------------
-Δ.A' ⊢ (↑≫σ).v₀ : Γ.A
-```
--/
-def substWk {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty)
-    (A' := σ ≫ A) (eq : σ ≫ A = A' := by rfl) : M.ext A' ⟶ M.ext A :=
-  M.substCons (M.disp _ ≫ σ) A (M.var _) (by simp [eq])
-
-@[reassoc]
-theorem substWk_disp {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (A' eq) :
-    M.substWk σ A A' eq ≫ M.disp A = M.disp A' ≫ σ := by
-  simp [substWk]
-
-@[reassoc (attr := simp)]
-theorem substWk_var {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (A' eq) :
-    M.substWk σ A A' eq ≫ M.var A = M.var A' := by
-  simp [substWk]
-
-/-- `sec` is the section of `disp A` corresponding to `a`.
-
-  ===== Γ ------ a --------¬
- ‖      ↓ sec             V
- ‖   M.ext A -----------> M.Tm
- ‖      |                  |
- ‖      |                  |
- ‖    disp A              M.tp
- ‖      |                  |
- ‖      V                  V
-  ===== Γ ------ A -----> M.Ty -/
-def sec {Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) : Γ ⟶ M.ext A :=
-  M.substCons (𝟙 Γ) A a (by simp [a_tp])
-
-@[reassoc (attr := simp)]
-theorem sec_disp {Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) :
-    M.sec A a a_tp ≫ M.disp A = 𝟙 _ := by
-  simp [sec]
-
-@[reassoc (attr := simp)]
-theorem sec_var {Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) :
-    M.sec A a a_tp ≫ M.var A = a := by
-  simp [sec]
-
-@[reassoc]
-theorem comp_sec {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (σA) (eq : σ ≫ A = σA)
-    (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) :
-    σ ≫ M.sec A a a_tp = M.sec σA (σ ≫ a) (by simp [eq, a_tp]) ≫ M.substWk σ A _ eq := by
-  apply (M.disp_pullback _).hom_ext <;>
-    simp [sec, substWk]
 
 /-! ## Polynomial functor on `tp`
 
@@ -392,7 +244,7 @@ lemma dependent_eq (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
 theorem comp_dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     {A} (eq1 : fst ab ≫ M.tp = A)
     {σA} (eq2 : σ ≫ A = σA) :
-    (substWk M σ _ _ eq2) ≫ dependent ab A eq1 =
+    (M.substWk σ _ _ eq2) ≫ dependent ab A eq1 =
     dependent (σ ≫ ab) σA (by simp [fst_comp, eq1, eq2]) := by
   dsimp [dependent]
   rw [UvPoly.compDomEquiv.dependent_comp σ ab (M.disp A) (M.var A)
@@ -677,20 +529,34 @@ theorem mkPair_mkFst_mkSnd {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty
 
 end
 
+def ofUnstructured (U0 U1 U2 : Universe R)
+    (S : UnstructuredModel.Universe.PolymorphicSigma U0.toUniverse U1.toUniverse U2.toUniverse) :
+    PolymorphicSigma U0 U1 U2 where
+  Sig := ofYoneda (fun AB => S.Sig (PtpEquiv.snd U0 AB)) (by
+    intro Δ Γ σ A
+    simp only [← S.Sig_comp, PtpEquiv.snd_comp_left, PtpEquiv.fst_comp_left]
+    rw! [PtpEquiv.fst_comp_left])
+  pair := ofYoneda (fun ab => S.pair (compDomEquiv.dependent ab) (compDomEquiv.fst ab)
+    (by rw [compDomEquiv.fst_tp]) (compDomEquiv.snd ab) (by rw [compDomEquiv.snd_tp])) (by
+    intro Δ Γ σ A
+    simp only [← S.pair_comp, compDomEquiv.comp_dependent, compDomEquiv.fst_comp,
+      compDomEquiv.snd_comp]
+    rw! [compDomEquiv.fst_comp, Category.assoc])
+  Sig_pullback := sorry
+
 end PolymorphicSigma
 
-def Sigma.mk'
-    (Sig : ∀ {Γ} {A : Γ ⟶ M.Ty}, (M.ext A ⟶ M.Ty) → (Γ ⟶ M.Ty))
-    (comp_Sig : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) {σA} (eq) (B : M.ext A ⟶ M.Ty),
-      σ ≫ Sig B = Sig (M.substWk σ A σA eq ≫ B))
-    (assoc : ∀ {Γ} {A : Γ ⟶ M.Ty} (B : M.ext A ⟶ M.Ty), M.ext B ≅ M.ext (Sig B))
-    (comp_assoc : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ M.Ty} {σA} (eq) (B : M.ext A ⟶ M.Ty),
-      substWk _ (substWk _ σ _ _ eq) _ ≫ (assoc B).hom =
-      (assoc (substWk M σ A σA eq ≫ B)).hom ≫ substWk M σ _ _ (comp_Sig ..))
-    (assoc_disp : ∀ {Γ} {A : Γ ⟶ M.Ty} (B : M.ext A ⟶ M.Ty),
-      (assoc B).hom ≫ M.disp _ = M.disp _ ≫ M.disp _) :
-    M.Sigma := sorry
-
+-- def Sigma.mk'
+--     (Sig : ∀ {Γ} {A : Γ ⟶ M.Ty}, (M.ext A ⟶ M.Ty) → (Γ ⟶ M.Ty))
+--     (comp_Sig : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) {σA} (eq) (B : M.ext A ⟶ M.Ty),
+--       σ ≫ Sig B = Sig (M.substWk σ A σA eq ≫ B))
+--     (assoc : ∀ {Γ} {A : Γ ⟶ M.Ty} (B : M.ext A ⟶ M.Ty), M.ext B ≅ M.ext (Sig B))
+--     (comp_assoc : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ M.Ty} {σA} (eq) (B : M.ext A ⟶ M.Ty),
+--       substWk _ (substWk _ σ _ _ eq) _ ≫ (assoc B).hom =
+--       (assoc (M.substWk σ A σA eq ≫ B)).hom ≫ M.substWk σ _ _ (comp_Sig ..))
+--     (assoc_disp : ∀ {Γ} {A : Γ ⟶ M.Ty} (B : M.ext A ⟶ M.Ty),
+--       (assoc B).hom ≫ M.disp _ = M.disp _ ≫ M.disp _) :
+--     M.Sigma := sorry
 
 /--
 Universe.IdIntro consists of the following commutative square
@@ -1082,93 +948,92 @@ def equivSnd (pair : Γ ⟶ ie.iFunctor.obj X) :
     (ii.motiveCtx (equivFst ie pair)) ⟶ X :=
   UvPoly.Equiv.snd' pair (ie.motiveCtx_isPullback' _).flip
 
-#exit
 lemma equivSnd_comp_left (pair : Γ ⟶ ie.iFunctor.obj X)
     {Δ} (σ : Δ ⟶ Γ) :
     ie.equivSnd (σ ≫ pair) =
     eqToHom (by simp [equivFst_comp_left]) ≫ ii.motiveSubst σ _ ≫ ie.equivSnd pair := by
-  dsimp only [equivSnd]
-  let a := ie.equivFst pair
-  have H : IsPullback (ie.toI a)
-    ((M.disp (ii.mkId ((M.disp (a ≫ M.tp)) ≫ a) (M.var (a ≫ M.tp)) _)) ≫
-    (M.disp (a ≫ M.tp))) ie.iUvPoly.p
-    (UvPoly.Equiv.fst ie.iUvPoly X pair) := (motiveCtx_isPullback' _ _)
-  have H' : IsPullback ((M.disp
-      (ii.mkId ((M.disp (ie.equivFst (σ ≫ pair) ≫ M.tp)) ≫
-      ie.equivFst (σ ≫ pair))
-      (M.var (ie.equivFst (σ ≫ pair) ≫ M.tp)) _)) ≫
-      (M.disp (ie.equivFst (σ ≫ pair) ≫ M.tp)))
-      (ie.toI (ie.equivFst (σ ≫ pair)))
-      (σ ≫ UvPoly.Equiv.fst ie.iUvPoly X pair)
-      ie.iUvPoly.p :=
-    (motiveCtx_isPullback' _ _).flip
-  rw [UvPoly.Equiv.snd'_comp_left (H := H.flip) (H' := H')]
-  · congr 1
-    have h : ie.toI (ie.equivFst (σ ≫ pair)) =
-        (ii.motiveSubst σ (ie.equivFst pair)) ≫ ie.toI a :=
-      ie.toI_comp_left a σ
-    apply (IsPullback.flip H).hom_ext
-    · simp only [iUvPoly_p, Category.assoc, IsPullback.lift_fst]
-      simp [motiveSubst, substWk, substCons, a]; rfl
-    · apply ie.i_isPullback.hom_ext
-      · simp [IsPullback.lift_snd, h]
-      · apply ii.isKernelPair.hom_ext
-        · simp [IsPullback.lift_snd, h]
-        · simp only [iUvPoly_p, IsPullback.lift_snd, IdElimBase.toI_comp_i2, ← h, toI_comp_i2]
+  sorry
+  -- dsimp only [equivSnd]
+  -- let a := ie.equivFst pair
+  -- have H : IsPullback (ie.toI a)
+  --   ((M.disp (ii.mkId ((M.disp (a ≫ M.tp)) ≫ a) (M.var (a ≫ M.tp)) _)) ≫
+  --   (M.disp (a ≫ M.tp))) ie.iUvPoly.p
+  --   (UvPoly.Equiv.fst ie.iUvPoly X pair) := (motiveCtx_isPullback' _ _)
+  -- have H' : IsPullback ((M.disp
+  --     (ii.mkId ((M.disp (ie.equivFst (σ ≫ pair) ≫ M.tp)) ≫
+  --     ie.equivFst (σ ≫ pair))
+  --     (M.var (ie.equivFst (σ ≫ pair) ≫ M.tp)) _)) ≫
+  --     (M.disp (ie.equivFst (σ ≫ pair) ≫ M.tp)))
+  --     (ie.toI (ie.equivFst (σ ≫ pair)))
+  --     (σ ≫ UvPoly.Equiv.fst ie.iUvPoly X pair)
+  --     ie.iUvPoly.p :=
+  --   (motiveCtx_isPullback' _ _).flip
+  -- rw [UvPoly.Equiv.snd'_comp_left (H := H.flip) (H' := H')]
+  -- · congr 1
+  --   have h : ie.toI (ie.equivFst (σ ≫ pair)) =
+  --       (ii.motiveSubst σ (ie.equivFst pair)) ≫ ie.toI a :=
+  --     ie.toI_comp_left a σ
+  --   apply (IsPullback.flip H).hom_ext
+  --   · simp only [iUvPoly_p, Category.assoc, IsPullback.lift_fst]
+  --     simp [motiveSubst, substWk, substCons, a]; rfl
+  --   · apply ie.i_isPullback.hom_ext
+  --     · simp [IsPullback.lift_snd, h]
+  --     · apply ii.isKernelPair.hom_ext
+  --       · simp [IsPullback.lift_snd, h]
+  --       · simp only [iUvPoly_p, IsPullback.lift_snd, IdElimBase.toI_comp_i2, ← h, toI_comp_i2]
 
-lemma equivFst_verticalNatTrans_app {Γ : Ctx} {X : Ctx}
-    (pair : Γ ⟶ ie.iFunctor.obj X) :
-    ie.equivFst pair = UvPoly.Equiv.fst (UvPoly.id M.Tm) X
-    (pair ≫ ie.verticalNatTrans.app X) := by
-  dsimp [equivFst, verticalNatTrans]
-  rw [← UvPoly.fst_verticalNatTrans_app]
+-- lemma equivFst_verticalNatTrans_app {Γ : Ctx} {X : Ctx}
+--     (pair : Γ ⟶ ie.iFunctor.obj X) :
+--     ie.equivFst pair = UvPoly.Equiv.fst (UvPoly.id M.Tm) X
+--     (pair ≫ ie.verticalNatTrans.app X) := by
+--   dsimp [equivFst, verticalNatTrans]
+--   rw [← UvPoly.fst_verticalNatTrans_app]
 
-lemma equivSnd_verticalNatTrans_app {Γ : Ctx} {X : Ctx}
-    (pair : Γ ⟶ ie.iFunctor.obj X) :
-    UvPoly.Equiv.snd' (UvPoly.id M.Tm) X (pair ≫ ie.verticalNatTrans.app X)
-      (R := Γ) (f := 𝟙 _) (g := ie.equivFst pair) (by
-        convert reflCase_aux (ie.equivFst pair)
-        rw [equivFst_verticalNatTrans_app]) =
-      (ii.reflSubst (ie.equivFst pair)) ≫
-      ie.equivSnd pair :=
-  calc _
-  _ = _ ≫ ie.equivSnd pair := by
-    dsimp [equivSnd, verticalNatTrans]
-    rw [UvPoly.snd'_verticalNatTrans_app (UvPoly.id M.Tm) ie.iUvPoly
-      (ie.comparison) _ _ pair _]
-    apply reflCase_aux (ie.equivFst pair)
-  _ = _ := by
-    congr 1
-    apply (M.disp_pullback _).hom_ext
-    · conv => lhs; rw [← toI_comp_i1 ie]
-      simp [reflSubst, comparison, mkRefl]
-    · apply (M.disp_pullback _).hom_ext
-      · slice_lhs 3 4 => rw [← ii.toK_comp_k1]
-        slice_lhs 2 3 => rw [← ie.toI_comp_i2]
-        simp [reflSubst]
-      · simp [reflSubst]
+-- lemma equivSnd_verticalNatTrans_app {Γ : Ctx} {X : Ctx}
+--     (pair : Γ ⟶ ie.iFunctor.obj X) :
+--     UvPoly.Equiv.snd' (UvPoly.id M.Tm) X (pair ≫ ie.verticalNatTrans.app X)
+--       (R := Γ) (f := 𝟙 _) (g := ie.equivFst pair) (by
+--         convert reflCase_aux (ie.equivFst pair)
+--         rw [equivFst_verticalNatTrans_app]) =
+--       (ii.reflSubst (ie.equivFst pair)) ≫
+--       ie.equivSnd pair :=
+--   calc _
+--   _ = _ ≫ ie.equivSnd pair := by
+--     dsimp [equivSnd, verticalNatTrans]
+--     rw [UvPoly.snd'_verticalNatTrans_app (UvPoly.id M.Tm) ie.iUvPoly
+--       (ie.comparison) _ _ pair _]
+--     apply reflCase_aux (ie.equivFst pair)
+--   _ = _ := by
+--     congr 1
+--     apply (M.disp_pullback _).hom_ext
+--     · conv => lhs; rw [← toI_comp_i1 ie]
+--       simp [reflSubst, comparison, mkRefl]
+--     · apply (M.disp_pullback _).hom_ext
+--       · slice_lhs 3 4 => rw [← ii.toK_comp_k1]
+--         slice_lhs 2 3 => rw [← ie.toI_comp_i2]
+--         simp [reflSubst]
+--       · simp [reflSubst]
 
-lemma equivMk_comp_verticalNatTrans_app {Γ : Ctx} {X : Ctx} (a : Γ ⟶ M.Tm)
-    (x : (ii.motiveCtx a) ⟶ X) :
-    ie.equivMk a x ≫ (ie.verticalNatTrans).app X =
-    UvPoly.Equiv.mk' (UvPoly.id M.Tm) X a (R := Γ) (f := 𝟙 _) (g := a)
-    (reflCase_aux a) ((ii.reflSubst a) ≫ x) := by
-  dsimp only [equivMk, verticalNatTrans]
-  rw [UvPoly.mk'_comp_verticalNatTrans_app (R' := Γ) (f' := 𝟙 _) (g' := a)
-    (H' := reflCase_aux a)]
-  congr 2
-  apply (M.disp_pullback _).hom_ext
-  · conv => lhs; rw [← toI_comp_i1 ie]
-    simp [reflSubst, comparison, mkRefl]
-  · apply (M.disp_pullback _).hom_ext
-    · slice_lhs 3 4 => rw [← ii.toK_comp_k1]
-      slice_lhs 2 3 => rw [← ie.toI_comp_i2]
-      simp [reflSubst]
-    · simp [reflSubst]
+-- lemma equivMk_comp_verticalNatTrans_app {Γ : Ctx} {X : Ctx} (a : Γ ⟶ M.Tm)
+--     (x : (ii.motiveCtx a) ⟶ X) :
+--     ie.equivMk a x ≫ (ie.verticalNatTrans).app X =
+--     UvPoly.Equiv.mk' (UvPoly.id M.Tm) X a (R := Γ) (f := 𝟙 _) (g := a)
+--     (reflCase_aux a) ((ii.reflSubst a) ≫ x) := by
+--   dsimp only [equivMk, verticalNatTrans]
+--   rw [UvPoly.mk'_comp_verticalNatTrans_app (R' := Γ) (f' := 𝟙 _) (g' := a)
+--     (H' := reflCase_aux a)]
+--   congr 2
+--   apply (M.disp_pullback _).hom_ext
+--   · conv => lhs; rw [← toI_comp_i1 ie]
+--     simp [reflSubst, comparison, mkRefl]
+--   · apply (M.disp_pullback _).hom_ext
+--     · slice_lhs 3 4 => rw [← ii.toK_comp_k1]
+--       slice_lhs 2 3 => rw [← ie.toI_comp_i2]
+--       simp [reflSubst]
+--     · simp [reflSubst]
 
 end
 
--/
 end Equiv
 
 end IdElimBase
