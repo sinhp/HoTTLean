@@ -22,6 +22,9 @@ variable {C : Type u} [Category.{v} C]
 
 namespace MorphismProperty
 
+instance : (⊤ : MorphismProperty C).HasOfPostcompProperty ⊤ where
+  of_postcomp := by simp
+
 instance (P : MorphismProperty C) {X} : P.HasPullback (𝟙 X) where
   hasPullback g hg :=
   have : IsPullback (𝟙 _) g g (𝟙 X) := IsPullback.of_horiz_isIso (by simp)
@@ -35,9 +38,91 @@ noncomputable def Over.pullbackId (P Q : MorphismProperty C) (X)
   NatIso.ofComponents (fun X ↦ Over.isoMk (asIso (pullback.fst X.hom (𝟙 _)))
     (by simp [pullback.condition]))
 
-/-- The Beck-Chevalley natural transformation
-`pushforward g ⋙ pullback k ⟶ pullback h ⋙ pushforward f` constructed as a mate of
-`pullbackMapTwoSquare`.
+/-- Fixing a commutative square,
+```
+   Y - k → W
+   ∧        ∧
+ f |        | g
+   |        |
+   X - h → Z
+```
+`pullbackMapTwoSquare` is the Beck-Chevalley natural transformation for `Over.map` between
+the `MorphismProperty.Over` categories,
+of type `pullback f ⋙ map h ⟶ map k ⋙ pullback g`.
+```
+           map k
+ R.Over Y --------> R.Over W
+    |                  |
+    |                  |
+pullback f     ↗    pullback g
+    |                  |
+    v                  V
+ R.Over X  --------> R.Over Z
+            map h
+```
+-/
+def pullbackMapTwoSquare {T : Type u} [Category.{v} T] (R : MorphismProperty T)
+    [R.IsStableUnderBaseChange] [R.IsStableUnderComposition]
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
+    (rk : R k) (rh : R h)
+    [R.HasPullback h] [R.HasPullback f] [R.HasPullback g] [R.HasPullback k]
+    (sq : f ≫ k = h ≫ g) :
+    TwoSquare (MorphismProperty.Over.pullback R ⊤ f)
+      (MorphismProperty.Over.map ⊤ rk) (MorphismProperty.Over.map ⊤ rh)
+      (MorphismProperty.Over.pullback R ⊤ g) :=
+    (mateEquiv (MorphismProperty.Over.mapPullbackAdj R ⊤ k rk trivial)
+      (MorphismProperty.Over.mapPullbackAdj R ⊤ h rh trivial)).symm <|
+      ((MorphismProperty.Over.pullbackComp _ _).inv ≫
+      eqToHom (by rw! [sq]) ≫
+      (MorphismProperty.Over.pullbackComp _ _).hom)
+
+/--
+The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
+```
+           map k
+ R.Over Y --------> R.Over W
+    |                  |
+    |                  |
+pullback f     ≅    pullback g
+    |                  |
+    v                  V
+ R.Over X  --------> R.Over Z
+            map h
+```
+when the commutativity
+condition is strengthened to a pullback condition.
+```
+   Y - k → W
+   ∧        ∧
+ f |  (pb)  | g
+   |        |
+   X - h → Z
+```
+TODO: in what generality does this theorem hold?
+NOTE: we know it holds when `R` is a clan
+([Joyal, Notes on Clans and Tribes, Cor 2.4.11](https://arxiv.org/pdf/1710.10238)).
+NOTE: we also know it holds in a category with pullbacks with `R = ⊤`.
+-/
+theorem pullbackMapTwoSquare_isIso {T : Type u} [Category.{v} T] (R : MorphismProperty T)
+    [R.IsStableUnderBaseChange] [R.IsStableUnderComposition]
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
+    (rk : R k) (rh : R h)
+    [R.HasPullback h] [R.HasPullback f] [R.HasPullback g] [R.HasPullback k]
+    (pb : IsPullback f h k g) :
+    NatTrans.IsCartesian <| pullbackMapTwoSquare R h f g k rk rh pb.w :=
+  sorry
+
+/-- Fixing a commutative square,
+```
+   Z - g → W
+   ∧        ∧
+ h |        | k
+   |        |
+   X - f → Y
+```
+`pushforwardPullbackTwoSquare` is the Beck-Chevalley natural transformation for pushforwards between
+the `MorphismProperty.Over` categories,
+of type `pushforward g ⋙ pullback k ⟶ pullback h ⋙ pushforward f`.
 ```
       R.Over ⊤ Z - pushforward g → R.Over ⊤ W
            |                           |
@@ -45,21 +130,53 @@ pullback h |           ↙              | pullback k
            V                           V
       R.Over ⊤ X - pushforward f → R.Over ⊤ Y
 ```
+It is the mate of the square of pullback functors
+`pullback k ⋙ pullback g ⟶ pullback f ⋙ pullback h`.
 -/
 def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProperty T}
     [R.HasPullbacks] [R.IsStableUnderBaseChange] {Q : MorphismProperty T} [Q.HasPullbacks]
+    [R.HasPushforwards Q] [R.IsStableUnderPushforward Q] {X Y Z W : T}
+    (h : X ⟶ Z) (f : X ⟶(Q) Y) (g : Z ⟶(Q) W) (k : Y ⟶ W) (sq : h ≫ g.1 = f.1 ≫ k) :
+    TwoSquare (pushforward (P := R) g) (Over.pullback R ⊤ h) (Over.pullback R ⊤ k)
+    (pushforward (P := R) f) :=
+  let pullbackTwoSquare : TwoSquare (Over.pullback R ⊤ k) (Over.pullback R ⊤ g.fst)
+      (Over.pullback R ⊤ f.fst) (Over.pullback R ⊤ h) :=
+    ((Over.pullbackComp _ _).inv ≫
+    eqToHom (by rw! [sq]) ≫
+    (Over.pullbackComp _ _).hom)
+  mateEquiv (pullbackPushforwardAdjunction R Q g)
+  (pullbackPushforwardAdjunction R Q f)
+  pullbackTwoSquare
+
+/--
+The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
+```
+      R.Over ⊤ Z - pushforward g → R.Over ⊤ W
+           |                           |
+pullback h |            ≅              | pullback k
+           V                           V
+      R.Over ⊤ X - pushforward f → R.Over ⊤ Y
+```
+when the commutativity
+condition is strengthened to a pullback condition.
+```
+   Z - g → W
+   ∧        ∧
+ h |  (pb)  | k
+   |        |
+   X - f → Y
+```
+TODO: in what generality does this theorem hold?
+NOTE: we know it holds when for π-clans with `R = Q = the π-clan`
+([Joyal, Notes on Clans and Tribes, Cor 2.4.11](https://arxiv.org/pdf/1710.10238)).
+NOTE: we also know it holds in a category with pullbacks with `R = ⊤` and `Q = ExponentiableMaps`.
+-/
+theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{v} T] (R : MorphismProperty T)
+    [R.HasPullbacks] [R.IsStableUnderBaseChange] {Q : MorphismProperty T} [Q.HasPullbacks]
     [R.HasPushforwards Q] [R.IsStableUnderPushforward Q]
     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶(Q) Y) (g : Z ⟶(Q) W) (k : Y ⟶ W)
-    (sq : h ≫ g.1 = f.1 ≫ k) :
-    TwoSquare (MorphismProperty.pushforward (P := R) (Q := Q) g)
-    (MorphismProperty.Over.pullback R ⊤ h)
-    (MorphismProperty.Over.pullback R ⊤ k)
-    (MorphismProperty.pushforward (P := R) (Q := Q) f) :=
-  mateEquiv (MorphismProperty.pullbackPushforwardAdjunction R Q g)
-  (MorphismProperty.pullbackPushforwardAdjunction R Q f)
-  ((MorphismProperty.Over.pullbackComp _ _).inv ≫
-  eqToHom (by rw! [sq]) ≫
-  (MorphismProperty.Over.pullbackComp _ _).hom)
+    (pb : IsPullback h f.1 g.1 k) : IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) :=
+  sorry
 
 namespace PolynomialPartialAdjunction
 
@@ -166,11 +283,11 @@ obtained by pasting the following 2-cells
 ```
         pullback i'        pushforward p'
 R.Over ⊤ I ---->  R.Over ⊤ E' ----> R.Over ⊤ B
-    ‖                 |                  |
-    ‖                 |                  |
-    ‖       ≅         |ρ*      ↙        |
-    ‖                 |                  |
-    ‖                 V                  V
+    ‖                 |                  ‖
+    ‖                 |                  ‖
+    ‖       ↙        |ρ*      ↙        ‖
+    ‖                 |                  ‖
+    ‖                 V                  ‖
 R.Over ⊤ I ---->  R.Over ⊤ E  ----> R.Over ⊤ B
         pullback i         pushforward p
 ```
@@ -182,9 +299,9 @@ def partialRightAdjointMap {E' : T} (i' : E' ⟶ I) (p' : E' ⟶(Q) B) (ρ)
     (Over.pullbackComp ρ i').symm ≪≫ eqToIso (by rw [hi])
   let cellLeft : TwoSquare (Over.pullback R ⊤ i') (𝟭 _) (Over.pullback R ⊤ ρ) (Over.pullback R ⊤ i) :=
     ((Over.pullbackComp ρ i').symm ≪≫ eqToIso (by simp [hi, Functor.id_comp])).hom
-  let cellMid := pushforwardPullbackTwoSquare (R := R) (Q := Q) ρ p p' (𝟙 _) (by simp [← hp])
+  let cellRight := pushforwardPullbackTwoSquare (R := R) (Q := Q) ρ p p' (𝟙 _) (by simp [← hp])
   Functor.whiskerLeft (partialRightAdjoint i' p') (Over.pullbackId R ⊤ B).inv ≫
-  cellLeft.hComp cellMid
+  cellLeft.hComp cellRight
 
 end PolynomialPartialAdjunction
 
@@ -298,14 +415,15 @@ structure MvPoly (R : MorphismProperty C) (H : MorphismProperty C) (I O E B : C)
 
 namespace MvPoly
 
-instance : (⊤ : MorphismProperty C).HasOfPostcompProperty ⊤ where
-  of_postcomp := by simp
-
 variable {R : MorphismProperty C} {H : MorphismProperty C}
 
 instance {B O : C} (i : B ⟶(R) O) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     [R.IsStableUnderComposition] : (pullback R ⊤ i.1).IsRightAdjoint :=
   (mapPullbackAdj R ⊤ i.1 i.2 ⟨⟩).isRightAdjoint
+
+instance [R.IsStableUnderComposition] {X Y} (f : X ⟶ Y) (hf : R f) :
+    Limits.PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.map ⊤ hf) :=
+  sorry
 
 variable {I O E B : C} (P : MvPoly R H I O E B) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     [H.HasPullbacks] [R.HasPushforwards H]
@@ -446,9 +564,6 @@ lemma eta (pair : Γ ⟶ (P @ X).toComma) : mk (fst pair) (by simp) (snd pair) =
 
 end Equiv
 
-instance (P : MvPoly R H I O E B) : Limits.PreservesLimitsOfShape WalkingCospan
-    (MorphismProperty.Over.map ⊤ P.o.2) := by sorry
-
 instance (P : MvPoly R H I O E B) :
     Limits.PreservesLimitsOfShape WalkingCospan (MvPoly.functor P) := by
   dsimp [functor]
@@ -473,23 +588,122 @@ obtained by pasting the following 2-cells
 ```
         pullback Q.i     pushforward Q.p.1     map Q.o.1
 R.Over ⊤ I ---->  R.Over ⊤ F ----> R.Over ⊤ B -----> R.Over ⊤ O
-    ‖                 |                  |                ‖
-    ‖                 |                  |                ‖
-    ‖       ≅         |ρ*      ↙        |       =        ‖
-    ‖                 |                  |                ‖
-    ‖                 V                  V                ‖
+    ‖                 |                  ‖                ‖
+    ‖                 |                  ‖                ‖
+    ‖       ↙        |ρ*      ↙        ‖       =        ‖
+    ‖                 |                  ‖                ‖
+    ‖                 V                  ‖                ‖
 R.Over ⊤ I ---->  R.Over ⊤ E ----> R.Over ⊤ B -----> R.Over ⊤ O
         pullback P.i     pushforward P.p.1     map P.o.1
 ```
 -/
 def verticalNatTrans {F : C} (P : MvPoly R H I O E B) (Q : MvPoly R H I O F B) (ρ : E ⟶ F)
-    (hi : P.i.1 = ρ ≫ Q.i.1)
-    (hp : P.p.1 = ρ ≫ Q.p.1)
-    (ho : P.o.1 = Q.o.1) : Q.functor ⟶ P.functor :=
+    (hi : P.i.1 = ρ ≫ Q.i.1) (hp : P.p.1 = ρ ≫ Q.p.1) (ho : P.o.1 = Q.o.1) :
+    Q.functor ⟶ P.functor :=
   (Functor.associator _ _ _).inv ≫
   ((PolynomialPartialAdjunction.partialRightAdjointMap P.i.1 P.p Q.i.1 Q.p ρ hi hp) ◫
   (eqToHom (by rw! [ho]))) ≫
   (Functor.associator _ _ _).hom
+
+section
+
+variable {F} (Q : MvPoly R H I O F B) (ρ : E ⟶ F) (hi : P.i.1 = ρ ≫ Q.i.1)
+    (hp : P.p.1 = ρ ≫ Q.p.1) (ho : P.o.1 = Q.o.1)
+
+lemma fst_verticalNatTrans_app {Γ} {X} (pair : Γ ⟶ (Q @ X).toComma) :
+    Equiv.fst (pair ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom) = Equiv.fst pair := by
+  -- simp [verticalNatTrans, partialRightAdjointMap]
+  -- erw [Category.id_comp]
+  -- dsimp [Equiv.fst]
+  -- congr 1
+  sorry
+
+-- lemma snd'_verticalNatTrans_app {Γ} {X} (pair : Γ ⟶ (Q @ X).toComma) :
+--     Equiv.snd (pair ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom) =
+--     --(H.lift f' (g' ≫ ρ) (by simp [H'.w, h])) ≫
+--     sorry ≫ Equiv.snd pair := by
+--   sorry
+
+-- lemma mk'_comp_verticalNatTrans_app {Γ : Over O} {X : R.Over ⊤ I} (f : Over B)
+--     (hf : Γ = (Over.map Q.o.1).obj f) (s : (leftAdjoint Q.i.1 Q.p).obj f ⟶ X.toComma) :
+--     Equiv.mk f hf s ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom =
+--     Equiv.mk f (sorry) sorry ≫ sorry
+--      :=
+--   sorry
+
+end
+
+open TwoSquare
+
+/-- A cartesian map
+```
+               P.p
+          E  -------->  B
+  P.i ↙  |             |  ↘ P.o
+     I   φ|    (pb)     | δ  O
+  P'.i ↖ v             v  ↗ P'.o
+          E' -------->  B'
+               P'.p
+```
+induces a natural transformation between their associated functors obtained by pasting the following
+2-cells
+```
+        pullback P'.i      pushforward P'.p       map P'.o
+R.Over I ------ >  R.Over E' --------> R.Over B' --------> R.Over O
+    ‖                |                     |                  ‖
+    ‖                |                     |                  ‖
+    ‖       ↗    pullback φ   ↗     pullback δ     ↗       ‖
+    ‖                |                     |                  ‖
+    ‖                v                     v                  ‖
+R.Over I ------ >  R.Over E  --------> R.Over B  --------> R.Over O
+        pullback P.i       pushforward P.p        map P.o
+```
+-/
+def cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O E' B')
+    (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i.1 = φ ≫ P'.i.1) (pb : IsPullback φ P.p.1 P'.p.1 δ)
+    (hδ : δ ≫ P'.o.1 = P.o.1) :
+    P.functor ⟶ P'.functor :=
+  let cellLeft : TwoSquare (𝟭 (R.Over ⊤ I)) (MorphismProperty.Over.pullback R ⊤ P'.i.1)
+      (MorphismProperty.Over.pullback R ⊤ P.i.1) (MorphismProperty.Over.pullback R ⊤ φ) :=
+    (eqToIso (by simp [hφ, Functor.id_comp]) ≪≫ (MorphismProperty.Over.pullbackComp φ P'.i.1)).hom
+  have : IsIso (pushforwardPullbackTwoSquare (R := R) φ P.p P'.p δ pb.w) :=
+    pushforwardPullbackTwoSquare_isIso R φ P.p P'.p δ pb
+  let cellMid : TwoSquare (MorphismProperty.Over.pullback R ⊤ φ)
+    (R.pushforward P'.p) (R.pushforward P.p) (MorphismProperty.Over.pullback R ⊤ δ) :=
+    CategoryTheory.inv (pushforwardPullbackTwoSquare φ P.p P'.p δ pb.w)
+  let cellRight : TwoSquare (MorphismProperty.Over.pullback R ⊤ δ)
+      (MorphismProperty.Over.map ⊤ P'.o.2) (MorphismProperty.Over.map ⊤ P.o.2) (𝟭 _) :=
+    (pullbackMapTwoSquare R P.o.1 δ (𝟙 _) P'.o.1 P'.o.2 P.o.2 (by simp [hδ])) ≫
+    Functor.whiskerLeft _ (MorphismProperty.Over.pullbackId R ⊤ O).hom
+  cellLeft ≫ᵥ cellMid ≫ᵥ cellRight
+
+theorem _root_.CategoryTheory.NatTrans.IsCartesian.comp' {J : Type*} [Category J]
+    {F G H : J ⥤ C} {α : F ⟶ G} {β : G ⟶ H} (hα : α.IsCartesian) (hβ : β.IsCartesian) :
+    (α ≫ β).IsCartesian := inferInstance
+
+theorem _root_.CategoryTheory.NatTrans.IsCartesian.of_isIso' {J : Type*} [Category J]
+    {F G : J ⥤ C} (α : F ⟶ G) [IsIso α] :
+    α.IsCartesian := inferInstance
+
+-- TODO: use Sina's Poly ForMathlib files, not the `clan` branch of Mathlib.
+-- JH changed IsCartesian to an instance, which proves to be difficult to work with.
+open NatTrans in
+theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O E' B')
+    (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i.1 = φ ≫ P'.i.1) (pb : IsPullback φ P.p.1 P'.p.1 δ)
+    (hδ : δ ≫ P'.o.1 = P.o.1) :
+    (cartesianNatTrans P P' δ φ hφ pb hδ).IsCartesian := by
+  dsimp [cartesianNatTrans]
+  have : NatTrans.IsCartesian
+      (pullbackMapTwoSquare R P.o.1 δ (𝟙 _) P'.o.1 P'.o.2 P.o.2 (by simp [hδ])) := by
+    unfold pullbackMapTwoSquare
+    simp only [mateEquiv_symm_apply]
+    -- apply IsCartesian.comp'; apply IsCartesian.of_isIso'
+    -- apply IsCartesian.comp'
+    -- · apply IsCartesian.whiskerRight
+    -- · apply isCartesian_mapPullbackAdj_counit
+    -- . apply isCartesian_of_isIso
+    sorry
+  infer_instance
 
 end MvPoly
 
@@ -645,54 +859,46 @@ C --- ≅ ---> R.Over ⊤ 1 ----> R.Over ⊤ 1 --- ≅ ---> C
 -/
 def verticalNatTrans {F : C} (P : UvPoly R E B) (Q : UvPoly R F B) (ρ : E ⟶ F)
     (h : P.p = ρ ≫ Q.p) : Q.functor ⟶ P.functor :=
-  (toOverTerminal).whiskerLeft (Functor.whiskerRight
-    (MvPoly.verticalNatTrans P.mvPoly Q.mvPoly ρ (terminal.hom_ext _ _) h (terminal.hom_ext _ _))
-    fromOverTerminal)
+  let mv : Q.mvPoly.functor ⟶ P.mvPoly.functor :=
+    MvPoly.verticalNatTrans P.mvPoly Q.mvPoly ρ (terminal.hom_ext ..) h (terminal.hom_ext ..)
+  (toOverTerminal).whiskerLeft (Functor.whiskerRight mv fromOverTerminal)
+
+open TwoSquare
 
 /-- A cartesian map of polynomials
 ```
-           P.p
-      E -------->  B
-      |            |
-   φ  |            | δ
-      v            v
-      F -------->  D
-           Q.p
+           φ
+      E  -------->  E'
+      |             |
+  P.p |    (pb)     | P'.p
+      v             v
+      B  -------->  B'
+            δ
 ```
 induces a natural transformation between their associated functors obtained by pasting the following
 2-cells
 ```
-              Q.p
-C --- >  C/F ----> C/D -----> C
-|         |          |        |
-|   ↗    | φ*  ≅    | δ* ↗  |
-|         v          v        |
-C --- >  C/E ---->  C/B ----> C
+             P'.p
+C --- >  C/E' ----> C/B' -----> C
+‖         |          |          ‖
+‖   ↗    | φ*  ≅    | δ* ↗    ‖
+‖         v          v          ‖
+C --- >  C/E -----> C/B  -----> C
               P.p
 ```
 -/
-def cartesianNatTrans {D F : C} (P : UvPoly R E B) (Q : UvPoly R F D)
-    (δ : B ⟶ D) (φ : E ⟶ F) (pb : IsPullback P.p φ δ Q.p) : P.functor ⟶ Q.functor :=
-  sorry
-  -- let cellLeft : TwoSquare (𝟭 C) (Over.star F) (Over.star E) (pullback φ) :=
-  --   (Over.starPullbackIsoStar φ).inv
-  -- let cellMid :  TwoSquare (pullback φ) (pushforward Q.p) (pushforward P.p) (pullback δ) :=
-  --   (pushforwardPullbackIsoSquare pb.flip).inv
-  -- let cellRight : TwoSquare (pullback δ) (forget D) (forget B) (𝟭 C) :=
-  --   pullbackForgetTwoSquare δ
-  -- let := cellLeft ≫ᵥ cellMid ≫ᵥ cellRight
-  -- this
+def cartesianNatTrans {E' B' : C} (P : UvPoly R E B) (P' : UvPoly R E' B')
+    (δ : B ⟶ B') (φ : E ⟶ E') (pb : IsPullback φ P.p P'.p δ) : P.functor ⟶ P'.functor :=
+  let mv := P.mvPoly.cartesianNatTrans P'.mvPoly δ φ (terminal.hom_ext ..) pb (terminal.hom_ext ..)
+  (toOverTerminal).whiskerLeft (Functor.whiskerRight mv fromOverTerminal)
 
 theorem isCartesian_cartesianNatTrans {D F : C} (P : UvPoly R E B) (Q : UvPoly R F D)
-    (δ : B ⟶ D) (φ : E ⟶ F) (pb : IsPullback P.p φ δ Q.p) :
-    (cartesianNatTrans P Q δ φ pb).IsCartesian := by
-  sorry
-  -- simp [cartesianNatTrans]
-  -- infer_instance
-
+    (δ : B ⟶ D) (φ : E ⟶ F) (pb : IsPullback φ P.p Q.p δ) :
+    (cartesianNatTrans P Q δ φ pb).IsCartesian :=
   -- (isCartesian_of_isIso _).vComp <|
   -- (isCartesian_of_isIso _).vComp <|
   -- isCartesian_pullbackForgetTwoSquare _
+  sorry
 
 /-- A morphism from a polynomial `P` to a polynomial `Q` is a pair of morphisms `e : E ⟶ E'`
 and `b : B ⟶ B'` such that the diagram
@@ -975,20 +1181,21 @@ theorem mk_comp_left {Δ} (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) (σ: Δ ⟶ 
   rw [mk'_comp_left (H := .of_hasPullback _ _) (H' := .of_hasPullback _ _) (eq := rfl)]
   congr 2; ext <;> simp
 
--- lemma mk'_comp_cartesianNatTrans_app {E' B' Γ X : C} {P' : UvPoly R E' B'}
---     (y : Γ ⟶ B) (pb f g) (H : IsPullback (P := pb) f g y P.p.1)
---     (x : pb ⟶ X) (e : E ⟶ E') (b : B ⟶ B')
---     (hp : IsPullback P.p.1 e b P'.p.1) :
---     Equiv.mk' y H x ≫ (P.cartesianNatTrans P' b e hp).app X =
---     Equiv.mk' P' X (y ≫ b) (H.paste_vert hp) x := by
---   have : fst P' X (Equiv.mk' P X y H x ≫ (P.cartesianNatTrans P' b e hp).app X) = y ≫ b := by
---     rw [fst_eq, Category.assoc, cartesianNatTrans_fstProj, ← Category.assoc, mk'_comp_fstProj]
---   refine ext' _ _ (this ▸ H.paste_vert hp) (by simpa) ?_
---   simp; rw [snd'_eq]
---   have := snd'_mk' P X y H x
---   rw [snd'_eq, ← fan_snd_map' _ _ X hp] at this
---   refine .trans ?_ this
---   simp only [← Category.assoc]; congr 1; ext <;> simp
+lemma mk'_comp_cartesianNatTrans_app {E' B' Γ X : C} {P' : UvPoly R E' B'}
+    (y : Γ ⟶ B) (pb f g) (H : IsPullback (P := pb) f g y P.p)
+    (x : pb ⟶ X) (e : E ⟶ E') (b : B ⟶ B')
+    (hp : IsPullback P.p e b P'.p) :
+    Equiv.mk' y H x ≫ (P.cartesianNatTrans P' b e hp.flip).app X =
+    Equiv.mk' (y ≫ b) (H.paste_vert hp) x := by
+  sorry
+  -- have : fst (Equiv.mk' y H x ≫ (P.cartesianNatTrans P' b e hp.flip).app X) = y ≫ b := by
+  --   rw [fst_eq, Category.assoc, cartesianNatTrans_fstProj, ← Category.assoc, mk'_comp_fstProj]
+  -- refine ext' _ _ (this ▸ H.paste_vert hp) (by simpa) ?_
+  -- simp; rw [snd'_eq]
+  -- have := snd'_mk' P X y H x
+  -- rw [snd'_eq, ← fan_snd_map' _ _ X hp] at this
+  -- refine .trans ?_ this
+  -- simp only [← Category.assoc]; congr 1; ext <;> simp
 
 end Equiv
 
@@ -1169,6 +1376,35 @@ lemma comp_mk {Δ} (σ : Δ ⟶ Γ) (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.
   · simp
 
 end compDomEquiv
+
+section
+
+variable {E B F : C} (P : UvPoly R E B) (Q : UvPoly R F B) (ρ : E ⟶ F) (h : P.p = ρ ≫ Q.p)
+
+lemma fst_verticalNatTrans_app {Γ : C} (X : C) (pair : Γ ⟶ Q @ X) :
+    Equiv.fst (pair ≫ (verticalNatTrans P Q ρ h).app X) = Equiv.fst pair := by
+  dsimp [Equiv.fst]
+  sorry
+
+lemma snd'_verticalNatTrans_app {Γ : C} (X : C) (pair : Γ ⟶ Q @ X) {R f g}
+    (H : IsPullback (P := R) f g (Equiv.fst pair) Q.p) {R' f' g'}
+    (H' : IsPullback (P := R') f' g' (Equiv.fst pair) P.p) :
+    Equiv.snd' (pair ≫ (verticalNatTrans P Q ρ h).app X) (by
+      rw [← fst_verticalNatTrans_app] at H'
+      exact H') =
+    (H.lift f' (g' ≫ ρ) (by simp [H'.w, h])) ≫
+    Equiv.snd' pair H :=
+  sorry
+
+lemma mk'_comp_verticalNatTrans_app {Γ : C} (X : C) (b : Γ ⟶ B) {R f g}
+    (H : IsPullback (P := R) f g b Q.p) (x : R ⟶ X) {R' f' g'}
+    (H' : IsPullback (P := R') f' g' b P.p) :
+    Equiv.mk' b H x ≫ (verticalNatTrans P Q ρ h).app X = Equiv.mk'  b H'
+    (H.lift f' (g' ≫ ρ) (by simp [H'.w, h]) ≫ x) :=
+  sorry
+
+end
+
 
 instance preservesPullbacks (P : UvPoly R E B) {Pb X Y Z : C} (fst : Pb ⟶ X) (snd : Pb ⟶ Y)
     (f : X ⟶ Z) (g : Y ⟶ Z) (h: IsPullback fst snd f g) :
