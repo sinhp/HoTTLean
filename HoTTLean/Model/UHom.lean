@@ -547,21 +547,21 @@ theorem mkApp_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty
   simp [mkApp]
 
 theorem comp_mkApp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
-    (A : (Γ) ⟶ s[i].Ty) (σA) (eq : (σ) ≫ A = σA) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B)
-    (a : (Γ) ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) :
-    (σ) ≫ s.mkApp ilen jlen A B f f_tp a a_tp =
-      s.mkApp ilen jlen σA ((s[i].substWk σ A _ eq) ≫ B)
-        ((σ) ≫ f) (by simp [f_tp, comp_mkPi (eq := eq)])
-        ((σ) ≫ a) (by simp [a_tp, eq]) := by
+    (A : Γ ⟶ s[i].Ty) (σA) (eq : σ ≫ A = σA) (B : (s[i].ext A) ⟶ s[j].Ty)
+    (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B)
+    (a : Γ ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) :
+    σ ≫ s.mkApp ilen jlen A B f f_tp a a_tp =
+      s.mkApp ilen jlen σA (s[i].substWk σ A _ eq ≫ B)
+        (σ ≫ f) (by simp [f_tp, comp_mkPi (eq := eq)])
+        (σ ≫ a) (by simp [a_tp, eq]) := by
   unfold mkApp; rw [← Category.assoc,
     comp_sec (eq := eq), Category.assoc, comp_unLam (eq := eq)]
 
 @[simp]
-theorem mkLam_unLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+theorem mkLam_unLam {Γ : Ctx} (A : Γ ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+    (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
     s.mkLam ilen jlen A (s.unLam ilen jlen A B f f_tp) = f := by
-  let total : (Γ) ⟶ s[i].Ptp.obj s[j].Tm :=
+  let total : Γ ⟶ s[i].Ptp.obj s[j].Tm :=
     (s.Pi_pb ilen jlen).lift f (PtpEquiv.mk s[i] A B) f_tp
   simp only [mkLam, unLam]
   have : PtpEquiv.fst s[i] total = A := by
@@ -574,8 +574,8 @@ theorem mkLam_unLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j]
   apply (s.Pi_pb ilen jlen).lift_fst
 
 @[simp]
-theorem unLam_mkLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (t : (s[i].ext A) ⟶ s[j].Tm) (t_tp : t ≫ s[j].tp = B)
+theorem unLam_mkLam {Γ : Ctx} (A : Γ ⟶ s[i].Ty) (B : s[i].ext A ⟶ s[j].Ty)
+    (t : s[i].ext A ⟶ s[j].Tm) (t_tp : t ≫ s[j].tp = B)
     (lam_tp : s.mkLam ilen jlen A t ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
     s.unLam ilen jlen A B (s.mkLam ilen jlen A t) lam_tp = t := by
   simp [mkLam, unLam]
@@ -591,11 +591,11 @@ theorem unLam_mkLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j]
 ```
 -/
 def etaExpand {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+    (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
     (Γ) ⟶ s[max i j].Tm :=
   s.mkLam ilen jlen A <|
     s.mkApp ilen jlen
-      ((s[i].disp A) ≫ A) ((s[i].substWk ..) ≫ B) ((s[i].disp A) ≫ f)
+      (s[i].disp A ≫ A) (s[i].substWk .. ≫ B) (s[i].disp A ≫ f)
         (by simp [f_tp, comp_mkPi])
       (s[i].var A) (s[i].var_tp A)
 

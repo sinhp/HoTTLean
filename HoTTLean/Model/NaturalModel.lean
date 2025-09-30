@@ -4,7 +4,6 @@ import Mathlib.CategoryTheory.Limits.Shapes.KernelPair
 
 import HoTTLean.ForMathlib
 import HoTTLean.ForMathlib.Tactic.CategoryTheory.FunctorMap
-import HoTTLean.ForMathlib.CategoryTheory.Yoneda
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 import HoTTLean.ForMathlib.CategoryTheory.WeakPullback
 import HoTTLean.ForMathlib.CategoryTheory.Polynomial
@@ -118,13 +117,12 @@ def substCons {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty)
 theorem substCons_disp {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (t : Δ ⟶ M.Tm)
     (tTp : t ≫ M.tp = σ ≫ A) :
     M.substCons σ A t tTp ≫ M.disp A = σ := by
-  apply Yoneda.fullyFaithful.map_injective
   simp [substCons]
 
 @[reassoc (attr := simp)]
 theorem substCons_var {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (t : Δ ⟶ M.Tm)
     (aTp : t ≫ M.tp = σ ≫ A) :
-    (M.substCons σ A t aTp) ≫ M.var A = t := by
+    M.substCons σ A t aTp ≫ M.var A = t := by
   simp [substCons]
 
 @[simp]
@@ -184,7 +182,7 @@ theorem substWk_disp {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (A' eq) :
 
 @[reassoc (attr := simp)]
 theorem substWk_var {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (A' eq) :
-    (M.substWk σ A A' eq) ≫ M.var A = M.var A' := by
+    M.substWk σ A A' eq ≫ M.var A = M.var A' := by
   simp [substWk]
 
 /-- `sec` is the section of `disp A` corresponding to `a`.
@@ -208,7 +206,7 @@ theorem sec_disp {Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.
 
 @[reassoc (attr := simp)]
 theorem sec_var {Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) :
-    (M.sec A a a_tp) ≫ M.var A = a := by
+    M.sec A a a_tp ≫ M.var A = a := by
   simp [sec]
 
 @[reassoc]
@@ -777,7 +775,7 @@ theorem mkRefl_tp (a : Γ ⟶ M.Tm) :
   ...
 -/
 def motiveCtx (a : Γ ⟶ M.Tm) : Ctx :=
-  M.ext (idIntro.mkId ((M.disp (a ≫ M.tp)) ≫ a) (M.var _) (by simp))
+  M.ext (idIntro.mkId (M.disp (a ≫ M.tp) ≫ a) (M.var _) (by simp))
 
 def motiveSubst {Γ Δ} (σ : Δ ⟶ Γ) (a : Γ ⟶ M.Tm) :
     motiveCtx idIntro (σ ≫ a) ⟶ motiveCtx idIntro a := by
@@ -805,8 +803,7 @@ theorem comp_reflSubst' {Γ Δ} (σ : Δ ⟶ Γ) (a : Γ ⟶ M.Tm) :
 @[simp, reassoc]
 lemma comp_reflSubst (a : Γ ⟶ M.Tm) {Δ} (σ : Δ ⟶ Γ) :
     reflSubst idIntro (σ ≫ a) ≫ idIntro.motiveSubst σ a = σ ≫ reflSubst idIntro a := by
-  apply Yoneda.fullyFaithful.map_injective
-  simp [Functor.map_comp, comp_reflSubst']
+  simp [comp_reflSubst']
 
 def toK (ii : IdIntro M) (a : Γ ⟶ M.Tm) : (M.ext (a ≫ M.tp)) ⟶ ii.k :=
   ii.isKernelPair.lift (M.var _) ((M.disp _) ≫ a) (by simp)
@@ -830,25 +827,25 @@ Note that the universe/model `N` for the motive `C` is different from the univer
 identity type lives in.
 -/
 protected structure Id' (i : IdIntro M) (N : Universe R) where
-  j {Γ} (a : Γ ⟶ M.Tm) (C : (IdIntro.motiveCtx _ a) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+  j {Γ} (a : Γ ⟶ M.Tm) (C : IdIntro.motiveCtx _ a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
     (r_tp : r ≫ N.tp = (i.reflSubst a) ≫ C) :
-    (i.motiveCtx a) ⟶ N.Tm
-  j_tp {Γ} (a : Γ ⟶ M.Tm) (C : (IdIntro.motiveCtx _ a) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+    i.motiveCtx a ⟶ N.Tm
+  j_tp {Γ} (a : Γ ⟶ M.Tm) (C : IdIntro.motiveCtx _ a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
     (r_tp : r ≫ N.tp = (i.reflSubst a) ≫ C) : j a C r r_tp ≫ N.tp = C
   comp_j {Γ Δ} (σ : Δ ⟶ Γ)
-    (a : Γ ⟶ M.Tm) (C : (IdIntro.motiveCtx _ a) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+    (a : Γ ⟶ M.Tm) (C : IdIntro.motiveCtx _ a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
     (r_tp : r ≫ N.tp = (i.reflSubst a) ≫ C) :
-    (i.motiveSubst σ _) ≫ j a C r r_tp =
-    j (σ ≫ a) ((i.motiveSubst σ _) ≫ C) (σ ≫ r) (by
+    i.motiveSubst σ _ ≫ j a C r r_tp =
+    j (σ ≫ a) (i.motiveSubst σ _ ≫ C) (σ ≫ r) (by
       simp [r_tp, IdIntro.comp_reflSubst'_assoc])
-  reflSubst_j {Γ} (a : Γ ⟶ M.Tm) (C : (IdIntro.motiveCtx _ a) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+  reflSubst_j {Γ} (a : Γ ⟶ M.Tm) (C : IdIntro.motiveCtx _ a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
     (r_tp : r ≫ N.tp = (i.reflSubst a) ≫ C) :
     (i.reflSubst a) ≫ j a C r r_tp = r
 
 namespace Id'
 
 variable {M} {N : Universe R} {ii : M.IdIntro} (i : M.Id' ii N) {Γ : Ctx} (a : Γ ⟶ M.Tm)
-  (C : (ii.motiveCtx a) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+  (C : ii.motiveCtx a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
   (r_tp : r ≫ N.tp = (ii.reflSubst a) ≫ C) (b : Γ ⟶ M.Tm) (b_tp : b ≫ M.tp = a ≫ M.tp)
   (h : Γ ⟶ M.Tm) (h_tp : h ≫ M.tp = ii.isKernelPair.lift b a (by aesop) ≫ ii.Id)
 
@@ -1008,7 +1005,6 @@ open IdElimBase IdIntro
 section Equiv
 
 variable {Γ : Ctx} {X : Ctx}
-/-
 section
 variable (a : Γ ⟶ M.Tm)
 /-
@@ -1034,16 +1030,13 @@ where `pullback` is the pullback of `i₂ ≫ k₂` along `a` given by `HasPullb
 -/
 
 lemma toK_comp_left {Δ} (σ : Δ ⟶ Γ) : ii.toK (σ ≫ a) =
-    (M.substWk σ (a ≫ M.tp)) ≫ ii.toK a := by
+    (M.substWk σ (a ≫ M.tp) _ (by simp)) ≫ ii.toK a := by
   dsimp [toK]
+  rw! [Category.assoc]
   apply ii.isKernelPair.hom_ext
-  -- FIXME: `transparency := .default` is like `erw` and should be avoided
-  · rw! (transparency := .default) [Category.assoc]
-    simp
+  · simp
   · simp only [IsKernelPair.lift_snd, Category.assoc]
-    slice_rhs 1 2 => rw [← Functor.map_comp, substWk_disp]
-    -- FIXME: `transparency := .default` is like `erw` and should be avoided
-    rw! (transparency := .default) [Category.assoc]
+    slice_rhs 1 2 => rw [substWk_disp]
     simp
 
 def toI : (ii.motiveCtx a) ⟶ ie.i :=
@@ -1056,12 +1049,11 @@ lemma toI_comp_i2 : ie.toI a ≫ ie.i2 = (M.disp _) ≫ ii.toK a :=
   by simp [toI]
 
 lemma toI_comp_left {Δ} (σ : Δ ⟶ Γ) : toI ie (σ ≫ a) =
-    (ii.motiveSubst σ a) ≫ toI ie a := by
+    ii.motiveSubst σ a ≫ toI ie a := by
   dsimp [toI]
   apply ie.i_isPullback.hom_ext
   · simp [motiveSubst]
   · simp [toK_comp_left, motiveSubst, substWk, substCons]
-    rfl
 
 theorem motiveCtx_isPullback :
     IsPullback (ie.toI a) (M.disp _) ie.i2 (toK ii a) :=
@@ -1074,11 +1066,11 @@ theorem motiveCtx_isPullback' :
     (ii.ext_a_tp_isPullback a)
 
 def equivMk (x : (ii.motiveCtx a) ⟶ X) : Γ ⟶ ie.iFunctor.obj X :=
-  UvPoly.Equiv.mk' ie.iUvPoly X a (ie.motiveCtx_isPullback' a).flip x
+  UvPoly.Equiv.mk' a (ie.motiveCtx_isPullback' a).flip x
 
 def equivFst (pair : Γ ⟶ ie.iFunctor.obj X) :
     Γ ⟶ M.Tm :=
-  UvPoly.Equiv.fst ie.iUvPoly X pair
+  UvPoly.Equiv.fst pair
 
 lemma equivFst_comp_left (pair : Γ ⟶ ie.iFunctor.obj X)
     {Δ} (σ : Δ ⟶ Γ) :
@@ -1088,12 +1080,13 @@ lemma equivFst_comp_left (pair : Γ ⟶ ie.iFunctor.obj X)
 
 def equivSnd (pair : Γ ⟶ ie.iFunctor.obj X) :
     (ii.motiveCtx (equivFst ie pair)) ⟶ X :=
-  UvPoly.Equiv.snd' ie.iUvPoly X pair (ie.motiveCtx_isPullback' _).flip
+  UvPoly.Equiv.snd' pair (ie.motiveCtx_isPullback' _).flip
 
+#exit
 lemma equivSnd_comp_left (pair : Γ ⟶ ie.iFunctor.obj X)
     {Δ} (σ : Δ ⟶ Γ) :
     ie.equivSnd (σ ≫ pair) =
-    (ii.motiveSubst σ _) ≫ ie.equivSnd pair := by
+    eqToHom (by simp [equivFst_comp_left]) ≫ ii.motiveSubst σ _ ≫ ie.equivSnd pair := by
   dsimp only [equivSnd]
   let a := ie.equivFst pair
   have H : IsPullback (ie.toI a)
@@ -1229,9 +1222,8 @@ variable {Γ Δ : Ctx} (σ : Δ ⟶ Γ) (a : Γ ⟶ M.Tm)
 
 open IdElimBase IdIntro
 
-#exit
-lemma reflCase_aux : IsPullback (𝟙 Γ) a a (UvPoly.id M.Tm).p :=
-  have : IsIso (UvPoly.id M.Tm).p := by simp; infer_instance
+lemma reflCase_aux : IsPullback (𝟙 Γ) a a (UvPoly.id R M.Tm).p :=
+  have : IsIso (UvPoly.id R M.Tm).p := by simp; infer_instance
   IsPullback.of_horiz_isIso (by simp)
 
 /-- The variable `r` witnesses the motive for the case `refl`,
@@ -1247,12 +1239,12 @@ Tm <--   Γ  --------> Tm
               a
 ```
 -/
-def reflCase : Γ ⟶ (UvPoly.id M.Tm).functor.obj N.Tm :=
-  UvPoly.Equiv.mk' (UvPoly.id M.Tm) N.Tm a (R := Γ) (f := 𝟙 _) (g := a)
-  (reflCase_aux a) r
+def reflCase : Γ ⟶ (UvPoly.id R M.Tm).functor.obj N.Tm :=
+  UvPoly.Equiv.mk' a (pb := Γ) (f := 𝟙 _) (g := a) (reflCase_aux a) r
 -- TODO: consider generalizing
 -- TODO: consider showing UvPoly on identity `(P_𝟙_Y X)` is isomorphic to product `Y × X`
 
+#exit
 variable (ie) in
 /-- The variable `C` is the motive for elimination,
 This gives a map `(a, C) : Γ ⟶ iFunctor Ty`
