@@ -722,7 +722,7 @@ Therefore it will typically be used with the following instances
   `[R.IsStableUnderBaseChange] [R.HasPullbacks]`
 - For the left adjoint to pullback along `B`, we assume `[R.IsStableUnderComposition]`
   and `[R.HasObjects]`, meaning the unique map `B ⟶ ⊤_ C` is in `R`.
-  For this, we will also assume `[HasTerminal C]`.
+  For this, we will also assume `[ChosenTerminal C]`.
 - For pushforward of `R`-maps along `p` we need
   `[R.IsStableUnderPushforward R] [R.HasPushforwards R]`
 - For pushforward of `R`-maps along `p` we also assume `[R.HasPullbacks]`.
@@ -751,7 +751,9 @@ section
 
 variable {R : MorphismProperty C} {E B : C}
 
-variable [HasTerminal C]
+variable [ChosenTerminal C]
+
+open ChosenTerminal
 
 variable [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderBaseChange] [R.HasObjects]
   [R.IsStableUnderPushforward R] [R.HasPushforwards R]
@@ -765,19 +767,19 @@ instance (P : UvPoly R E B) {Γ : C} (A : Γ ⟶ B) : HasPullback A P.p := by
 instance (P : UvPoly R E B) {Γ : C} (A : Γ ⟶ B) : HasPullback P.p A :=
   hasPullback_symmetry _ _
 
-def object (X : C) : X ⟶(R) ⊤_ C :=
-  ⟨terminal.from X, HasObjects.obj_mem _ terminalIsTerminal⟩
+def object (X : C) : X ⟶(R) (𝟭_ C) :=
+  ⟨ isTerminal.from X, HasObjects.obj_mem _ ChosenTerminal.isTerminal⟩
 
 @[simp]
-abbrev toOverTerminal : C ⥤ R.Over ⊤ (⊤_ C) :=
-  (equivalenceOfHasObjects R terminalIsTerminal).inverse
+abbrev toOverTerminal : C ⥤ R.Over ⊤ (𝟭_ C) :=
+  (equivalenceOfHasObjects R isTerminal).inverse
 
 @[simp]
-abbrev fromOverTerminal : R.Over ⊤ (⊤_ C) ⥤ C :=
-  (equivalenceOfHasObjects R terminalIsTerminal).functor
+abbrev fromOverTerminal : R.Over ⊤ (𝟭_ C) ⥤ C :=
+  (equivalenceOfHasObjects R isTerminal).functor
 
 @[simps]
-def mvPoly (P : UvPoly R E B) : MvPoly R R (⊤_ C) (⊤_ C) E B where
+def mvPoly (P : UvPoly R E B) : MvPoly R R (𝟭_ C) (𝟭_ C) E B where
   i := object E
   p := morphismProperty' P
   o := object B
@@ -788,12 +790,12 @@ def functor (P : UvPoly R E B) : C ⥤ C :=
   fromOverTerminal
 
 /-- The action of a univariate polynomial on objects. -/
-def apply [HasTerminal C] (P : UvPoly R E B) : C → C := P.functor.obj
+def apply [ChosenTerminal C] (P : UvPoly R E B) : C → C := P.functor.obj
 
 @[inherit_doc]
 infix:90 " @ " => apply
 
-instance [HasTerminal C] (P : UvPoly R E B) :
+instance [ChosenTerminal C] (P : UvPoly R E B) :
     Limits.PreservesLimitsOfShape WalkingCospan P.functor := by
   unfold functor
   infer_instance
@@ -860,7 +862,7 @@ C --- ≅ ---> R.Over ⊤ 1 ----> R.Over ⊤ 1 --- ≅ ---> C
 def verticalNatTrans {F : C} (P : UvPoly R E B) (Q : UvPoly R F B) (ρ : E ⟶ F)
     (h : P.p = ρ ≫ Q.p) : Q.functor ⟶ P.functor :=
   let mv : Q.mvPoly.functor ⟶ P.mvPoly.functor :=
-    MvPoly.verticalNatTrans P.mvPoly Q.mvPoly ρ (terminal.hom_ext ..) h (terminal.hom_ext ..)
+    MvPoly.verticalNatTrans P.mvPoly Q.mvPoly ρ (isTerminal.hom_ext ..) h (isTerminal.hom_ext ..)
   (toOverTerminal).whiskerLeft (Functor.whiskerRight mv fromOverTerminal)
 
 open TwoSquare
@@ -889,7 +891,7 @@ C --- >  C/E -----> C/B  -----> C
 -/
 def cartesianNatTrans {E' B' : C} (P : UvPoly R E B) (P' : UvPoly R E' B')
     (δ : B ⟶ B') (φ : E ⟶ E') (pb : IsPullback φ P.p P'.p δ) : P.functor ⟶ P'.functor :=
-  let mv := P.mvPoly.cartesianNatTrans P'.mvPoly δ φ (terminal.hom_ext ..) pb (terminal.hom_ext ..)
+  let mv := P.mvPoly.cartesianNatTrans P'.mvPoly δ φ (isTerminal.hom_ext ..) pb (isTerminal.hom_ext ..)
   (toOverTerminal).whiskerLeft (Functor.whiskerRight mv fromOverTerminal)
 
 theorem isCartesian_cartesianNatTrans {D F : C} (P : UvPoly R E B) (Q : UvPoly R F D)
@@ -967,10 +969,11 @@ namespace Equiv
 
 variable {P : UvPoly R E B} {Γ X Y : C}
 
-/-- Convert the morphism `pair` into a morphism in the over category `Over (⊤_ C)` -/
+/-- Convert the morphism `pair` into a morphism in the over category `Over (𝟭_ C)` -/
 @[simp]
-abbrev homMk (pair : Γ ⟶ P @ X) : Over.mk (terminal.from Γ) ⟶
-    ((toOverTerminal ⋙ MvPoly.functor P.mvPoly).obj X).toComma := Over.homMk pair
+abbrev homMk (pair : Γ ⟶ P @ X) : Over.mk (isTerminal.from Γ) ⟶
+    ((toOverTerminal ⋙ MvPoly.functor P.mvPoly).obj X).toComma :=
+  Over.homMk pair (isTerminal.hom_ext ..)
 
 /--
 A morphism `pair : Γ ⟶ P @ X` is equivalent to a pair of morphisms
@@ -1007,16 +1010,16 @@ def snd' (pair : Γ ⟶ P @ X) {pb f g} (H : IsPullback (P := pb) f g (fst pair)
 theorem snd_eq_snd' (pair : Γ ⟶ P @ X) : snd pair = snd' pair (.of_hasPullback ..) :=
   by simp [snd']
 
-/-- Convert the morphism `x` into a morphism in the over category `Over (⊤_ C)` -/
+/-- Convert the morphism `x` into a morphism in the over category `Over (𝟭_ C)` -/
 @[simp]
 abbrev mkAux (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
     (PolynomialPartialAdjunction.leftAdjoint P.mvPoly.i.fst P.mvPoly.p).obj (Over.mk b) ⟶
     ((toOverTerminal (R := R)).obj X).toComma :=
-  Over.homMk x
+  Over.homMk x (isTerminal.hom_ext ..)
 
 def mk (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) : Γ ⟶ P @ X :=
-  (MvPoly.Equiv.mk (P := P.mvPoly) (Γ := Over.mk (terminal.from Γ))
-    (Over.mk b) (by congr; apply terminal.hom_ext) (mkAux b x)).left
+  (MvPoly.Equiv.mk (P := P.mvPoly) (Γ := Over.mk (isTerminal.from Γ))
+    (Over.mk b) (by congr; apply isTerminal.hom_ext) (mkAux b x)).left
 
 def mk' (b : Γ ⟶ B) {pb f g} (H : IsPullback (P := pb) f g b P.p) (x : pb ⟶ X) : Γ ⟶ P @ X :=
   mk b (H.isoPullback.inv ≫ x)
@@ -1065,8 +1068,8 @@ lemma snd'_eq_snd' (pair : Γ ⟶ P @ X) {pb f g} (H : IsPullback (P := pb) f g 
 @[simp]
 lemma snd_mk (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) : snd (mk b x) =
     eqToHom (by simp) ≫ x := by
-  have := MvPoly.Equiv.snd_mk (P := P.mvPoly) (Γ := Over.mk (terminal.from Γ))
-    (Over.mk b) (by congr; apply terminal.hom_ext) (mkAux b x)
+  have := MvPoly.Equiv.snd_mk (P := P.mvPoly) (Γ := Over.mk (isTerminal.from Γ))
+    (Over.mk b) (by congr; apply isTerminal.hom_ext) (mkAux b x)
   convert congr_arg CommaMorphism.left this
   simp
 
@@ -1125,7 +1128,7 @@ theorem snd_comp_right (pair : Γ ⟶ P @ X) (f : X ⟶ Y) : snd (pair ≫ P.fun
 @[simp]
 lemma eta (pair : Γ ⟶ P @ X) :
     mk (fst pair) (snd pair) = pair := by
-  have := MvPoly.Equiv.eta (P := P.mvPoly) (Γ := Over.mk (terminal.from Γ)) (homMk pair)
+  have := MvPoly.Equiv.eta (P := P.mvPoly) (Γ := Over.mk (isTerminal.from Γ)) (homMk pair)
   exact congr_arg CommaMorphism.left this
 
 @[simp]

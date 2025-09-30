@@ -66,7 +66,7 @@ variable [ChosenTerminal Ctx] [R.HasObjects] [R.IsMultiplicative]
 
 def Hom.cartesianNatTrans {M N : Universe R} (h : Hom M N) :
     M.Ptp ⟶ N.Ptp :=
-  M.uvPolyTp.cartesianNatTrans N.uvPolyTp h.mapTy h.mapTm h.pb.flip
+  M.uvPolyTp.cartesianNatTrans N.uvPolyTp h.mapTy h.mapTm h.pb
 
 @[simp] def Hom.extIsoExt {M N : Universe R} (h : Hom M N)
     {Γ} (A : (Γ) ⟶ M.Ty) : (N.ext (A ≫ h.mapTy)) ≅ (M.ext A) :=

@@ -227,8 +227,6 @@ abbrev uvPolyTp : UvPoly R M.Tm M.Ty := ⟨M.tp, M.morphismProperty⟩
 variable [ChosenTerminal Ctx] [R.HasObjects] [R.IsMultiplicative]
   [R.HasPushforwards R] [R.IsStableUnderPushforward R]
 
-instance : HasTerminal Ctx := IsTerminal.hasTerminal (ChosenTerminal.isTerminal)
-
 def Ptp : Ctx ⥤ Ctx := M.uvPolyTp.functor
 
 namespace PtpEquiv
