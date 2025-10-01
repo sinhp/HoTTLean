@@ -3,7 +3,6 @@ import HoTTLean.ForMathlib
 import HoTTLean.ForMathlib.Tactic.CategoryTheory.FunctorMap
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 import HoTTLean.ForMathlib.CategoryTheory.WeakPullback
-import HoTTLean.ForMathlib.CategoryTheory.Polynomial
 
 universe u v
 
@@ -239,39 +238,6 @@ structure PolymorphicSigma (U0 U1 U2 : Universe Ctx) where
     (eta : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
       (s_tp : s ≫ U2.tp = Sig B), pair B (fst B s s_tp) (fst_tp ..) (snd B s s_tp) (snd_tp ..) = s)
 
--- def Sigma.mk'' {U0 U1 U2 : Universe R}
---     (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
---     (Sig_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
---       Sig (U0.substWk σ A σA eq ≫ B) = σ ≫ Sig B)
---     (pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (a : Γ ⟶ U0.Tm)
---       (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm) (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B),
---       Γ ⟶ U2.Tm)
---     (pair_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) (B : U0.ext A ⟶ U1.Ty)
---       (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
---       (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B),
---       pair (U0.substWk σ A σA eq ≫ B) (σ ≫ a) (by cat_disch) (σ ≫ b)
---         (by simp [b_tp, comp_sec_assoc, eq]) =
---         σ ≫ pair B a a_tp b b_tp)
---     (pair_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
---       (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
---       (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B),
---         pair B a a_tp b b_tp ≫ U2.tp = Sig B)
---     (fst : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
---       (s_tp : s ≫ U2.tp = Sig B), Γ ⟶ U0.Tm)
---     (fst_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ext A ⟶ U1.Ty}
---       (s : Γ ⟶ U2.Tm) (s_tp : s ≫ U2.tp = Sig B),
---       fst (U0.substWk σ A σA eq ≫ B) (σ ≫ s) (by cat_disch) = σ ≫ fst B s s_tp)
---     (fst_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
---       (s_tp : s ≫ U2.tp = Sig B), fst B s s_tp ≫ U0.tp = A)
---     (snd : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
---       (s_tp : s ≫ U2.tp = Sig B), Γ ⟶ U1.Tm)
---     (snd_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ext A ⟶ U1.Ty}
---       (s : Γ ⟶ U2.Tm) (s_tp : s ≫ U2.tp = Sig B),
---       snd (U0.substWk σ A σA eq ≫ B) (σ ≫ s) (by cat_disch) = σ ≫ snd B s s_tp)
---     (snd_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
---       (s_tp : s ≫ U2.tp = Sig B), snd B s s_tp ≫ U1.tp = U0.sec A (fst B s s_tp) (fst_tp ..) ≫ B)
---     (fst_pair : sorry)
---     (snd_pair : sorry)
---     (eta : sorry)
---     : PolymorphicSigma U0 U1 U2 :=
---     sorry
+end Universe
+
+end UnstructuredModel

@@ -1,7 +1,7 @@
 import Mathlib.CategoryTheory.Limits.Shapes.StrictInitial
 import HoTTLean.ForMathlib
 import HoTTLean.ForPoly
-import HoTTLean.Model.NaturalModel
+import HoTTLean.Model.StructuredModel
 
 /-! Morphisms of natural models, and Russell-universe embeddings. -/
 
@@ -11,15 +11,20 @@ noncomputable section
 
 open CategoryTheory Limits Opposite MonoidalCategory
 
-namespace NaturalModel
+namespace StructuredModel
 
 namespace Universe
 
 open UnstructuredModel.Universe
 
-variable {Ctx : Type u} [Category Ctx]
-  {R : MorphismProperty Ctx} (M : Universe R)
+variable {Ctx : Type u} [Category Ctx] {R : MorphismProperty Ctx}
+    (M : StructuredModel.Universe R)
+
+variable [ChosenTerminal Ctx] [R.HasObjects] [R.IsMultiplicative]
   [R.HasPullbacks] [R.IsStableUnderBaseChange]
+  [R.HasPushforwards R] [R.IsStableUnderPushforward R]
+
+open ChosenTerminal
 
 macro "by>" s:tacticSeq : term => `(by as_aux_lemma => $s)
 
@@ -63,37 +68,10 @@ def Hom.subst (M : Universe R)
     pb := by
       convert IsPullback.of_right' (M.disp_pullback Aσ) (M.disp_pullback A)}
 
-variable [ChosenTerminal Ctx] [R.HasObjects] [R.IsMultiplicative]
-  [R.HasPushforwards R] [R.IsStableUnderPushforward R]
-
-def Hom.cartesianNatTrans {M N : Universe R} (h : Hom M N) :
-    M.Ptp ⟶ N.Ptp :=
-  M.uvPolyTp.cartesianNatTrans N.uvPolyTp h.mapTy h.mapTm h.pb
-
 @[simp] def Hom.extIsoExt {M N : Universe R} (h : Hom M N)
-    {Γ} (A : (Γ) ⟶ M.Ty) : (N.ext (A ≫ h.mapTy)) ≅ (M.ext A) :=
-  IsPullback.isoIsPullback N.Tm (Γ) (N.disp_pullback (A ≫ h.mapTy))
+    {Γ} (A : Γ ⟶ M.Ty) : (N.ext (A ≫ h.mapTy)) ≅ (M.ext A) :=
+  IsPullback.isoIsPullback N.Tm Γ (N.disp_pullback (A ≫ h.mapTy))
   (IsPullback.paste_horiz (M.disp_pullback A) h.pb)
-
-@[reassoc]
-theorem Hom.mk_comp_cartesianNatTrans {M N : Universe R} (h : Hom M N)
-    {Γ X} (A : (Γ) ⟶ M.Ty) (B : (M.ext A) ⟶ X) :
-    PtpEquiv.mk M A B ≫ h.cartesianNatTrans.app X =
-    PtpEquiv.mk N (A ≫ h.mapTy) ((h.extIsoExt A).hom ≫ B) := by sorry
-  -- simp [PtpEquiv.mk]
-  -- have := UvPoly.Equiv.mk'_comp_cartesianNatTrans_app M.uvPolyTp (P' := N.uvPolyTp)
-  --   A _ _ _ (M.disp_pullback _).flip B h.mapTm h.mapTy h.pb.flip
-  -- refine this.trans ?_
-  -- simp [UvPoly.Equiv.mk']; congr 1
-  -- rw [← Category.assoc]; congr 1
-  -- generalize_proofs _ h1
-  -- apply h1.hom_ext <;> simp
-
-/- We have a 'nice', specific terminal object in `Ctx`,
-and this instance allows use to use it directly
-rather than through an isomorphism with `Limits.terminal`. -/
-variable [ChosenTerminal Ctx]
-open ChosenTerminal
 
 /-- A Russell universe embedding is a hom of natural models `M ⟶ N`
 such that types in `M` correspond to terms of a universe `U` in `N`.
@@ -240,6 +218,97 @@ theorem substCons_unliftVar {i j ij jlen Γ A} {A' : (Γ) ⟶ s[j].Ty}
   simp [unlift, unliftVar]; apply (s.homOfLe i j).pb.hom_ext <;> simp [*]
 
 /--
+TODO: Consider generalising to just UHom?
+Convert a map into the `i`th type classifier into a a term of the
+`i+1`th term classifier, that is a term of the `i`th universe.
+It is defined by composition with the first projection of the pullback square
+               v
+     s[i].Ty ----> s[i+1].Tm
+     ^    |          |
+  A /     |   p.b.   |
+   /      |          |
+  /       V          V
+(Γ) ---> 1 -----> s[i+1].Ty
+              U_i
+-/
+def code {Γ : Ctx} {i : Nat} (s : UHomSeq R) (ilen : i < s.length) (A : (Γ) ⟶ s[i].Ty) :
+    (Γ) ⟶ s[i+1].Tm :=
+  A ≫ (s.homSucc i).asTm
+
+@[simp]
+theorem code_tp {Γ : Ctx} {i : Nat} (s : UHomSeq R) (ilen : i < s.length) (A : (Γ) ⟶ s[i].Ty) :
+    s.code ilen A ≫ s[i+1].tp = (s.homSucc i).wkU Γ := by
+  simp [code, (s.homSucc i).U_pb.w, UHom.wkU]
+
+@[reassoc]
+theorem comp_code {Δ Γ : Ctx} {i : Nat} (s : UHomSeq R) (ilen : i < s.length)
+    (σ : (Δ) ⟶ (Γ)) (A : (Γ) ⟶ s[i].Ty) :
+    σ ≫ s.code ilen A = s.code ilen (σ ≫ A) := by
+  simp [code]
+
+/--
+TODO: Consider generalising to just UHom?
+Convert a a term of the `i`th universe (it is a `i+1` level term) into
+a map into the `i`th type classifier.
+It is the unique map into the pullback
+             a
+(Γ) -----------------¬
+‖  -->          v     V
+‖    s[i].Ty ----> s[i+1].Tm
+‖         |          |
+‖         |   p.b.   |
+‖         |          |
+‖         V          V
+(Γ) ---> 1 -----> s[i+1].Ty
+              U_i
+-/
+def el (s : UHomSeq R) {Γ : Ctx} {i : Nat} (ilen : i < s.length)
+    (a : (Γ) ⟶ s[i+1].Tm) (a_tp : a ≫ s[i+1].tp = (s.homSucc i).wkU Γ) :
+    (Γ) ⟶ s[i].Ty :=
+  (s.homSucc i).U_pb.lift a (ChosenTerminal.isTerminal.from (Γ)) (by rw [a_tp, UHom.wkU])
+
+@[reassoc]
+theorem comp_el (s : UHomSeq R) {Δ Γ : Ctx} {i : Nat} (ilen : i < s.length)
+    (σ : (Δ) ⟶ (Γ)) (a : (Γ) ⟶ s[i+1].Tm) (a_tp : a ≫ s[i+1].tp = (s.homSucc i).wkU Γ) :
+    σ ≫ s.el ilen a a_tp = s.el ilen (σ ≫ a) (by simp [a_tp]) :=
+  (s.homSucc i).U_pb.hom_ext (by simp [el]) (by simp)
+
+@[simp]
+lemma el_code {Γ : Ctx} {i : Nat} (s : UHomSeq R) (ilen : i < s.length) (A : (Γ) ⟶ s[i].Ty) :
+    el s ilen (code s ilen A) (code_tp _ _ _) = A :=
+  (s.homSucc i).U_pb.hom_ext (by simp [el, code]) (by simp)
+
+@[simp]
+lemma code_el (s : UHomSeq R) {Γ : Ctx} {i : Nat} (ilen : i < s.length)
+    (a : (Γ) ⟶ s[i+1].Tm) (a_tp : a ≫ s[i+1].tp = (s.homSucc i).wkU Γ) :
+    code s ilen (el s ilen a a_tp) = a := by
+  simp [code, el]
+
+end UHomSeq
+
+def Hom.cartesianNatTrans {M N : StructuredModel.Universe R} (h : Hom M N) :
+    M.Ptp ⟶ N.Ptp :=
+  M.uvPolyTp.cartesianNatTrans N.uvPolyTp h.mapTy h.mapTm h.pb
+
+@[reassoc]
+theorem Hom.mk_comp_cartesianNatTrans {M N : StructuredModel.Universe R}
+    (h : Hom M N) {Γ X} (A : Γ ⟶ M.Ty) (B : M.ext A ⟶ X) :
+    PtpEquiv.mk M A B ≫ h.cartesianNatTrans.app X =
+    PtpEquiv.mk N (A ≫ h.mapTy) ((h.extIsoExt A).hom ≫ B) := by sorry
+  -- simp [PtpEquiv.mk]
+  -- have := UvPoly.Equiv.mk'_comp_cartesianNatTrans_app M.uvPolyTp (P' := N.uvPolyTp)
+  --   A _ _ _ (M.disp_pullback _).flip B h.mapTm h.mapTy h.pb.flip
+  -- refine this.trans ?_
+  -- simp [UvPoly.Equiv.mk']; congr 1
+  -- rw [← Category.assoc]; congr 1
+  -- generalize_proofs _ h1
+  -- apply h1.hom_ext <;> simp
+
+namespace UHomSeq
+
+variable (s : UHomSeq R)
+
+/--
 If `s` is a sequence of universe homomorphisms then for `i ≤ j` we get a polynomial endofunctor
 natural transformation `s[i].Ptp ⟶ s[j].Ptp`.
 -/
@@ -335,73 +404,6 @@ theorem hom_comp_trans (s : UHomSeq R) (i j k : Nat) (ij : i < j) (jk : j < k)
     simp
   . rw [UHom.comp_assoc, hom_comp_trans]
 termination_by s.length - i
-
-/--
-TODO: Consider generalising to just UHom?
-Convert a map into the `i`th type classifier into a a term of the
-`i+1`th term classifier, that is a term of the `i`th universe.
-It is defined by composition with the first projection of the pullback square
-               v
-     s[i].Ty ----> s[i+1].Tm
-     ^    |          |
-  A /     |   p.b.   |
-   /      |          |
-  /       V          V
-(Γ) ---> 1 -----> s[i+1].Ty
-              U_i
--/
-def code {Γ : Ctx} {i : Nat} (s : UHomSeq R) (ilen : i < s.length) (A : (Γ) ⟶ s[i].Ty) :
-    (Γ) ⟶ s[i+1].Tm :=
-  A ≫ (s.homSucc i).asTm
-
-@[simp]
-theorem code_tp {Γ : Ctx} {i : Nat} (s : UHomSeq R) (ilen : i < s.length) (A : (Γ) ⟶ s[i].Ty) :
-    s.code ilen A ≫ s[i+1].tp = (s.homSucc i).wkU Γ := by
-  simp [code, (s.homSucc i).U_pb.w, UHom.wkU]
-
-@[reassoc]
-theorem comp_code {Δ Γ : Ctx} {i : Nat} (s : UHomSeq R) (ilen : i < s.length)
-    (σ : (Δ) ⟶ (Γ)) (A : (Γ) ⟶ s[i].Ty) :
-    σ ≫ s.code ilen A = s.code ilen (σ ≫ A) := by
-  simp [code]
-
-/--
-TODO: Consider generalising to just UHom?
-Convert a a term of the `i`th universe (it is a `i+1` level term) into
-a map into the `i`th type classifier.
-It is the unique map into the pullback
-             a
-(Γ) -----------------¬
-‖  -->          v     V
-‖    s[i].Ty ----> s[i+1].Tm
-‖         |          |
-‖         |   p.b.   |
-‖         |          |
-‖         V          V
-(Γ) ---> 1 -----> s[i+1].Ty
-              U_i
--/
-def el (s : UHomSeq R) {Γ : Ctx} {i : Nat} (ilen : i < s.length)
-    (a : (Γ) ⟶ s[i+1].Tm) (a_tp : a ≫ s[i+1].tp = (s.homSucc i).wkU Γ) :
-    (Γ) ⟶ s[i].Ty :=
-  (s.homSucc i).U_pb.lift a (ChosenTerminal.isTerminal.from (Γ)) (by rw [a_tp, UHom.wkU])
-
-@[reassoc]
-theorem comp_el (s : UHomSeq R) {Δ Γ : Ctx} {i : Nat} (ilen : i < s.length)
-    (σ : (Δ) ⟶ (Γ)) (a : (Γ) ⟶ s[i+1].Tm) (a_tp : a ≫ s[i+1].tp = (s.homSucc i).wkU Γ) :
-    σ ≫ s.el ilen a a_tp = s.el ilen (σ ≫ a) (by simp [a_tp]) :=
-  (s.homSucc i).U_pb.hom_ext (by simp [el]) (by simp)
-
-@[simp]
-lemma el_code {Γ : Ctx} {i : Nat} (s : UHomSeq R) (ilen : i < s.length) (A : (Γ) ⟶ s[i].Ty) :
-    el s ilen (code s ilen A) (code_tp _ _ _) = A :=
-  (s.homSucc i).U_pb.hom_ext (by simp [el, code]) (by simp)
-
-@[simp]
-lemma code_el (s : UHomSeq R) {Γ : Ctx} {i : Nat} (ilen : i < s.length)
-    (a : (Γ) ⟶ s[i+1].Tm) (a_tp : a ≫ s[i+1].tp = (s.homSucc i).wkU Γ) :
-    code s ilen (el s ilen a a_tp) = a := by
-  simp [code, el]
 
 -- Sadly, we have to spell out `ilen` and `jlen` due to
 -- https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Optional.20implicit.20argument

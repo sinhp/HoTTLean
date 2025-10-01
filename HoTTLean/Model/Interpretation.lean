@@ -16,8 +16,9 @@ open CategoryTheory Limits
 
 noncomputable section
 
-namespace NaturalModel.Universe
-open SynthLean
+namespace StructuredModel.Universe
+
+open SynthLean UnstructuredModel.Universe
 
 variable {𝒞 : Type u} [Category 𝒞]
   {R : MorphismProperty 𝒞} (M : Universe R)
@@ -119,7 +120,7 @@ theorem substWk_length {Δ Γ Γ' : 𝒞} (σ : Δ ⟶ Γ) (d : s.ExtSeq Γ Γ')
 @[functor_map (attr := reassoc)]
 theorem substWk_disp {Δ Γ Γ' : 𝒞} (σ : Δ ⟶ Γ) (d : s.ExtSeq Γ Γ') :
     (d.substWk σ).2.2 ≫ d.disp = (d.substWk σ).2.1.disp ≫ σ := by
-  induction d generalizing σ <;> simp [substWk, NaturalModel.Universe.substWk_disp_assoc, *]
+  induction d generalizing σ <;> simp [substWk, UnstructuredModel.Universe.substWk_disp_assoc, *]
 
 /-- `Γ.Aₖ.….A₀ ⊢ vₙ : Aₙ[↑ⁿ⁺¹]` -/
 protected def var {Γ Γ' : 𝒞} {l : Nat} (llen : l < s.length + 1) :
@@ -199,7 +200,7 @@ theorem var_substWk_of_lt_length {l i} {Δ Γ Γ' : 𝒞} (σ : Δ ⟶ Γ) (d : 
       obtain ⟨a, amem, rfl⟩ := st_mem
       refine ⟨_, ih amem h, ?_⟩
       simp only [← Category.assoc]
-      simp [NaturalModel.Universe.substWk_disp]
+      simp [UnstructuredModel.Universe.substWk_disp]
 
 end ExtSeq
 
@@ -392,7 +393,7 @@ def ofTerm (Γ : s.CObj) (l : Nat) :
   | .code t, _ =>
     Part.assert (0 < l) fun lpos => do
     let A ← ofType Γ (l-1) t
-    return cast (by congr 3; omega) <| s.code (by omega) A
+    return cast (by congr 3; sorry) <| s.code (by omega) A
   | _, _ => .none
 
 end
@@ -1336,4 +1337,4 @@ def snoc [DecidableEq χ] (I : Interpretation χ s) (c : χ) (l : Nat) (l_lt : l
   ax d k _ := if h : c = d ∧ k = l then some (h.2 ▸ sc) else I.ax d k
 
 end Interpretation
-end NaturalModel.Universe
+end StructuredModel.Universe

@@ -4,7 +4,7 @@ import HoTTLean.ForMathlib.Tactic.CategoryTheory.FunctorMap
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 import HoTTLean.ForMathlib.CategoryTheory.WeakPullback
 import HoTTLean.ForMathlib.CategoryTheory.Polynomial
-import HoTTLean.Model.Unstructured
+import HoTTLean.Model.UnstructuredModel
 
 universe v u
 
@@ -12,7 +12,7 @@ noncomputable section
 
 open CategoryTheory Limits Opposite
 
-namespace NaturalModel
+namespace StructuredModel
 
 /-- A natural model with support for dependent types (and nothing more).
 The data is a natural transformation with representable fibers,
@@ -20,6 +20,8 @@ stored as a choice of representative for each fiber. -/
 structure Universe {Ctx : Type u} [Category Ctx] (R : MorphismProperty Ctx)
     extends UnstructuredModel.Universe Ctx where
   morphismProperty : R tp
+
+-- FIXME: rename `Universe.toUniverse` to `Univese.toUnstructured`
 
 namespace Universe
 
@@ -293,8 +295,8 @@ def mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : M.ext A ⟶ N.Ty) (β 
     apply (disp_pullback ..).hom_ext <;> simp)
 
 @[simp]
-theorem fst_mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : (M.ext A) ⟶ N.Ty) (β : Γ ⟶ N.Tm)
-    (h : β ≫ N.tp = (M.sec _ α eq) ≫ B) : fst (mk α eq B β h) = α := by
+theorem fst_mk (α : Γ ⟶ M.Tm) {A} (eq : α ≫ M.tp = A := by rfl) (B : (M.ext A) ⟶ N.Ty)
+    (β : Γ ⟶ N.Tm) (h : β ≫ N.tp = (M.sec _ α eq) ≫ B) : fst (mk α eq B β h) = α := by
   simp [mk, fst]
 
 @[simp]
@@ -529,20 +531,117 @@ theorem mkPair_mkFst_mkSnd {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty
 
 end
 
-def ofUnstructured (U0 U1 U2 : Universe R)
-    (S : UnstructuredModel.Universe.PolymorphicSigma U0.toUniverse U1.toUniverse U2.toUniverse) :
-    PolymorphicSigma U0 U1 U2 where
-  Sig := ofYoneda (fun AB => S.Sig (PtpEquiv.snd U0 AB)) (by
-    intro Δ Γ σ A
-    simp only [← S.Sig_comp, PtpEquiv.snd_comp_left, PtpEquiv.fst_comp_left]
-    rw! [PtpEquiv.fst_comp_left])
-  pair := ofYoneda (fun ab => S.pair (compDomEquiv.dependent ab) (compDomEquiv.fst ab)
-    (by rw [compDomEquiv.fst_tp]) (compDomEquiv.snd ab) (by rw [compDomEquiv.snd_tp])) (by
-    intro Δ Γ σ A
-    simp only [← S.pair_comp, compDomEquiv.comp_dependent, compDomEquiv.fst_comp,
+section
+
+variable {U0 U1 U2 : Universe R}
+    (S : UnstructuredModel.Universe.PolymorphicSigma U0.toUniverse U1.toUniverse U2.toUniverse)
+
+def ofUnstructured.SigApp (AB : Γ ⟶ U0.Ptp.obj U1.Ty) : Γ ⟶ U2.Ty :=
+  S.Sig (PtpEquiv.snd U0 AB)
+
+lemma ofUnstructured.Sig_naturality {Δ Γ} (σ : Δ ⟶ Γ) (AB) :
+    SigApp S (σ ≫ AB) = σ ≫ SigApp S AB := by
+  simp only [SigApp, PtpEquiv.fst_comp_left, PtpEquiv.snd_comp_left, ← S.Sig_comp]
+  rw! [PtpEquiv.fst_comp_left]
+
+def ofUnstructured.Sig : U0.Ptp.obj U1.Ty ⟶ U2.Ty :=
+    ofYoneda (SigApp S) (Sig_naturality S)
+
+def ofUnstructured.pairApp (ab : Γ ⟶ U0.compDom U1) : Γ ⟶ U2.Tm :=
+  S.pair (compDomEquiv.dependent ab) (compDomEquiv.fst ab)
+    (by rw [compDomEquiv.fst_tp]) (compDomEquiv.snd ab) (by rw [compDomEquiv.snd_tp])
+
+lemma ofUnstructured.pair_naturality {Δ Γ} (σ : Δ ⟶ Γ) (ab) :
+    pairApp S (σ ≫ ab) = σ ≫ pairApp S ab := by
+  dsimp [pairApp]
+  simp only [← S.pair_comp, compDomEquiv.comp_dependent, compDomEquiv.fst_comp,
       compDomEquiv.snd_comp]
-    rw! [compDomEquiv.fst_comp, Category.assoc])
-  Sig_pullback := sorry
+  rw! [compDomEquiv.fst_comp, Category.assoc]
+
+def ofUnstructured.pair : U0.compDom U1 ⟶ U2.Tm :=
+  ofYoneda (pairApp S) (pair_naturality S)
+
+lemma ofUnstructured.pair_tp (ab : Γ ⟶ U0.compDom U1) :
+    ofUnstructured.pairApp S ab ≫ U2.tp = ofUnstructured.SigApp S (ab ≫ U0.compP U1) := by
+  dsimp [pairApp, SigApp]
+  rw! [S.pair_tp, compDomEquiv.dependent_eq, compDomEquiv.fst_tp]
+
+def ofUnstructured.lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+    Γ ⟶ U0.compDom U1 :=
+  let B := PtpEquiv.snd U0 AB
+  compDomEquiv.mk (S.fst B ab ab_tp) (S.fst_tp ..) B (S.snd B ab ab_tp) (S.snd_tp ..)
+
+lemma ofUnstructured.fst_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+    compDomEquiv.fst (lift S ab AB ab_tp) =
+    S.fst (PtpEquiv.snd U0 AB) ab ab_tp := by
+  rw [lift, compDomEquiv.fst_mk _ _]
+
+lemma ofUnstructured.snd_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+    compDomEquiv.snd (lift S ab AB ab_tp) =
+    S.snd (PtpEquiv.snd U0 AB) ab ab_tp := by
+  rw [lift, compDomEquiv.snd_mk]
+
+lemma ofUnstructured.dependent_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+    compDomEquiv.dependent (lift S ab AB ab_tp) (PtpEquiv.fst U0 AB) (by rw [fst_lift, S.fst_tp]) =
+    PtpEquiv.snd U0 AB (PtpEquiv.fst U0 AB) := by
+  simp [lift, compDomEquiv.dependent_mk]
+
+lemma ofUnstructured.pairApp_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+    ofUnstructured.pairApp S (ofUnstructured.lift S ab AB ab_tp) = ab := by
+  dsimp [pairApp]
+  rw! [fst_lift, S.fst_tp, fst_lift, snd_lift, dependent_lift]
+  rw [S.eta]
+
+lemma ofUnstructured.lift_compP (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+    ofUnstructured.lift S ab AB ab_tp ≫ U0.compP U1 = AB := by
+  dsimp [lift]
+  rw [compDomEquiv.mk_comp, PtpEquiv.eta]
+
+lemma ofUnstructured.lift_uniq (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) (m : Γ ⟶ U0.compDom U1)
+    (hl : ofUnstructured.pairApp S m = ab) (hr : m ≫ U0.compP U1 = AB) :
+    m = ofUnstructured.lift S ab AB ab_tp := by
+  rw! [← compDomEquiv.eta m]
+  fapply compDomEquiv.ext (A := PtpEquiv.fst U0 AB)
+  · rw [compDomEquiv.fst_mk, compDomEquiv.fst_tp, hr]
+  · rw [fst_lift, compDomEquiv.fst_mk _]
+    calc compDomEquiv.fst m
+    _ = S.fst (compDomEquiv.dependent m) (pairApp S m) (S.pair_tp ..) := by
+      dsimp [pairApp]
+      rw [S.fst_pair]
+    S.fst (compDomEquiv.dependent m) (pairApp S m) (S.pair_tp ..) =
+    S.fst (PtpEquiv.snd U0 AB) ab ab_tp := by
+      subst hl hr
+      rw! [compDomEquiv.dependent_eq, compDomEquiv.fst_tp]
+  · subst hr
+    rw [compDomEquiv.dependent_mk, dependent_lift, compDomEquiv.dependent_eq]
+    rw! [compDomEquiv.fst_tp, eqToHom_refl, Category.id_comp, compDomEquiv.fst_tp]
+  · simp [snd_lift]
+    calc compDomEquiv.snd m
+    _ = S.snd (compDomEquiv.dependent m) (pairApp S m) (S.pair_tp ..) := by
+      dsimp [pairApp]
+      rw [S.snd_pair]
+    S.snd (compDomEquiv.dependent m) (pairApp S m) (S.pair_tp ..) =
+    S.snd (PtpEquiv.snd U0 AB) ab ab_tp := by
+      subst hl hr
+      rw! [compDomEquiv.dependent_eq, compDomEquiv.fst_tp]
+
+def ofUnstructured : PolymorphicSigma U0 U1 U2 where
+  Sig := ofUnstructured.Sig S
+  pair := ofUnstructured.pair S
+  Sig_pullback := ofYoneda_isPullback _ _ _ _ _ _ (ofUnstructured.pair_tp S)
+    (ofUnstructured.lift S)
+    (ofUnstructured.pairApp_lift S)
+    (ofUnstructured.lift_compP S)
+    (ofUnstructured.lift_uniq S)
+
+end
 
 end PolymorphicSigma
 
@@ -1385,4 +1484,4 @@ end Id'
 
 end Universe
 
-end NaturalModel
+end StructuredModel
