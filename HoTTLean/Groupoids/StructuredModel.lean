@@ -1,4 +1,4 @@
-import HoTTLean.Groupoids.Sigma
+import HoTTLean.Groupoids.Pi
 
 /-!
 Here we construct universes for the groupoid natural model.
@@ -63,6 +63,9 @@ def liftSeq : UHomSeq Grpd.IsIsofibration.{5} where
 def USig : Universe.Sigma StructuredU :=
   PolymorphicSigma.ofUnstructured GroupoidModel.USig
 
+def smallUPi : Universe.Pi StructuredU :=
+  PolymorphicPi.ofUnstructured GroupoidModel.UPi
+
 #exit
 def liftSeqSigs' (i : ℕ) (ilen : i < 4) :
     Universe.Sigma (liftSeqObjs i ilen) :=
@@ -76,6 +79,17 @@ def liftSeqSigs' (i : ℕ) (ilen : i < 4) :
 instance liftSeqSigma : liftSeq.SigSeq where
   nmSig := liftSeqSigs'
 
+def uHomSeqPis' (i : ℕ) (ilen : i < 4) :
+    Universe.Pi (uHomSeqObjs i ilen) :=
+  match i with
+  | 0 => smallUPi.{0,4}
+  | 1 => smallUPi.{1,4}
+  | 2 => smallUPi.{2,4}
+  | 3 => smallUPi.{3,4}
+  | (n+4) => by omega
+
+instance uHomSeqPi : uHomSeq.PiSeq where
+  nmPi := uHomSeqPis'
 
 -- section
 

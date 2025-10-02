@@ -373,6 +373,274 @@ Ptp Ty ------> Ty
 -/
 protected abbrev Pi := PolymorphicPi M M M
 
+namespace PolymorphicPi
+
+variable {U0 U1 U2 : Universe R} {Γ : Ctx}
+
+section
+variable (P : PolymorphicPi U0 U1 U2)
+
+/--
+```
+Γ ⊢₀ A  Γ.A ⊢₁ B
+-----------------
+Γ ⊢₂ ΠA. B
+``` -/
+def mkPi {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty) : Γ ⟶ U2.Ty :=
+  PtpEquiv.mk U0 A B ≫ P.Pi
+
+theorem comp_mkPi {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    (A : (Γ) ⟶ U0.Ty) (σA) (eq : (σ) ≫ A = σA)
+    (B : (U0.ext A) ⟶ U1.Ty) :
+    (σ) ≫ P.mkPi A B = P.mkPi σA ((U0.substWk σ A _ eq) ≫ B) := by
+  simp [mkPi, ← Category.assoc, PtpEquiv.mk_comp_left (eq := eq)]
+
+/--
+```
+Γ ⊢₀ A  Γ.A ⊢₁ t : B
+-------------------------
+Γ ⊢₂ λA. t : ΠA. B
+``` -/
+def mkLam {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (t : (U0.ext A) ⟶ U1.Tm) : (Γ) ⟶ U2.Tm :=
+  PtpEquiv.mk U0 A t ≫ P.lam
+
+@[simp]
+theorem mkLam_tp {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (t : (U0.ext A) ⟶ U1.Tm) (t_tp : t ≫ U1.tp = B) :
+    P.mkLam A t ≫ U2.tp = P.mkPi A B := by
+  simp [mkLam, mkPi, P.Pi_pullback.w, PtpEquiv.mk_map_assoc, t_tp]
+
+theorem comp_mkLam {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    (A : (Γ) ⟶ U0.Ty) (σA) (eq : (σ) ≫ A = σA) (t : (U0.ext A) ⟶ U1.Tm) :
+    (σ) ≫ P.mkLam A t = P.mkLam σA ((U0.substWk σ A _ eq) ≫ t) := by
+  simp [mkLam, ← Category.assoc, PtpEquiv.mk_comp_left (eq := eq)]
+
+
+/--
+```
+Γ ⊢₀ A  Γ ⊢₂ f : ΠA. B
+-----------------------------
+Γ.A ⊢₁ unlam f : B
+``` -/
+def unLam {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : (Γ) ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B) :
+    (U0.ext A) ⟶ U1.Tm := by
+  let total : (Γ) ⟶ U0.Ptp.obj U1.Tm :=
+    P.Pi_pullback.lift f (PtpEquiv.mk U0 A B) f_tp
+  refine PtpEquiv.snd U0 total _ ?_
+  have eq : total ≫ U0.Ptp.map U1.tp = PtpEquiv.mk U0 A B :=
+    (P.Pi_pullback).lift_snd ..
+  apply_fun PtpEquiv.fst U0 at eq
+  rw [PtpEquiv.fst_comp_right] at eq
+  simpa using eq
+
+@[simp]
+theorem unLam_tp {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : (Γ) ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B) :
+    P.unLam A B f f_tp ≫ U1.tp = B := by
+  rw [unLam, ← PtpEquiv.snd_comp_right]
+  convert PtpEquiv.snd_mk U0 A B using 2; simp
+
+theorem comp_unLam {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    (A : (Γ) ⟶ U0.Ty) (σA) (eq : (σ) ≫ A = σA) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : (Γ) ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B) :
+    (U0.substWk σ A _ eq) ≫ P.unLam A B f f_tp =
+      P.unLam σA ((U0.substWk σ A _ eq) ≫ B)
+        ((σ) ≫ f) (by simp [eq, f_tp, comp_mkPi]) := by
+  simp [unLam]
+  rw [← PtpEquiv.snd_comp_left]
+  simp [PtpEquiv.snd, UvPoly.Equiv.snd'_eq]; congr 1
+  apply pullback.hom_ext <;> simp; congr 1
+  apply (P.Pi_pullback).hom_ext <;> simp
+  rw [PtpEquiv.mk_comp_left]
+
+/--
+```
+Γ ⊢₂ f : ΠA. B  Γ ⊢₀ a : A
+---------------------------------
+Γ ⊢₁ f a : B[id.a]
+``` -/
+def mkApp {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : (Γ) ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B)
+    (a : (Γ) ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) : (Γ) ⟶ U1.Tm :=
+  (U0.sec A a a_tp) ≫ P.unLam A B f f_tp
+
+@[simp]
+theorem mkApp_tp {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : (Γ) ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B)
+    (a : (Γ) ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+    P.mkApp A B f f_tp a a_tp ≫ U1.tp = (U0.sec A a a_tp) ≫ B := by
+  simp [mkApp]
+
+theorem comp_mkApp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    (A : Γ ⟶ U0.Ty) (σA) (eq : σ ≫ A = σA) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+    σ ≫ P.mkApp A B f f_tp a a_tp =
+      P.mkApp σA (U0.substWk σ A _ eq ≫ B)
+        (σ ≫ f) (by simp [f_tp, comp_mkPi (eq := eq)])
+        (σ ≫ a) (by simp [a_tp, eq]) := by
+  unfold mkApp; rw [← Category.assoc,
+    comp_sec (eq := eq), Category.assoc, comp_unLam (eq := eq)]
+
+@[simp]
+theorem mkLam_unLam {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B) :
+    P.mkLam A (P.unLam A B f f_tp) = f := by
+  let total : Γ ⟶ U0.Ptp.obj U1.Tm :=
+    (P.Pi_pullback).lift f (PtpEquiv.mk U0 A B) f_tp
+  simp only [mkLam, unLam]
+  have : PtpEquiv.fst U0 total = A := by
+    simp only [PtpEquiv.fst, UvPoly.Equiv.fst_eq, total]
+    rw [← U0.uvPolyTp.map_fstProj U1.tp]
+    slice_lhs 1 2 => apply (P.Pi_pullback).lift_snd
+    apply PtpEquiv.fst_mk
+  slice_lhs 1 1 => equals total =>
+    apply PtpEquiv.ext _ (A := A) (by simp) (by simp [this]) (by simp [total])
+  apply (P.Pi_pullback).lift_fst
+
+@[simp]
+theorem unLam_mkLam {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty)
+    (t : U0.ext A ⟶ U1.Tm) (t_tp : t ≫ U1.tp = B)
+    (lam_tp : P.mkLam A t ≫ U2.tp = P.mkPi A B) :
+    P.unLam A B (P.mkLam A t) lam_tp = t := by
+  simp [mkLam, unLam]
+  convert PtpEquiv.snd_mk U0 A t using 2
+  apply (P.Pi_pullback).hom_ext <;> simp
+  rw [PtpEquiv.mk_comp_right, t_tp]
+
+/--
+```
+Γ ⊢₂ f : ΠA. B
+--------------------------------------
+Γ ⊢₂ λA. f[↑] v₀ : ΠA. B
+```
+-/
+def etaExpand {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B) :
+    (Γ) ⟶ U2.Tm :=
+  P.mkLam A <|
+    P.mkApp
+      (U0.disp A ≫ A) (U0.substWk .. ≫ B) (U0.disp A ≫ f)
+        (by simp [f_tp, comp_mkPi])
+      (U0.var A) (U0.var_tp A)
+
+theorem etaExpand_eq {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.mkPi A B) :
+    P.etaExpand A B f f_tp = f := by
+  simp [etaExpand]
+  convert P.mkLam_unLam A B f f_tp using 2
+  simp [mkApp]; rw [← comp_unLam (f_tp := f_tp), ← Category.assoc]
+  conv_rhs => rw [← Category.id_comp (P.unLam ..)]
+  congr 2
+  apply (U0.disp_pullback A).hom_ext <;> simp
+  simp [substWk]
+
+/--
+```
+Γ ⊢₀ A  Γ.A ⊢₁ t : B  Γ ⊢₀ a : A
+--------------------------------
+Γ.A ⊢₁ (λA. t) a ≡ t[a] : B[a]
+``` -/
+@[simp]
+theorem mkApp_mkLam {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
+    (t : (U0.ext A) ⟶ U1.Tm) (t_tp : t ≫ U1.tp = B)
+    (lam_tp : P.mkLam A t ≫ U2.tp = P.mkPi A B)
+    (a : (Γ) ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+    P.mkApp A B (P.mkLam A t) lam_tp a a_tp = (U0.sec A a a_tp) ≫ t := by
+  rw [mkApp, unLam_mkLam]
+  assumption
+
+def toUnstructured :
+    UnstructuredModel.Universe.PolymorphicPi U0.toUniverse U1.toUniverse U2.toUniverse where
+  Pi := P.mkPi _
+  Pi_comp _ _ _ _ _ := (P.comp_mkPi ..).symm
+  lam _ b _ := P.mkLam _ b
+  lam_comp σ A σA eq _ b _ := (P.comp_mkLam σ A σA eq b).symm
+  lam_tp B b b_tp := P.mkLam_tp _ B b b_tp
+  unLam := P.unLam _
+  unLam_comp σ A σA eq _ f f_tp := (P.comp_unLam σ A σA eq _ f f_tp).symm
+  unLam_tp B f f_tp := P.unLam_tp _ B f f_tp
+  unLam_lam B b b_tp := P.unLam_mkLam _ B b b_tp _
+  lam_unLam B := P.mkLam_unLam _ B
+
+end
+
+namespace ofUnstructured
+
+variable {U0 U1 U2 : Universe R}
+    (P : UnstructuredModel.Universe.PolymorphicPi U0.toUniverse U1.toUniverse U2.toUniverse)
+
+def PiApp (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty) : Γ ⟶ U2.Ty :=
+  P.Pi (PtpEquiv.snd U0 AB)
+
+lemma Pi_naturality {Δ Γ} (σ : Δ ⟶ Γ) (AB) :
+    PiApp P (σ ≫ AB) = σ ≫ PiApp P AB := by
+  simp only [PiApp, PtpEquiv.fst_comp_left, PtpEquiv.snd_comp_left, ← P.Pi_comp]
+  rw! [PtpEquiv.fst_comp_left]
+
+def Pi : U0.uvPolyTp @ U1.Ty ⟶ U2.Ty :=
+    ofYoneda (PiApp P) (Pi_naturality P)
+
+def lamApp (b : Γ ⟶ U0.uvPolyTp @ U1.Tm) : Γ ⟶ U2.Tm :=
+  P.lam _ (PtpEquiv.snd U0 b) rfl
+
+lemma lam_naturality {Δ Γ} (σ : Δ ⟶ Γ) (ab) :
+    lamApp P (σ ≫ ab) = σ ≫ lamApp P ab := by
+  simp only [lamApp, PtpEquiv.fst_comp_left, PtpEquiv.snd_comp_left, ← P.lam_comp]
+  rw! [PtpEquiv.fst_comp_left]
+  simp
+
+def lam : U0.uvPolyTp @ U1.Tm ⟶ U2.Tm :=
+  ofYoneda (lamApp P) (lam_naturality P)
+
+lemma lamApp_tp (b : Γ ⟶ U0.uvPolyTp @ U1.Tm) :
+    lamApp P b ≫ U2.tp = PiApp P (b ≫ U0.Ptp.map U1.tp) := by
+  simp only [lamApp, PiApp, PtpEquiv.fst_comp_right, PtpEquiv.snd_comp_right]
+  rw! [P.lam_tp, PtpEquiv.fst_comp_right]
+
+def lift (f : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (f_tp : f ≫ U2.tp = PiApp P AB) : Γ ⟶ U0.uvPolyTp @ U1.Tm :=
+  PtpEquiv.mk _ (PtpEquiv.fst _ AB) (P.unLam (PtpEquiv.snd _ AB) f f_tp)
+
+lemma lamApp_lift (f : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (f_tp : f ≫ U2.tp = PiApp P AB) :
+    lamApp P (lift P f AB f_tp) = f := by
+  dsimp only [lamApp, lift]
+  rw! (castMode := .all) [PtpEquiv.fst_mk, PtpEquiv.snd_mk, P.unLam_tp, P.lam_unLam]
+
+lemma lift_Ptp_map_tp (f : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (f_tp : f ≫ U2.tp = PiApp P AB) :
+    ofUnstructured.lift P f AB f_tp ≫ U0.Ptp.map U1.tp = AB := by
+  dsimp [lift]
+  rw [PtpEquiv.mk_comp_right, P.unLam_tp, PtpEquiv.eta]
+
+lemma lift_uniq (f : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (f_tp : f ≫ U2.tp = PiApp P AB) (m : Γ ⟶ U0.Ptp.obj U1.Tm)
+    (hl : lamApp P m = f) (hr : m ≫ U0.Ptp.map U1.tp = AB) :
+    m = lift P f AB f_tp := by
+  fapply PtpEquiv.ext _
+  · calc PtpEquiv.fst _ m
+    _ = PtpEquiv.fst _ (m ≫ U0.Ptp.map U1.tp) := by rw [PtpEquiv.fst_comp_right]
+    _ = _ := by simp [hr, lift]
+  · subst hl hr
+    dsimp only [lift, lamApp]
+    rw! [PtpEquiv.fst_comp_right, PtpEquiv.snd_mk, PtpEquiv.snd_comp_right, P.unLam_lam]
+
+end ofUnstructured
+
+def ofUnstructured (P : UnstructuredModel.Universe.PolymorphicPi U0.toUniverse U1.toUniverse
+    U2.toUniverse) : PolymorphicPi U0 U1 U2 where
+  Pi := ofUnstructured.Pi P
+  lam := ofUnstructured.lam P
+  Pi_pullback := ofYoneda_isPullback _ _ _ _ _ _ (ofUnstructured.lamApp_tp P)
+    (ofUnstructured.lift P)
+    (ofUnstructured.lamApp_lift P)
+    (ofUnstructured.lift_Ptp_map_tp P)
+    (ofUnstructured.lift_uniq P)
+
+end PolymorphicPi
+
 /-! ## Sigma types -/
 
 /-- The structure on three universes that for
@@ -531,82 +799,82 @@ theorem mkPair_mkFst_mkSnd {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty
 
 end
 
-section
+namespace ofUnstructured
 
 variable {U0 U1 U2 : Universe R}
     (S : UnstructuredModel.Universe.PolymorphicSigma U0.toUniverse U1.toUniverse U2.toUniverse)
 
-def ofUnstructured.SigApp (AB : Γ ⟶ U0.Ptp.obj U1.Ty) : Γ ⟶ U2.Ty :=
+def SigApp (AB : Γ ⟶ U0.Ptp.obj U1.Ty) : Γ ⟶ U2.Ty :=
   S.Sig (PtpEquiv.snd U0 AB)
 
-lemma ofUnstructured.Sig_naturality {Δ Γ} (σ : Δ ⟶ Γ) (AB) :
+lemma Sig_naturality {Δ Γ} (σ : Δ ⟶ Γ) (AB) :
     SigApp S (σ ≫ AB) = σ ≫ SigApp S AB := by
   simp only [SigApp, PtpEquiv.fst_comp_left, PtpEquiv.snd_comp_left, ← S.Sig_comp]
   rw! [PtpEquiv.fst_comp_left]
 
-def ofUnstructured.Sig : U0.Ptp.obj U1.Ty ⟶ U2.Ty :=
+def Sig : U0.Ptp.obj U1.Ty ⟶ U2.Ty :=
     ofYoneda (SigApp S) (Sig_naturality S)
 
-def ofUnstructured.pairApp (ab : Γ ⟶ U0.compDom U1) : Γ ⟶ U2.Tm :=
+def pairApp (ab : Γ ⟶ U0.compDom U1) : Γ ⟶ U2.Tm :=
   S.pair (compDomEquiv.dependent ab) (compDomEquiv.fst ab)
     (by rw [compDomEquiv.fst_tp]) (compDomEquiv.snd ab) (by rw [compDomEquiv.snd_tp])
 
-lemma ofUnstructured.pair_naturality {Δ Γ} (σ : Δ ⟶ Γ) (ab) :
+lemma pair_naturality {Δ Γ} (σ : Δ ⟶ Γ) (ab) :
     pairApp S (σ ≫ ab) = σ ≫ pairApp S ab := by
   dsimp [pairApp]
   simp only [← S.pair_comp, compDomEquiv.comp_dependent, compDomEquiv.fst_comp,
       compDomEquiv.snd_comp]
   rw! [compDomEquiv.fst_comp, Category.assoc]
 
-def ofUnstructured.pair : U0.compDom U1 ⟶ U2.Tm :=
+def pair : U0.compDom U1 ⟶ U2.Tm :=
   ofYoneda (pairApp S) (pair_naturality S)
 
-lemma ofUnstructured.pair_tp (ab : Γ ⟶ U0.compDom U1) :
-    ofUnstructured.pairApp S ab ≫ U2.tp = ofUnstructured.SigApp S (ab ≫ U0.compP U1) := by
+lemma pair_tp (ab : Γ ⟶ U0.compDom U1) :
+    pairApp S ab ≫ U2.tp = SigApp S (ab ≫ U0.compP U1) := by
   dsimp [pairApp, SigApp]
   rw! [S.pair_tp, compDomEquiv.dependent_eq, compDomEquiv.fst_tp]
 
-def ofUnstructured.lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
-    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+def lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = SigApp S AB) :
     Γ ⟶ U0.compDom U1 :=
   let B := PtpEquiv.snd U0 AB
   compDomEquiv.mk (S.fst B ab ab_tp) (S.fst_tp ..) B (S.snd B ab ab_tp) (S.snd_tp ..)
 
-lemma ofUnstructured.fst_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
-    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+lemma fst_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = SigApp S AB) :
     compDomEquiv.fst (lift S ab AB ab_tp) =
     S.fst (PtpEquiv.snd U0 AB) ab ab_tp := by
   rw [lift, compDomEquiv.fst_mk _ _]
 
-lemma ofUnstructured.snd_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
-    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+lemma snd_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = SigApp S AB) :
     compDomEquiv.snd (lift S ab AB ab_tp) =
     S.snd (PtpEquiv.snd U0 AB) ab ab_tp := by
   rw [lift, compDomEquiv.snd_mk]
 
-lemma ofUnstructured.dependent_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
-    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
+lemma dependent_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = SigApp S AB) :
     compDomEquiv.dependent (lift S ab AB ab_tp) (PtpEquiv.fst U0 AB) (by rw [fst_lift, S.fst_tp]) =
     PtpEquiv.snd U0 AB (PtpEquiv.fst U0 AB) := by
   simp [lift, compDomEquiv.dependent_mk]
 
-lemma ofUnstructured.pairApp_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+lemma pairApp_lift (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
     (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
     ofUnstructured.pairApp S (ofUnstructured.lift S ab AB ab_tp) = ab := by
   dsimp [pairApp]
   rw! [fst_lift, S.fst_tp, fst_lift, snd_lift, dependent_lift]
   rw [S.eta]
 
-lemma ofUnstructured.lift_compP (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
-    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) :
-    ofUnstructured.lift S ab AB ab_tp ≫ U0.compP U1 = AB := by
+lemma lift_compP (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = SigApp S AB) :
+    lift S ab AB ab_tp ≫ U0.compP U1 = AB := by
   dsimp [lift]
   rw [compDomEquiv.mk_comp, PtpEquiv.eta]
 
-lemma ofUnstructured.lift_uniq (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
-    (ab_tp : ab ≫ U2.tp = ofUnstructured.SigApp S AB) (m : Γ ⟶ U0.compDom U1)
-    (hl : ofUnstructured.pairApp S m = ab) (hr : m ≫ U0.compP U1 = AB) :
-    m = ofUnstructured.lift S ab AB ab_tp := by
+lemma lift_uniq (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
+    (ab_tp : ab ≫ U2.tp = SigApp S AB) (m : Γ ⟶ U0.compDom U1)
+    (hl : pairApp S m = ab) (hr : m ≫ U0.compP U1 = AB) :
+    m = lift S ab AB ab_tp := by
   rw! [← compDomEquiv.eta m]
   fapply compDomEquiv.ext (A := PtpEquiv.fst U0 AB)
   · rw [compDomEquiv.fst_mk, compDomEquiv.fst_tp, hr]
@@ -632,7 +900,11 @@ lemma ofUnstructured.lift_uniq (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1
       subst hl hr
       rw! [compDomEquiv.dependent_eq, compDomEquiv.fst_tp]
 
-def ofUnstructured : PolymorphicSigma U0 U1 U2 where
+end ofUnstructured
+
+def ofUnstructured {U0 U1 U2 : Universe R}
+    (S : UnstructuredModel.Universe.PolymorphicSigma U0.toUniverse U1.toUniverse U2.toUniverse) :
+    PolymorphicSigma U0 U1 U2 where
   Sig := ofUnstructured.Sig S
   pair := ofUnstructured.pair S
   Sig_pullback := ofYoneda_isPullback _ _ _ _ _ _ (ofUnstructured.pair_tp S)
@@ -640,8 +912,6 @@ def ofUnstructured : PolymorphicSigma U0 U1 U2 where
     (ofUnstructured.pairApp_lift S)
     (ofUnstructured.lift_compP S)
     (ofUnstructured.lift_uniq S)
-
-end
 
 end PolymorphicSigma
 

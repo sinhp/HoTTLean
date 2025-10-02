@@ -238,6 +238,32 @@ structure PolymorphicSigma (U0 U1 U2 : Universe Ctx) where
     (eta : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
       (s_tp : s ≫ U2.tp = Sig B), pair B (fst B s s_tp) (fst_tp ..) (snd B s s_tp) (snd_tp ..) = s)
 
+structure PolymorphicPi (U0 U1 U2 : Universe Ctx) where
+    (Pi : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
+    (Pi_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
+      Pi (U0.substWk σ A σA eq ≫ B) = σ ≫ Pi B)
+    (lam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+      (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B), Γ ⟶ U2.Tm)
+    (lam_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) (B : U0.ext A ⟶ U1.Ty)
+      (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B),
+      lam (U0.substWk σ A σA eq ≫ B) (U0.substWk σ A σA eq ≫ b) (by cat_disch) =
+        σ ≫ lam B b b_tp)
+    (lam_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+      (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B),
+        lam B b b_tp ≫ U2.tp = Pi B)
+    (unLam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm)
+      (f_tp : f ≫ U2.tp = Pi B), U0.ext A ⟶ U1.Tm)
+    (unLam_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ext A ⟶ U1.Ty}
+      (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = Pi B),
+      unLam (U0.substWk σ A σA eq ≫ B) (σ ≫ f) (by cat_disch) =
+      U0.substWk σ A σA eq ≫ unLam B f f_tp)
+    (unLam_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm)
+      (f_tp : f ≫ U2.tp = Pi B), unLam B f f_tp ≫ U1.tp = B)
+    (unLam_lam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+      (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B), unLam B (lam B b b_tp) (lam_tp ..) = b)
+    (lam_unLam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm)
+      (f_tp : f ≫ U2.tp = Pi B), lam B (unLam B f f_tp) (unLam_tp ..) = f)
+
 end Universe
 
 end UnstructuredModel

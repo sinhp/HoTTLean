@@ -15,7 +15,7 @@
    "type": "git",
    "subDir": null,
    "scope": "",
-   "rev": "87d8a903c4d5ede38bf6685dede04722bbc755b4",
+   "rev": "df0f5040c2944a4c4d4fd353185776a9d2af3e03",
    "name": "mathlib",
    "manifestFile": "lake-manifest.json",
    "inputRev": "clans",

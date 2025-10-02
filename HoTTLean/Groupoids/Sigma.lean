@@ -836,8 +836,33 @@ open FunctorOperation
 
 section
 
+@[simp]
+abbrev USig.SigAux {X : Type (v + 1)} [Category.{v} X]
+    (S : ∀ {Γ : Ctx} (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ X), Γ ⥤ X)
+    {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ Ctx.coreAsSmall X) :
+    Γ ⟶ Ctx.coreAsSmall X :=
+  toCoreAsSmallEquiv.symm (S (toCoreAsSmallEquiv A) (toCoreAsSmallEquiv B))
+
+theorem USig.SigAux_comp {X : Type (v + 1)} [Category.{v} X]
+    (S : ∀ {Γ : Ctx} (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ X), Γ ⥤ X)
+    (S_naturality : ∀ {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⥤ Grpd}
+      {B : ∫(A) ⥤ X}, σ ⋙ S A B = S (σ ⋙ A) (pre A σ ⋙ B))
+    {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} {σA : Δ ⟶ U.Ty}
+    (eq : σ ≫ A = σA) (B : U.ext A ⟶ Ctx.coreAsSmall X) :
+    USig.SigAux S (U.substWk σ A σA eq ≫ B) = σ ≫ USig.SigAux S B := by
+  simp only [USig.SigAux, Grpd.comp_eq_comp]
+  rw [← toCoreAsSmallEquiv_symm_apply_comp_left]
+  congr 1
+  rw [S_naturality]
+  subst eq
+  simp only [Grpd.comp_eq_comp]
+  conv => left; right; rw! [toCoreAsSmallEquiv_apply_comp_left]
+  rw! (castMode := .all) [toCoreAsSmallEquiv_apply_comp_left]
+  simp [U.substWk_eq, map_id_eq]
+  rfl
+
 def USig.Sig {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty) : Γ ⟶ U.{v}.Ty :=
-  toCoreAsSmallEquiv.symm (sigma _ (toCoreAsSmallEquiv B))
+  USig.SigAux sigma B
 
 /--
 Naturality for the formation rule for Σ-types.
@@ -845,17 +870,8 @@ Also known as Beck-Chevalley.
 -/
 theorem USig.Sig_comp {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} {σA : Δ ⟶ U.Ty}
     (eq : σ ≫ A = σA) (B : U.ext A ⟶ U.{v}.Ty) :
-    USig.Sig (U.substWk σ A σA eq ≫ B) = σ ≫ USig.Sig B := by
-  simp only [USig.Sig, Grpd.comp_eq_comp]
-  rw [← toCoreAsSmallEquiv_symm_apply_comp_left]
-  congr 1
-  rw [sigma_naturality]
-  subst eq
-  simp only [Grpd.comp_eq_comp]
-  conv => left; right; rw! [toCoreAsSmallEquiv_apply_comp_left]
-  rw! (castMode := .all) [toCoreAsSmallEquiv_apply_comp_left]
-  simp [U.substWk_eq, map_id_eq]
-  rfl
+    USig.Sig (U.substWk σ A σA eq ≫ B) = σ ≫ USig.Sig B :=
+  USig.SigAux_comp sigma (by intros; rw [sigma_naturality]) σ eq B
 
 lemma USig.pair_aux {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty) (a : Γ ⟶ U.Tm)
     (a_tp : a ≫ U.tp = A) (b : Γ ⟶ U.Tm) (b_tp : b ≫ U.tp = U.sec A a a_tp ≫ B) :

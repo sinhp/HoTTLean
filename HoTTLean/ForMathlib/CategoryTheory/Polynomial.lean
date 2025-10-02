@@ -6,9 +6,10 @@ Authors: Joseph Hua, Sina Hazratpour, Emily Riehl
 
 import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
 import Mathlib.CategoryTheory.Functor.TwoSquare
-import Mathlib.CategoryTheory.NatTrans.IsCartesian
 import Mathlib.CategoryTheory.Comma.Over.Pushforward
+import Mathlib.CategoryTheory.Limits.Constructions.Over.Basic
 import HoTTLean.ForMathlib
+import HoTTLean.ForMathlib.CategoryTheory.NatTrans
 
 universe v u v₁ u₁
 
@@ -70,11 +71,11 @@ def pullbackMapTwoSquare {T : Type u} [Category.{v} T] (R : MorphismProperty T)
     TwoSquare (MorphismProperty.Over.pullback R ⊤ f)
       (MorphismProperty.Over.map ⊤ rk) (MorphismProperty.Over.map ⊤ rh)
       (MorphismProperty.Over.pullback R ⊤ g) :=
-    (mateEquiv (MorphismProperty.Over.mapPullbackAdj R ⊤ k rk trivial)
-      (MorphismProperty.Over.mapPullbackAdj R ⊤ h rh trivial)).symm <|
-      ((MorphismProperty.Over.pullbackComp _ _).inv ≫
-      eqToHom (by rw! [sq]) ≫
-      (MorphismProperty.Over.pullbackComp _ _).hom)
+  (mateEquiv (MorphismProperty.Over.mapPullbackAdj R ⊤ k rk trivial)
+    (MorphismProperty.Over.mapPullbackAdj R ⊤ h rh trivial)).symm <|
+    ((MorphismProperty.Over.pullbackComp _ _).inv ≫
+    eqToHom (by rw! [sq]) ≫
+    (MorphismProperty.Over.pullbackComp _ _).hom)
 
 /--
 The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
@@ -177,6 +178,61 @@ theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{v} T] (R : Mo
     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶(Q) Y) (g : Z ⟶(Q) W) (k : Y ⟶ W)
     (pb : IsPullback h f.1 g.1 k) : IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) :=
   sorry
+
+/-
+Copyright (c) 2025 Wojciech Nawrocki. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Wojciech Nawrocki
+-/
+
+theorem _root_.CategoryTheory.Functor.reflect_commSq
+    {C D : Type*} [Category C] [Category D]
+    (F : C ⥤ D) [Functor.Faithful F]
+    {X Y Z W : C} {f : X ⟶ Y} {g : X ⟶ Z} {h : Y ⟶ W} {i : Z ⟶ W} :
+    CommSq (F.map f) (F.map g) (F.map h) (F.map i) →
+    CommSq f g h i := by
+  intro cs
+  constructor
+  apply Functor.map_injective F
+  simpa [← Functor.map_comp] using cs.w
+
+theorem _root_.CategoryTheory.Functor.reflect_isPullback
+    {C D : Type*} [Category C] [Category D] (F : C ⥤ D)
+    {X Y Z W : C} (f : X ⟶ Y) (g : X ⟶ Z) (h : Y ⟶ W) (i : Z ⟶ W)
+    [rl : ReflectsLimit (cospan h i) F] [Functor.Faithful F] :
+    IsPullback (F.map f) (F.map g) (F.map h) (F.map i) →
+    IsPullback f g h i := by
+  intro pb
+  have sq := F.reflect_commSq pb.toCommSq
+  apply IsPullback.mk sq
+  apply rl.reflects
+  let i := cospanCompIso F h i
+  apply IsLimit.equivOfNatIsoOfIso i.symm pb.cone _ _ pb.isLimit
+  let j :
+      ((Cones.postcompose i.symm.hom).obj pb.cone).pt ≅
+      (F.mapCone <| PullbackCone.mk f g sq.w).pt :=
+    Iso.refl _
+  apply WalkingCospan.ext j <;> simp +zetaDelta
+
+open NatTrans MorphismProperty.Over in
+/-- The counit of the adjunction `mapPullbackAdj` is a pullback square,
+since it is the pullback computed by `P.Over.pullback`. -/
+lemma isCartesian_mapPullbackAdj_counit {P : MorphismProperty C} {X Y : C} {f : X ⟶ Y}
+    [P.IsStableUnderComposition] [P.IsStableUnderBaseChange]
+    [P.HasPullback f] (hPf : P f) : IsCartesian (mapPullbackAdj P ⊤ f hPf trivial).counit := by
+  intro A B U
+  apply (MorphismProperty.Over.forget P ⊤ Y).reflect_isPullback
+  apply (CategoryTheory.Over.forget Y).reflect_isPullback
+  apply IsPullback.flip
+  simp only [Functor.comp_obj, Comma.forget_obj, Over.forget_obj, map_obj_left, pullback_obj_left,
+    Functor.id_obj, mapPullbackAdj, Adjunction.mkOfHomEquiv, morphismProperty_fst,
+    Functor.const_obj_obj, map_obj_hom, Equiv.coe_fn_mk, Comma.id_hom, CategoryTheory.Comma.id_left,
+    id_comp, Adjunction.mk'_counit, Comma.forget_map, homMk_hom, Over.forget_map, Over.homMk_left,
+    Functor.comp_map, map_map_left, pullback_map_left, Functor.id_map]
+  apply IsPullback.of_bot (v₂₁ := (pullback.snd B.hom f)) (h₃₁ := f) (v₂₂ := B.hom) _ _
+    (IsPullback.of_hasPullback B.hom f)
+  · convert IsPullback.of_hasPullback A.hom f <;> simp
+  · simp
 
 namespace PolynomialPartialAdjunction
 
@@ -564,11 +620,18 @@ lemma eta (pair : Γ ⟶ (P @ X).toComma) : mk (fst pair) (by simp) (snd pair) =
 
 end Equiv
 
+instance (X Y) (δ : X ⟶ Y) (rδ : R δ) : (MorphismProperty.Over.pullback R ⊤ δ).IsRightAdjoint :=
+    Adjunction.isRightAdjoint (MorphismProperty.Over.mapPullbackAdj R ⊤ δ rδ trivial)
+
+-- (MorphismProperty.Over.pullback R ⊤ δ ⋙ MorphismProperty.Over.map ⊤ ⋯)
+instance (P : MvPoly R H I O E B) : PreservesLimitsOfShape WalkingCospan
+    (MorphismProperty.Over.pullback R ⊤ P.i.fst ⋙ R.pushforward P.p ⋙
+    MorphismProperty.Over.map ⊤ P.o.2) :=
+  inferInstance
+
 instance (P : MvPoly R H I O E B) :
     Limits.PreservesLimitsOfShape WalkingCospan (MvPoly.functor P) := by
   dsimp [functor]
-  have : (MorphismProperty.Over.pullback R ⊤ P.i.1).IsRightAdjoint :=
-    Adjunction.isRightAdjoint (MorphismProperty.Over.mapPullbackAdj R ⊤ P.i.1 P.i.2 trivial)
   infer_instance
 
 /-- A commutative triangle
@@ -677,33 +740,38 @@ def cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O 
     Functor.whiskerLeft _ (MorphismProperty.Over.pullbackId R ⊤ O).hom
   cellLeft ≫ᵥ cellMid ≫ᵥ cellRight
 
-theorem _root_.CategoryTheory.NatTrans.IsCartesian.comp' {J : Type*} [Category J]
-    {F G H : J ⥤ C} {α : F ⟶ G} {β : G ⟶ H} (hα : α.IsCartesian) (hβ : β.IsCartesian) :
-    (α ≫ β).IsCartesian := inferInstance
-
-theorem _root_.CategoryTheory.NatTrans.IsCartesian.of_isIso' {J : Type*} [Category J]
-    {F G : J ⥤ C} (α : F ⟶ G) [IsIso α] :
-    α.IsCartesian := inferInstance
-
--- TODO: use Sina's Poly ForMathlib files, not the `clan` branch of Mathlib.
--- JH changed IsCartesian to an instance, which proves to be difficult to work with.
 open NatTrans in
 theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O E' B')
     (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i.1 = φ ≫ P'.i.1) (pb : IsPullback φ P.p.1 P'.p.1 δ)
     (hδ : δ ≫ P'.o.1 = P.o.1) :
     (cartesianNatTrans P P' δ φ hφ pb hδ).IsCartesian := by
   dsimp [cartesianNatTrans]
-  have : NatTrans.IsCartesian
-      (pullbackMapTwoSquare R P.o.1 δ (𝟙 _) P'.o.1 P'.o.2 P.o.2 (by simp [hδ])) := by
-    unfold pullbackMapTwoSquare
-    simp only [mateEquiv_symm_apply]
-    -- apply IsCartesian.comp'; apply IsCartesian.of_isIso'
-    -- apply IsCartesian.comp'
-    -- · apply IsCartesian.whiskerRight
-    -- · apply isCartesian_mapPullbackAdj_counit
-    -- . apply isCartesian_of_isIso
-    sorry
-  infer_instance
+  -- NOTE: this lemma could be extracted, but `repeat' apply IsCartesian.comp` will unfold past it.
+  -- have : NatTrans.IsCartesian
+  --     (pullbackMapTwoSquare R P.o.1 δ (𝟙 _) P'.o.1 P'.o.2 P.o.2 (by simp [hδ])) := by
+  --   -- unfold pullbackMapTwoSquare
+  --   -- simp only [mateEquiv_symm_apply]
+  --   repeat' apply IsCartesian.comp
+  --   -- have (i j : R.Over ⊤ B') (f : j ⟶ i) :
+  --   -- PreservesLimit
+  --   --   (cospan ((mapPullbackAdj R ⊤ P'.o.fst P'.o.snd trivial).unit.app i)
+  --   --     ((MorphismProperty.Over.map ⊤ P'.o.2 ⋙ MorphismProperty.Over.pullback R ⊤ P'.o.fst).map f))
+  --   --   (MorphismProperty.Over.pullback R ⊤ δ ⋙ MorphismProperty.Over.map ⊤ P.o.2) := sorry
+  --   any_goals apply isCartesian_of_isIso
+  --   · sorry --refine IsCartesian.whiskerRight _ _
+  --   · apply IsCartesian.whiskerLeft
+  --     apply isCartesian_mapPullbackAdj_counit
+  repeat' apply IsCartesian.comp
+  any_goals apply isCartesian_of_isIso
+  apply IsCartesian.whiskerLeft
+  repeat' apply IsCartesian.comp
+  any_goals apply isCartesian_of_isIso
+  apply IsCartesian.whiskerLeft
+  repeat' apply IsCartesian.comp
+  any_goals apply isCartesian_of_isIso
+  · sorry -- apply IsCartesian.whiskerRight
+  · apply IsCartesian.whiskerLeft
+    apply isCartesian_mapPullbackAdj_counit
 
 end MvPoly
 
