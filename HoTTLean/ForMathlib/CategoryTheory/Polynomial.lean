@@ -959,16 +959,17 @@ C --- >  C/E -----> C/B  -----> C
 -/
 def cartesianNatTrans {E' B' : C} (P : UvPoly R E B) (P' : UvPoly R E' B')
     (δ : B ⟶ B') (φ : E ⟶ E') (pb : IsPullback φ P.p P'.p δ) : P.functor ⟶ P'.functor :=
-  let mv := P.mvPoly.cartesianNatTrans P'.mvPoly δ φ (isTerminal.hom_ext ..) pb (isTerminal.hom_ext ..)
+  let mv := P.mvPoly.cartesianNatTrans P'.mvPoly δ φ (isTerminal.hom_ext ..)
+    pb (isTerminal.hom_ext ..)
   (toOverTerminal).whiskerLeft (Functor.whiskerRight mv fromOverTerminal)
 
+open NatTrans in
 theorem isCartesian_cartesianNatTrans {D F : C} (P : UvPoly R E B) (Q : UvPoly R F D)
     (δ : B ⟶ D) (φ : E ⟶ F) (pb : IsPullback φ P.p Q.p δ) :
-    (cartesianNatTrans P Q δ φ pb).IsCartesian :=
-  -- (isCartesian_of_isIso _).vComp <|
-  -- (isCartesian_of_isIso _).vComp <|
-  -- isCartesian_pullbackForgetTwoSquare _
-  sorry
+    (cartesianNatTrans P Q δ φ pb).IsCartesian := by
+  apply IsCartesian.whiskerLeft
+  apply IsCartesian.whiskerRight
+  apply MvPoly.isCartesian_cartesianNatTrans
 
 /-- A morphism from a polynomial `P` to a polynomial `Q` is a pair of morphisms `e : E ⟶ E'`
 and `b : B ⟶ B'` such that the diagram
