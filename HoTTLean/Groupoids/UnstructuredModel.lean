@@ -13,7 +13,7 @@ Here we construct universes for the groupoid natural model.
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 
 noncomputable section
-open CategoryTheory Limits UnstructuredModel Universe
+open CategoryTheory Limits Model UnstructuredUniverse
   Functor.Groupoidal GroupoidModel.Ctx GroupoidModel.U
 
 namespace GroupoidModel
@@ -24,7 +24,7 @@ open U
   The π-clan we use is the set of groupoid isofibrations.
 -/
 @[simps]
-def U : Universe Grpd where
+def U : UnstructuredUniverse Grpd where
   Ty := Ty.{v}
   Tm := Tm.{v}
   tp := tp
@@ -81,7 +81,7 @@ def isoExtAsSmallClosedType :
 
 end U
 
-def liftSeqObjs (i : Nat) (h : i < 4) : Universe Grpd.{4} :=
+def liftSeqObjs (i : Nat) (h : i < 4) : UnstructuredUniverse Grpd.{4} :=
   match i with
   | 0 => U.{0,4}
   | 1 => U.{1,4}
@@ -113,7 +113,7 @@ theorem substWk_eq (A : Γ ⟶ U.Ty.{v}) (σA : Δ ⟶ U.Ty.{v}) (eq) :
     U.sec _ α hα = sec (toCoreAsSmallEquiv A) (toCoreAsSmallEquiv α)
     (by rw [← hα, Grpd.comp_eq_comp, tp, toCoreAsSmallEquiv_apply_comp_right]) := by
   apply (U.disp_pullback _).hom_ext
-  . erw [Universe.sec_var, U_var, var, Grpd.comp_eq_comp,
+  . erw [sec_var, U_var, var, Grpd.comp_eq_comp,
       ← toCoreAsSmallEquiv_symm_apply_comp_left, Equiv.eq_symm_apply, sec_toPGrpd]
     rfl
   . rw [sec_disp]

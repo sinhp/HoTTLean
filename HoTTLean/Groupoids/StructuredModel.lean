@@ -1,4 +1,4 @@
-import HoTTLean.Groupoids.Pi
+import HoTTLean.Groupoids.IsIsofibration
 
 /-!
 Here we construct universes for the groupoid natural model.
@@ -7,7 +7,7 @@ Here we construct universes for the groupoid natural model.
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 
 noncomputable section
-open CategoryTheory Limits UnstructuredModel StructuredModel Universe
+open CategoryTheory Limits Model UnstructuredUniverse StructuredUniverse
   Functor.Groupoidal GroupoidModel.Ctx GroupoidModel.U
 
 namespace GroupoidModel
@@ -18,7 +18,7 @@ open U
   The π-clan we use is the set of groupoid isofibrations.
 -/
 @[simps!]
-def StructuredU : Universe Grpd.IsIsofibration where
+def StructuredU : StructuredUniverse Grpd.IsIsofibration where
   __ := U
   morphismProperty := sorry
 
@@ -26,7 +26,7 @@ namespace U
 
 open MonoidalCategory
 
-def liftSeqObjs (i : Nat) (h : i < 4) : Universe Grpd.IsIsofibration.{5} :=
+def liftSeqObjs (i : Nat) (h : i < 4) : StructuredUniverse Grpd.IsIsofibration.{5} :=
   match i with
   | 0 => StructuredU.{0,4}
   | 1 => StructuredU.{1,4}
@@ -60,15 +60,15 @@ def liftSeq : UHomSeq Grpd.IsIsofibration.{5} where
   objs := liftSeqObjs
   homSucc' := liftSeqHomSucc'
 
-def USig : Universe.Sigma StructuredU :=
+def USig : StructuredUniverse.Sigma StructuredU :=
   PolymorphicSigma.ofUnstructured GroupoidModel.USig
 
-def smallUPi : Universe.Pi StructuredU :=
+def smallUPi : StructuredUniverse.Pi StructuredU :=
   PolymorphicPi.ofUnstructured GroupoidModel.UPi
 
 #exit
 def liftSeqSigs' (i : ℕ) (ilen : i < 4) :
-    Universe.Sigma (liftSeqObjs i ilen) :=
+    StructuredUniverse.Sigma (liftSeqObjs i ilen) :=
   match i with
   | 0 => USig.{0, 4}
   | 1 => USig.{1, 4}
@@ -80,7 +80,7 @@ instance liftSeqSigma : liftSeq.SigSeq where
   nmSig := liftSeqSigs'
 
 def uHomSeqPis' (i : ℕ) (ilen : i < 4) :
-    Universe.Pi (uHomSeqObjs i ilen) :=
+    StructuredUniverse.Pi (uHomSeqObjs i ilen) :=
   match i with
   | 0 => smallUPi.{0,4}
   | 1 => smallUPi.{1,4}
@@ -106,7 +106,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- `PtpEquiv.fst` is the `A` in this pair.
 -- -/
 -- def fst : Γ ⥤ Grpd.{v,v} :=
---   toCoreAsSmallEquiv (Universe.PtpEquiv.fst U AB)
+--   toCoreAsSmallEquiv (StructuredUniverse.PtpEquiv.fst U AB)
 
 -- variable (A := fst AB) (hA : A = fst AB := by rfl)
 
@@ -117,8 +117,8 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- `PtpEquiv.snd` is the `B` in this pair.
 -- -/
 -- def snd : ∫A ⥤ C :=
---   toCoreAsSmallEquiv (Universe.PtpEquiv.snd U AB (toCoreAsSmallEquiv.symm A) (by
---     simp [Universe.PtpEquiv.fst, hA, fst]))
+--   toCoreAsSmallEquiv (StructuredUniverse.PtpEquiv.snd U AB (toCoreAsSmallEquiv.symm A) (by
+--     simp [StructuredUniverse.PtpEquiv.fst, hA, fst]))
 
 -- nonrec theorem fst_comp_left : fst (σ ≫ AB) = σ ⋙ fst AB := by
 --   dsimp only [fst]
@@ -127,7 +127,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- theorem fst_comp_right {D : Type (v + 1)} [Category.{v, v + 1} D] (F : C ⥤ D) :
 --     fst (AB ≫ U.Ptp.map (Ctx.coreAsSmallFunctor F)) = fst AB := by
 --   dsimp only [fst]
---   rw [Universe.PtpEquiv.fst_comp_right]
+--   rw [StructuredUniverse.PtpEquiv.fst_comp_right]
 
 -- nonrec theorem snd_comp_left : snd (σ ≫ AB) (σ ⋙ A) (by rw [hA, fst_comp_left]) =
 --     map (eqToHom (by rw [hA])) ⋙ pre _ σ ⋙ snd AB := by
@@ -146,14 +146,14 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- -/
 -- def mk (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ C) :
 --     Γ ⟶ U.{v}.Ptp.obj (Ctx.coreAsSmall C) :=
---   Universe.PtpEquiv.mk U (toCoreAsSmallEquiv.symm A) (toCoreAsSmallEquiv.symm B)
+--   StructuredUniverse.PtpEquiv.mk U (toCoreAsSmallEquiv.symm A) (toCoreAsSmallEquiv.symm B)
 
 -- theorem hext (AB1 AB2 : Γ ⟶ U.{v}.Ptp.obj Ty.{v}) (hfst : fst AB1 = fst AB2)
 --     (hsnd : HEq (snd AB1) (snd AB2)) : AB1 = AB2 := by
---   have hfst' : Universe.PtpEquiv.fst U AB1 = Universe.PtpEquiv.fst U AB2 := by
+--   have hfst' : StructuredUniverse.PtpEquiv.fst U AB1 = StructuredUniverse.PtpEquiv.fst U AB2 := by
 --     dsimp [fst] at hfst
 --     aesop
---   apply Universe.PtpEquiv.ext U (Universe.PtpEquiv.fst U AB1) ?_ hfst' ?_
+--   apply StructuredUniverse.PtpEquiv.ext U (StructuredUniverse.PtpEquiv.fst U AB1) ?_ hfst' ?_
 --   · simp
 --   · dsimp only [snd] at hsnd
 --     apply toCoreAsSmallEquiv.injective
@@ -164,7 +164,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- @[simp]
 -- lemma fst_mk (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ C) :
 --     fst (mk A B) = A := by
---   simp [fst, mk, Universe.PtpEquiv.fst_mk]
+--   simp [fst, mk, StructuredUniverse.PtpEquiv.fst_mk]
 
 -- lemma Grpd.eqToHom_comp_heq {A B : Grpd} {C : Type*} [Category C]
 --     (h : A = B) (F : B ⥤ C) : eqToHom h ⋙ F ≍ F := by
@@ -175,7 +175,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 --     snd (mk A B) A' (by rw [fst_mk, hA]) = map (eqToHom hA.symm) ⋙ B := by
 --   dsimp only [snd, mk]
 --   subst hA
---   rw [Universe.PtpEquiv.snd_mk U (toCoreAsSmallEquiv.symm A) (toCoreAsSmallEquiv.symm B)]
+--   rw [StructuredUniverse.PtpEquiv.snd_mk U (toCoreAsSmallEquiv.symm A) (toCoreAsSmallEquiv.symm B)]
 --   erw [Equiv.apply_symm_apply toCoreAsSmallEquiv B]
 --   simp [map_id_eq]
 
@@ -189,7 +189,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 
 -- @[simp]
 -- abbrev compP : compDom.{v} ⟶ U.{v}.Ptp.obj Ty.{v} :=
---   Universe.compP U U
+--   StructuredUniverse.compP U U
 
 -- namespace compDom
 
@@ -202,7 +202,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- is `(a : A)` in `(a : A) × (b : B a)`.
 -- -/
 -- def fst : Γ ⥤ PGrpd.{v,v} :=
---   toCoreAsSmallEquiv (Universe.compDomEquiv.fst ab)
+--   toCoreAsSmallEquiv (StructuredUniverse.compDomEquiv.fst ab)
 
 -- /-- Universal property of `compDom`, decomposition (part 2).
 
@@ -212,7 +212,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- -/
 -- def dependent (A := fst ab ⋙ PGrpd.forgetToGrpd) (eq : fst ab ⋙ PGrpd.forgetToGrpd = A := by rfl) :
 --     ∫(A) ⥤ Grpd.{v,v} :=
---   toCoreAsSmallEquiv (Universe.compDomEquiv.dependent ab (toCoreAsSmallEquiv.symm A) (by
+--   toCoreAsSmallEquiv (StructuredUniverse.compDomEquiv.dependent ab (toCoreAsSmallEquiv.symm A) (by
 --     simp only [U_Ty, U_Tm, compDomEquiv.fst, U_tp, ← eq]
 --     erw [toCoreAsSmallEquiv_symm_apply_comp_right]
 --     simp [fst]; rfl))
@@ -224,7 +224,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- is `(b : B a)` in `(a : A) × (b : B a)`.
 -- -/
 -- def snd : Γ ⥤ PGrpd.{v,v} :=
---   toCoreAsSmallEquiv (Universe.compDomEquiv.snd ab)
+--   toCoreAsSmallEquiv (StructuredUniverse.compDomEquiv.snd ab)
 
 -- /-- Universal property of `compDom`, decomposition (part 4).
 
@@ -235,7 +235,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 -- -/
 -- theorem snd_forgetToGrpd : snd ab ⋙ PGrpd.forgetToGrpd = sec _ (fst ab) rfl ⋙ (dependent ab) := by
 --   erw [← toCoreAsSmallEquiv_apply_comp_right, ← Grpd.comp_eq_comp,
---     Universe.compDomEquiv.snd_tp ab, sec_eq]
+--     StructuredUniverse.compDomEquiv.snd_tp ab, sec_eq]
 --   rfl
 
 -- /-- Universal property of `compDom`, constructing a map into `compDom`. -/
@@ -244,7 +244,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 --     (B : ∫(A) ⥤ Grpd.{v,v})
 --     (β : Γ ⥤ PGrpd.{v,v}) (h : β ⋙ PGrpd.forgetToGrpd = sec _ α hA ⋙ B) :
 --     Γ ⟶ compDom.{v} :=
---   Universe.compDomEquiv.mk (toCoreAsSmallEquiv.symm α) (A := toCoreAsSmallEquiv.symm A)
+--   StructuredUniverse.compDomEquiv.mk (toCoreAsSmallEquiv.symm α) (A := toCoreAsSmallEquiv.symm A)
 --     (by rw [← hA, toCoreAsSmallEquiv_symm_apply_comp_right]; rfl)
 --     (toCoreAsSmallEquiv.symm B) (toCoreAsSmallEquiv.symm β)
 --     (by
@@ -265,7 +265,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 --     (eq : fst ab ⋙ PGrpd.forgetToGrpd = A := by rfl) : dependent ab A eq =
 --     map (eqToHom (by rw [← eq, fst_forgetToGrpd])) ⋙ U.PtpEquiv.snd (ab ≫ compP.{v}) := by
 --   dsimp only [dependent, PtpEquiv.snd]
---   rw [Universe.compDomEquiv.dependent_eq _ _ _, ← toCoreAsSmallEquiv_apply_comp_left]
+--   rw [StructuredUniverse.compDomEquiv.dependent_eq _ _ _, ← toCoreAsSmallEquiv_apply_comp_left]
 --   subst eq
 --   rw! [← fst_forgetToGrpd]
 --   simp [map_id_eq]
@@ -279,21 +279,21 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 
 -- theorem fst_comp : fst (σ ≫ ab) = σ ⋙ fst ab := by
 --   dsimp only [fst]
---   rw [Universe.compDomEquiv.fst_comp, Grpd.comp_eq_comp,
+--   rw [StructuredUniverse.compDomEquiv.fst_comp, Grpd.comp_eq_comp,
 --     toCoreAsSmallEquiv_apply_comp_left]
 
 -- theorem dependent_comp : dependent (σ ≫ ab) =
 --     map (eqToHom (by rw [fst_comp, Functor.assoc]))
 --     ⋙ pre _ σ ⋙ dependent ab := by
 --   rw [dependent, dependent,
---     ← Universe.compDomEquiv.comp_dependent (eq1 := rfl)
+--     ← StructuredUniverse.compDomEquiv.comp_dependent (eq1 := rfl)
 --       (eq2 := by erw [← compDomEquiv.fst_comp_assoc, fst, toCoreAsSmallEquiv.eq_symm_apply]; rfl),
 --     substWk_eq]
 --   rfl
 
 -- theorem snd_comp : snd (σ ≫ ab) = σ ⋙ snd ab := by
 --   dsimp only [snd]
---   rw [Universe.compDomEquiv.snd_comp, Grpd.comp_eq_comp,
+--   rw [StructuredUniverse.compDomEquiv.snd_comp, Grpd.comp_eq_comp,
 --     toCoreAsSmallEquiv_apply_comp_left]
 
 -- /-- First component of the computation rule for `mk`. -/
@@ -302,7 +302,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 --     (B : ∫(A) ⥤ Grpd.{v,v})
 --     (β : Γ ⥤ PGrpd.{v,v}) (h : β ⋙ PGrpd.forgetToGrpd = sec _ α hA ⋙ B) :
 --     fst (mk α A hA B β h) = α := by
---   simp [fst, mk, Universe.compDomEquiv.fst_mk]
+--   simp [fst, mk, StructuredUniverse.compDomEquiv.fst_mk]
 
 -- /-- Second component of the computation rule for `mk`. -/
 -- theorem dependent_mk (α : Γ ⥤ PGrpd.{v,v}) (A := α ⋙ PGrpd.forgetToGrpd)
@@ -325,7 +325,7 @@ instance uHomSeqPi : uHomSeq.PiSeq where
 --     (β : Γ ⥤ PGrpd.{v,v}) (h : β ⋙ PGrpd.forgetToGrpd = sec _ α hA ⋙ B) :
 --     snd (mk α A hA B β h) = β := by
 --   dsimp [snd, mk]
---   rw [Universe.compDomEquiv.snd_mk]
+--   rw [StructuredUniverse.compDomEquiv.snd_mk]
 --   simp
 
 -- theorem ext (ab1 ab2 : Γ ⟶ U.compDom.{v})

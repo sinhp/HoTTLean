@@ -10,12 +10,12 @@ noncomputable section
 
 open CategoryTheory Limits Opposite
 
-namespace UnstructuredModel
+namespace Model
 
 /-- A natural model with support for dependent types (and nothing more).
 The data is a natural transformation with representable fibers,
 stored as a choice of representative for each fiber. -/
-structure Universe (Ctx : Type u) [Category Ctx] where
+structure UnstructuredUniverse (Ctx : Type u) [Category Ctx] where
   Tm : Ctx
   Ty : Ctx
   tp : Tm ⟶ Ty
@@ -25,14 +25,14 @@ structure Universe (Ctx : Type u) [Category Ctx] where
   disp_pullback {Γ : Ctx} (A : Γ ⟶ Ty) :
     IsPullback (var A) (disp A) tp A
 
-namespace Universe
+namespace UnstructuredUniverse
 
-variable {Ctx : Type u} [Category Ctx] (M : Universe Ctx)
+variable {Ctx : Type u} [Category Ctx] (M : UnstructuredUniverse Ctx)
 
 /-! ## Pullback of representable natural transformation -/
 
 /-- Pull a natural model back along a type. -/
-protected def pullback {Γ : Ctx} (A : Γ ⟶ M.Ty) : Universe Ctx where
+protected def pullback {Γ : Ctx} (A : Γ ⟶ M.Ty) : UnstructuredUniverse Ctx where
   Tm := M.ext A
   Ty := Γ
   tp := M.disp A
@@ -62,7 +62,7 @@ protected def pullback {Γ : Ctx} (A : Γ ⟶ M.Ty) : Universe Ctx where
 def ofIsPullback {U E : Ctx} {π : E ⟶ U}
     {toTy : U ⟶ M.Ty} {toTm : E ⟶ M.Tm}
     (pb : IsPullback toTm π M.tp toTy) :
-    Universe Ctx where
+    UnstructuredUniverse Ctx where
   Ty := U
   Tm := E
   tp := π
@@ -198,7 +198,7 @@ theorem comp_sec {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (σA) (eq : σ
   apply (M.disp_pullback _).hom_ext <;>
     simp [sec, substWk]
 
-structure PolymorphicSigma (U0 U1 U2 : Universe Ctx) where
+structure PolymorphicSigma (U0 U1 U2 : UnstructuredUniverse Ctx) where
     (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
     (Sig_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
       Sig (U0.substWk σ A σA eq ≫ B) = σ ≫ Sig B)
@@ -238,7 +238,7 @@ structure PolymorphicSigma (U0 U1 U2 : Universe Ctx) where
     (eta : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
       (s_tp : s ≫ U2.tp = Sig B), pair B (fst B s s_tp) (fst_tp ..) (snd B s s_tp) (snd_tp ..) = s)
 
-structure PolymorphicPi (U0 U1 U2 : Universe Ctx) where
+structure PolymorphicPi (U0 U1 U2 : UnstructuredUniverse Ctx) where
     (Pi : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
     (Pi_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
       Pi (U0.substWk σ A σA eq ≫ B) = σ ≫ Pi B)
@@ -264,6 +264,6 @@ structure PolymorphicPi (U0 U1 U2 : Universe Ctx) where
     (lam_unLam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm)
       (f_tp : f ≫ U2.tp = Pi B), lam B (unLam B f f_tp) (unLam_tp ..) = f)
 
-end Universe
+end UnstructuredUniverse
 
-end UnstructuredModel
+end Model

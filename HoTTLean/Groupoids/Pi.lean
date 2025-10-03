@@ -1041,7 +1041,7 @@ lemma lam_unLam {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.Ty) (f : Γ 
 
 end UPi
 
-def UPi : UnstructuredModel.Universe.PolymorphicPi U.{v} U.{v} U.{v} where
+def UPi : Model.UnstructuredUniverse.PolymorphicPi U.{v} U.{v} U.{v} where
   Pi := UPi.Pi
   Pi_comp := UPi.Pi_comp
   lam _ b _ := UPi.lam b

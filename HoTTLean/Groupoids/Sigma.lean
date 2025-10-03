@@ -7,7 +7,7 @@ noncomputable section
 
 namespace GroupoidModel
 
-open CategoryTheory UnstructuredModel Universe Opposite Functor.Groupoidal PGrpd
+open CategoryTheory Model UnstructuredUniverse Opposite Functor.Groupoidal PGrpd
 
 attribute [local simp] eqToHom_map Grpd.id_eq_id Grpd.comp_eq_comp Functor.id_comp
 
@@ -1014,7 +1014,7 @@ lemma USig.eta {Γ : Grpd} {A : Γ ⟶ U.Ty} (B : U.ext A ⟶ U.Ty) (s : Γ ⟶ 
   congr 1
   simp [sigma.dependent', map_id_eq]
 
-def USig : Universe.PolymorphicSigma U.{v} U.{v} U.{v} where
+def USig : PolymorphicSigma U.{v} U.{v} U.{v} where
   Sig := USig.Sig
   Sig_comp := USig.Sig_comp
   pair := USig.pair

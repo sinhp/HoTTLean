@@ -11,14 +11,14 @@ noncomputable section
 
 open CategoryTheory Limits Opposite MonoidalCategory
 
-namespace StructuredModel
+namespace Model
 
-namespace Universe
+namespace StructuredUniverse
 
-open UnstructuredModel.Universe
+open UnstructuredUniverse
 
 variable {Ctx : Type u} [Category Ctx] {R : MorphismProperty Ctx}
-    (M : StructuredModel.Universe R)
+    (M : StructuredUniverse R)
 
 variable [ChosenTerminal Ctx] [R.HasObjects] [R.IsMultiplicative]
   [R.HasPullbacks] [R.IsStableUnderBaseChange]
@@ -28,28 +28,28 @@ open ChosenTerminal
 
 macro "by>" s:tacticSeq : term => `(by as_aux_lemma => $s)
 
-structure Hom (M N : Universe R) where
+structure Hom (M N : StructuredUniverse R) where
   mapTm : M.Tm ⟶ N.Tm
   mapTy : M.Ty ⟶ N.Ty
   pb : IsPullback mapTm M.tp N.tp mapTy
 
-def Hom.id (M : Universe R) : Hom M M where
+def Hom.id (M : StructuredUniverse R) : Hom M M where
   mapTm := 𝟙 _
   mapTy := 𝟙 _
   pb := IsPullback.of_id_fst
 
-def Hom.comp {M N O : Universe R} (α : Hom M N) (β : Hom N O) : Hom M O where
+def Hom.comp {M N O : StructuredUniverse R} (α : Hom M N) (β : Hom N O) : Hom M O where
   mapTm := α.mapTm ≫ β.mapTm
   mapTy := α.mapTy ≫ β.mapTy
   pb := α.pb.paste_horiz β.pb
 
-def Hom.comp_assoc {M N O P : Universe R} (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
+def Hom.comp_assoc {M N O P : StructuredUniverse R} (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp]
 
 /-- Morphism into the representable natural transformation `M`
 from the pullback of `M` along a type. -/
-protected def pullbackHom (M : Universe R) {Γ : Ctx} (A : (Γ) ⟶ M.Ty) :
+protected def pullbackHom (M : StructuredUniverse R) {Γ : Ctx} (A : (Γ) ⟶ M.Ty) :
     Hom (M.pullback A) M where
   mapTm := M.var A
   mapTy := A
@@ -58,7 +58,7 @@ protected def pullbackHom (M : Universe R) {Γ : Ctx} (A : (Γ) ⟶ M.Ty) :
 /-- Given `M : Universe`, a semantic type `A : (Γ) ⟶ M.Ty`,
 and a substitution `σ : Δ ⟶ Γ`, construct a Hom for the substitution `A[σ]`.
 -/
-def Hom.subst (M : Universe R)
+def Hom.subst (M : StructuredUniverse R)
     {Γ Δ : Ctx} (A : (Γ) ⟶ M.Ty) (σ : Δ ⟶ Γ) :
     Hom (M.pullback ((σ) ≫ A)) (M.pullback A) :=
   let Aσ := (σ) ≫ A
@@ -68,7 +68,7 @@ def Hom.subst (M : Universe R)
     pb := by
       convert IsPullback.of_right' (M.disp_pullback Aσ) (M.disp_pullback A)}
 
-@[simp] def Hom.extIsoExt {M N : Universe R} (h : Hom M N)
+@[simp] def Hom.extIsoExt {M N : StructuredUniverse R} (h : Hom M N)
     {Γ} (A : Γ ⟶ M.Ty) : (N.ext (A ≫ h.mapTy)) ≅ (M.ext A) :=
   IsPullback.isoIsPullback N.Tm Γ (N.disp_pullback (A ≫ h.mapTy))
   (IsPullback.paste_horiz (M.disp_pullback A) h.pb)
@@ -80,7 +80,7 @@ These don't form a category since `UHom.id M` is essentially `Type : Type` in `M
 
 Note this doesn't need to extend `Hom` as none of its fields are used;
 it's just convenient to pack up the data. -/
-structure UHom (M N : Universe R) extends Hom M N where
+structure UHom (M N : StructuredUniverse R) extends Hom M N where
   U : ChosenTerminal.terminal ⟶ N.Ty
   asTm : M.Ty ⟶ N.Tm
   U_pb : IsPullback
@@ -89,7 +89,7 @@ structure UHom (M N : Universe R) extends Hom M N where
              /- ⊤ -/               U  /- N.Ty -/
 
 def UHom.ofTyIsoExt
-    {M N : Universe R}
+    {M N : StructuredUniverse R}
     (H : Hom M N) {U : (𝟭_ Ctx) ⟶ N.Ty} (i : M.Ty ≅ (N.ext U)) :
     UHom M N where
   __ := H
@@ -99,27 +99,27 @@ def UHom.ofTyIsoExt
     convert IsPullback.of_iso_isPullback (N.disp_pullback _) i
     apply ChosenTerminal.isTerminal.hom_ext
 
-def UHom.comp {M N O : Universe R} (α : UHom M N) (β : UHom N O) : UHom M O where
+def UHom.comp {M N O : StructuredUniverse R} (α : UHom M N) (β : UHom N O) : UHom M O where
   __ := Hom.comp α.toHom β.toHom
   U := α.U ≫ β.mapTy
   asTm := α.asTm ≫ β.mapTm
   U_pb := α.U_pb.paste_horiz β.pb
 
-def UHom.comp_assoc {M N O P : Universe R} (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
+def UHom.comp_assoc {M N O P : StructuredUniverse R} (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp, Hom.comp]
 
-def UHom.wkU {M N : Universe R} (Γ : Ctx) (α : UHom M N) : (Γ) ⟶ N.Ty :=
+def UHom.wkU {M N : StructuredUniverse R} (Γ : Ctx) (α : UHom M N) : (Γ) ⟶ N.Ty :=
   ChosenTerminal.isTerminal.from Γ ≫ α.U
 
 @[reassoc (attr := simp)]
-theorem UHom.comp_wkU {M N : Universe R} {Δ Γ : Ctx} (α : UHom M N) (f : (Δ) ⟶ (Γ)) :
+theorem UHom.comp_wkU {M N : StructuredUniverse R} {Δ Γ : Ctx} (α : UHom M N) (f : (Δ) ⟶ (Γ)) :
     f ≫ α.wkU Γ = α.wkU Δ := by
   simp [wkU]
 
 /- Sanity check:
 construct a `UHom` into a natural model with a Tarski universe. -/
-def UHom.ofTarskiU (M : Universe R) (U : (𝟭_ Ctx) ⟶ M.Ty) (El : (M.ext U) ⟶ M.Ty) :
+def UHom.ofTarskiU (M : StructuredUniverse R) (U : (𝟭_ Ctx) ⟶ M.Ty) (El : (M.ext U) ⟶ M.Ty) :
     UHom (M.pullback El) M where
   __ := M.pullbackHom El
   U
@@ -140,14 +140,14 @@ structure UHomSeq where
   /-- Number of embeddings in the sequence,
   or one less than the number of models in the sequence. -/
   length : Nat
-  objs (i : Nat) (h : i < length + 1) : Universe R
+  objs (i : Nat) (h : i < length + 1) : StructuredUniverse R
   homSucc' (i : Nat) (h : i < length) : UHom (objs i <| by omega) (objs (i + 1) <| by omega)
 
 namespace UHomSeq
 
 variable (s : UHomSeq R)
 
-instance : GetElem (UHomSeq R) Nat (Universe R) (fun s i => i < s.length + 1) where
+instance : GetElem (UHomSeq R) Nat (StructuredUniverse R) (fun s i => i < s.length + 1) where
   getElem s i h := s.objs i h
 
 def homSucc (i : Nat) (h : i < s.length := by get_elem_tactic) : UHom s[i] s[i+1] :=
@@ -286,12 +286,12 @@ lemma code_el (s : UHomSeq R) {Γ : Ctx} {i : Nat} (ilen : i < s.length)
 
 end UHomSeq
 
-def Hom.cartesianNatTrans {M N : StructuredModel.Universe R} (h : Hom M N) :
+def Hom.cartesianNatTrans {M N : StructuredUniverse R} (h : Hom M N) :
     M.Ptp ⟶ N.Ptp :=
   M.uvPolyTp.cartesianNatTrans N.uvPolyTp h.mapTy h.mapTm h.pb
 
 @[reassoc]
-theorem Hom.mk_comp_cartesianNatTrans {M N : StructuredModel.Universe R}
+theorem Hom.mk_comp_cartesianNatTrans {M N : StructuredUniverse R}
     (h : Hom M N) {Γ X} (A : Γ ⟶ M.Ty) (B : M.ext A ⟶ X) :
     PtpEquiv.mk M A B ≫ h.cartesianNatTrans.app X =
     PtpEquiv.mk N (A ≫ h.mapTy) ((h.extIsoExt A).hom ≫ B) := by sorry
@@ -429,7 +429,7 @@ can be extended to
 Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ ΠA. B type
 ``` -/
 protected class PiSeq (s : UHomSeq R) where
-  nmPi (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : Universe.Pi s[i]
+  nmPi (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : StructuredUniverse.Pi s[i]
 
 section Pi
 open PiSeq
@@ -458,176 +458,184 @@ def Pi_pb :
   sorry
   -- apply CategoryTheory.IsPullback.paste_horiz (p1.isCartesian s[j].tp).flip q
 
-/--
-```
-Γ ⊢ᵢ A  Γ.A ⊢ⱼ B
------------------
-Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ ΠA. B
-``` -/
-def mkPi {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty) : (Γ) ⟶ s[max i j].Ty :=
-  PtpEquiv.mk s[i] A B ≫ s.Pi ilen jlen
+def polymorphicPi : PolymorphicPi s[i] s[j] s[max i j] where
+  Pi := Pi s ilen jlen
+  lam := lam s ilen jlen
+  Pi_pullback := Pi_pb s ilen jlen
 
-theorem comp_mkPi {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
-    (A : (Γ) ⟶ s[i].Ty) (σA) (eq : (σ) ≫ A = σA)
-    (B : (s[i].ext A) ⟶ s[j].Ty) :
-    (σ) ≫ s.mkPi ilen jlen A B = s.mkPi ilen jlen σA ((s[i].substWk σ A _ eq) ≫ B) := by
-  simp [mkPi, ← Category.assoc, PtpEquiv.mk_comp_left (eq := eq)]
+-- NOTE: the commented out lemmas `lemma_name` are now called
+-- from (s.polymorphicPi ilen jlen).name
 
-/--
-```
-Γ ⊢ᵢ A  Γ.A ⊢ⱼ t : B
--------------------------
-Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ λA. t : ΠA. B
-``` -/
-def mkLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (t : (s[i].ext A) ⟶ s[j].Tm) : (Γ) ⟶ s[max i j].Tm :=
-  PtpEquiv.mk s[i] A t ≫ s.lam ilen jlen
+-- /--
+-- ```
+-- Γ ⊢ᵢ A  Γ.A ⊢ⱼ B
+-- -----------------
+-- Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ ΠA. B
+-- ``` -/
+-- def mkPi {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty) : (Γ) ⟶ s[max i j].Ty :=
+--   PtpEquiv.mk s[i] A B ≫ s.Pi ilen jlen
 
-@[simp]
-theorem mkLam_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (t : (s[i].ext A) ⟶ s[j].Tm) (t_tp : t ≫ s[j].tp = B) :
-    s.mkLam ilen jlen A t ≫ s[max i j].tp = s.mkPi ilen jlen A B := by
-  simp [mkLam, mkPi, (s.Pi_pb ilen jlen).w, PtpEquiv.mk_map_assoc, t_tp]
+-- theorem comp_mkPi {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+--     (A : (Γ) ⟶ s[i].Ty) (σA) (eq : (σ) ≫ A = σA)
+--     (B : (s[i].ext A) ⟶ s[j].Ty) :
+--     (σ) ≫ s.mkPi ilen jlen A B = s.mkPi ilen jlen σA ((s[i].substWk σ A _ eq) ≫ B) := by
+--   simp [mkPi, ← Category.assoc, PtpEquiv.mk_comp_left (eq := eq)]
 
-theorem comp_mkLam {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
-    (A : (Γ) ⟶ s[i].Ty) (σA) (eq : (σ) ≫ A = σA) (t : (s[i].ext A) ⟶ s[j].Tm) :
-    (σ) ≫ s.mkLam ilen jlen A t = s.mkLam ilen jlen σA ((s[i].substWk σ A _ eq) ≫ t) := by
-  simp [mkLam, ← Category.assoc, PtpEquiv.mk_comp_left (eq := eq)]
+-- /--
+-- ```
+-- Γ ⊢ᵢ A  Γ.A ⊢ⱼ t : B
+-- -------------------------
+-- Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ λA. t : ΠA. B
+-- ``` -/
+-- def mkLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (t : (s[i].ext A) ⟶ s[j].Tm) : (Γ) ⟶ s[max i j].Tm :=
+--   PtpEquiv.mk s[i] A t ≫ s.lam ilen jlen
+
+-- @[simp]
+-- theorem mkLam_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (t : (s[i].ext A) ⟶ s[j].Tm) (t_tp : t ≫ s[j].tp = B) :
+--     s.mkLam ilen jlen A t ≫ s[max i j].tp = s.mkPi ilen jlen A B := by
+--   simp [mkLam, mkPi, (s.Pi_pb ilen jlen).w, PtpEquiv.mk_map_assoc, t_tp]
+
+-- theorem comp_mkLam {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+--     (A : (Γ) ⟶ s[i].Ty) (σA) (eq : (σ) ≫ A = σA) (t : (s[i].ext A) ⟶ s[j].Tm) :
+--     (σ) ≫ s.mkLam ilen jlen A t = s.mkLam ilen jlen σA ((s[i].substWk σ A _ eq) ≫ t) := by
+--   simp [mkLam, ← Category.assoc, PtpEquiv.mk_comp_left (eq := eq)]
 
 
-/--
-```
-Γ ⊢ᵢ A  Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B
------------------------------
-Γ.A ⊢ⱼ unlam f : B
-``` -/
-def unLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
-    (s[i].ext A) ⟶ s[j].Tm := by
-  let total : (Γ) ⟶ s[i].Ptp.obj s[j].Tm :=
-    (s.Pi_pb ilen jlen).lift f (PtpEquiv.mk s[i] A B) f_tp
-  refine PtpEquiv.snd s[i] total _ ?_
-  have eq : total ≫ s[i].Ptp.map s[j].tp = PtpEquiv.mk s[i] A B :=
-    (s.Pi_pb ilen jlen).lift_snd ..
-  apply_fun PtpEquiv.fst s[i] at eq
-  rw [PtpEquiv.fst_comp_right] at eq
-  simpa using eq
+-- /--
+-- ```
+-- Γ ⊢ᵢ A  Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B
+-- -----------------------------
+-- Γ.A ⊢ⱼ unlam f : B
+-- ``` -/
+-- def unLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+--     (s[i].ext A) ⟶ s[j].Tm := by
+--   let total : (Γ) ⟶ s[i].Ptp.obj s[j].Tm :=
+--     (s.Pi_pb ilen jlen).lift f (PtpEquiv.mk s[i] A B) f_tp
+--   refine PtpEquiv.snd s[i] total _ ?_
+--   have eq : total ≫ s[i].Ptp.map s[j].tp = PtpEquiv.mk s[i] A B :=
+--     (s.Pi_pb ilen jlen).lift_snd ..
+--   apply_fun PtpEquiv.fst s[i] at eq
+--   rw [PtpEquiv.fst_comp_right] at eq
+--   simpa using eq
 
-@[simp]
-theorem unLam_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
-    s.unLam ilen jlen A B f f_tp ≫ s[j].tp = B := by
-  rw [unLam, ← PtpEquiv.snd_comp_right]
-  convert PtpEquiv.snd_mk s[i] A B using 2; simp
+-- @[simp]
+-- theorem unLam_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+--     s.unLam ilen jlen A B f f_tp ≫ s[j].tp = B := by
+--   rw [unLam, ← PtpEquiv.snd_comp_right]
+--   convert PtpEquiv.snd_mk s[i] A B using 2; simp
 
-theorem comp_unLam {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
-    (A : (Γ) ⟶ s[i].Ty) (σA) (eq : (σ) ≫ A = σA) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
-    (s[i].substWk σ A _ eq) ≫ s.unLam ilen jlen A B f f_tp =
-      s.unLam ilen jlen σA ((s[i].substWk σ A _ eq) ≫ B)
-        ((σ) ≫ f) (by simp [eq, f_tp, comp_mkPi]) := by
-  simp [unLam]
-  rw [← PtpEquiv.snd_comp_left]
-  simp [PtpEquiv.snd, UvPoly.Equiv.snd'_eq]; congr 1
-  apply pullback.hom_ext <;> simp; congr 1
-  apply (s.Pi_pb ilen jlen).hom_ext <;> simp
-  rw [PtpEquiv.mk_comp_left]
+-- theorem comp_unLam {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+--     (A : (Γ) ⟶ s[i].Ty) (σA) (eq : (σ) ≫ A = σA) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+--     (s[i].substWk σ A _ eq) ≫ s.unLam ilen jlen A B f f_tp =
+--       s.unLam ilen jlen σA ((s[i].substWk σ A _ eq) ≫ B)
+--         ((σ) ≫ f) (by simp [eq, f_tp, comp_mkPi]) := by
+--   simp [unLam]
+--   rw [← PtpEquiv.snd_comp_left]
+--   simp [PtpEquiv.snd, UvPoly.Equiv.snd'_eq]; congr 1
+--   apply pullback.hom_ext <;> simp; congr 1
+--   apply (s.Pi_pb ilen jlen).hom_ext <;> simp
+--   rw [PtpEquiv.mk_comp_left]
 
-/--
-```
-Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B  Γ ⊢ᵢ a : A
----------------------------------
-Γ ⊢ⱼ f a : B[id.a]
-``` -/
-def mkApp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B)
-    (a : (Γ) ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) : (Γ) ⟶ s[j].Tm :=
-  (s[i].sec A a a_tp) ≫ s.unLam ilen jlen A B f f_tp
+-- /--
+-- ```
+-- Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B  Γ ⊢ᵢ a : A
+-- ---------------------------------
+-- Γ ⊢ⱼ f a : B[id.a]
+-- ``` -/
+-- def mkApp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B)
+--     (a : (Γ) ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) : (Γ) ⟶ s[j].Tm :=
+--   (s[i].sec A a a_tp) ≫ s.unLam ilen jlen A B f f_tp
 
-@[simp]
-theorem mkApp_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B)
-    (a : (Γ) ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) :
-    s.mkApp ilen jlen A B f f_tp a a_tp ≫ s[j].tp = (s[i].sec A a a_tp) ≫ B := by
-  simp [mkApp]
+-- @[simp]
+-- theorem mkApp_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B)
+--     (a : (Γ) ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) :
+--     s.mkApp ilen jlen A B f f_tp a a_tp ≫ s[j].tp = (s[i].sec A a a_tp) ≫ B := by
+--   simp [mkApp]
 
-theorem comp_mkApp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
-    (A : Γ ⟶ s[i].Ty) (σA) (eq : σ ≫ A = σA) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B)
-    (a : Γ ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) :
-    σ ≫ s.mkApp ilen jlen A B f f_tp a a_tp =
-      s.mkApp ilen jlen σA (s[i].substWk σ A _ eq ≫ B)
-        (σ ≫ f) (by simp [f_tp, comp_mkPi (eq := eq)])
-        (σ ≫ a) (by simp [a_tp, eq]) := by
-  unfold mkApp; rw [← Category.assoc,
-    comp_sec (eq := eq), Category.assoc, comp_unLam (eq := eq)]
+-- theorem comp_mkApp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+--     (A : Γ ⟶ s[i].Ty) (σA) (eq : σ ≫ A = σA) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B)
+--     (a : Γ ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) :
+--     σ ≫ s.mkApp ilen jlen A B f f_tp a a_tp =
+--       s.mkApp ilen jlen σA (s[i].substWk σ A _ eq ≫ B)
+--         (σ ≫ f) (by simp [f_tp, comp_mkPi (eq := eq)])
+--         (σ ≫ a) (by simp [a_tp, eq]) := by
+--   unfold mkApp; rw [← Category.assoc,
+--     comp_sec (eq := eq), Category.assoc, comp_unLam (eq := eq)]
 
-@[simp]
-theorem mkLam_unLam {Γ : Ctx} (A : Γ ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
-    s.mkLam ilen jlen A (s.unLam ilen jlen A B f f_tp) = f := by
-  let total : Γ ⟶ s[i].Ptp.obj s[j].Tm :=
-    (s.Pi_pb ilen jlen).lift f (PtpEquiv.mk s[i] A B) f_tp
-  simp only [mkLam, unLam]
-  have : PtpEquiv.fst s[i] total = A := by
-    simp only [PtpEquiv.fst, UvPoly.Equiv.fst_eq, total]
-    rw [← s[i].uvPolyTp.map_fstProj s[j].tp]
-    slice_lhs 1 2 => apply (s.Pi_pb ilen jlen).lift_snd
-    apply PtpEquiv.fst_mk
-  slice_lhs 1 1 => equals total =>
-    apply PtpEquiv.ext _ (A := A) (by simp) (by simp [this]) (by simp [total])
-  apply (s.Pi_pb ilen jlen).lift_fst
+-- @[simp]
+-- theorem mkLam_unLam {Γ : Ctx} (A : Γ ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+--     s.mkLam ilen jlen A (s.unLam ilen jlen A B f f_tp) = f := by
+--   let total : Γ ⟶ s[i].Ptp.obj s[j].Tm :=
+--     (s.Pi_pb ilen jlen).lift f (PtpEquiv.mk s[i] A B) f_tp
+--   simp only [mkLam, unLam]
+--   have : PtpEquiv.fst s[i] total = A := by
+--     simp only [PtpEquiv.fst, UvPoly.Equiv.fst_eq, total]
+--     rw [← s[i].uvPolyTp.map_fstProj s[j].tp]
+--     slice_lhs 1 2 => apply (s.Pi_pb ilen jlen).lift_snd
+--     apply PtpEquiv.fst_mk
+--   slice_lhs 1 1 => equals total =>
+--     apply PtpEquiv.ext _ (A := A) (by simp) (by simp [this]) (by simp [total])
+--   apply (s.Pi_pb ilen jlen).lift_fst
 
-@[simp]
-theorem unLam_mkLam {Γ : Ctx} (A : Γ ⟶ s[i].Ty) (B : s[i].ext A ⟶ s[j].Ty)
-    (t : s[i].ext A ⟶ s[j].Tm) (t_tp : t ≫ s[j].tp = B)
-    (lam_tp : s.mkLam ilen jlen A t ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
-    s.unLam ilen jlen A B (s.mkLam ilen jlen A t) lam_tp = t := by
-  simp [mkLam, unLam]
-  convert PtpEquiv.snd_mk s[i] A t using 2
-  apply (s.Pi_pb ilen jlen).hom_ext <;> simp
-  rw [PtpEquiv.mk_comp_right, t_tp]
+-- @[simp]
+-- theorem unLam_mkLam {Γ : Ctx} (A : Γ ⟶ s[i].Ty) (B : s[i].ext A ⟶ s[j].Ty)
+--     (t : s[i].ext A ⟶ s[j].Tm) (t_tp : t ≫ s[j].tp = B)
+--     (lam_tp : s.mkLam ilen jlen A t ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+--     s.unLam ilen jlen A B (s.mkLam ilen jlen A t) lam_tp = t := by
+--   simp [mkLam, unLam]
+--   convert PtpEquiv.snd_mk s[i] A t using 2
+--   apply (s.Pi_pb ilen jlen).hom_ext <;> simp
+--   rw [PtpEquiv.mk_comp_right, t_tp]
 
-/--
-```
-Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B
---------------------------------------
-Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ λA. f[↑] v₀ : ΠA. B
-```
--/
-def etaExpand {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
-    (Γ) ⟶ s[max i j].Tm :=
-  s.mkLam ilen jlen A <|
-    s.mkApp ilen jlen
-      (s[i].disp A ≫ A) (s[i].substWk .. ≫ B) (s[i].disp A ≫ f)
-        (by simp [f_tp, comp_mkPi])
-      (s[i].var A) (s[i].var_tp A)
+-- /--
+-- ```
+-- Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B
+-- --------------------------------------
+-- Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ λA. f[↑] v₀ : ΠA. B
+-- ```
+-- -/
+-- def etaExpand {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : Γ ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+--     (Γ) ⟶ s[max i j].Tm :=
+--   s.mkLam ilen jlen A <|
+--     s.mkApp ilen jlen
+--       (s[i].disp A ≫ A) (s[i].substWk .. ≫ B) (s[i].disp A ≫ f)
+--         (by simp [f_tp, comp_mkPi])
+--       (s[i].var A) (s[i].var_tp A)
 
-theorem etaExpand_eq {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
-    s.etaExpand ilen jlen A B f f_tp = f := by
-  simp [etaExpand]
-  convert s.mkLam_unLam ilen jlen A B f f_tp using 2
-  simp [mkApp]; rw [← comp_unLam (f_tp := f_tp), ← Category.assoc]
-  conv_rhs => rw [← Category.id_comp (s.unLam ..)]
-  congr 2
-  apply (s[i].disp_pullback A).hom_ext <;> simp
-  simp [substWk]
+-- theorem etaExpand_eq {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (f : (Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
+--     s.etaExpand ilen jlen A B f f_tp = f := by
+--   simp [etaExpand]
+--   convert s.mkLam_unLam ilen jlen A B f f_tp using 2
+--   simp [mkApp]; rw [← comp_unLam (f_tp := f_tp), ← Category.assoc]
+--   conv_rhs => rw [← Category.id_comp (s.unLam ..)]
+--   congr 2
+--   apply (s[i].disp_pullback A).hom_ext <;> simp
+--   simp [substWk]
 
-/--
-```
-Γ ⊢ᵢ A  Γ.A ⊢ⱼ t : B  Γ ⊢ᵢ a : A
---------------------------------
-Γ.A ⊢ⱼ (λA. t) a ≡ t[a] : B[a]
-``` -/
-@[simp]
-theorem mkApp_mkLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
-    (t : (s[i].ext A) ⟶ s[j].Tm) (t_tp : t ≫ s[j].tp = B)
-    (lam_tp : s.mkLam ilen jlen A t ≫ s[max i j].tp = s.mkPi ilen jlen A B)
-    (a : (Γ) ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) :
-    s.mkApp ilen jlen A B (s.mkLam ilen jlen A t) lam_tp a a_tp = (s[i].sec A a a_tp) ≫ t := by
-  rw [mkApp, unLam_mkLam]
-  assumption
+-- /--
+-- ```
+-- Γ ⊢ᵢ A  Γ.A ⊢ⱼ t : B  Γ ⊢ᵢ a : A
+-- --------------------------------
+-- Γ.A ⊢ⱼ (λA. t) a ≡ t[a] : B[a]
+-- ``` -/
+-- @[simp]
+-- theorem mkApp_mkLam {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (B : (s[i].ext A) ⟶ s[j].Ty)
+--     (t : (s[i].ext A) ⟶ s[j].Tm) (t_tp : t ≫ s[j].tp = B)
+--     (lam_tp : s.mkLam ilen jlen A t ≫ s[max i j].tp = s.mkPi ilen jlen A B)
+--     (a : (Γ) ⟶ s[i].Tm) (a_tp : a ≫ s[i].tp = A) :
+--     s.mkApp ilen jlen A B (s.mkLam ilen jlen A t) lam_tp a a_tp = (s[i].sec A a a_tp) ≫ t := by
+--   rw [mkApp, unLam_mkLam]
+--   assumption
 
 end Pi
 
@@ -635,7 +643,7 @@ end Pi
 
 /-- The data of `Sig` and `pair` formers at each universe `s[i].tp`. -/
 class SigSeq (s : UHomSeq R) where
-  nmSig (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : Universe.Sigma s[i]
+  nmSig (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : StructuredUniverse.Sigma s[i]
 
 section Sigma
 open SigSeq
@@ -804,11 +812,11 @@ def polymorphicSigma : PolymorphicSigma s[i] s[j] s[max i j] where
 /-! ## Identity types -/
 
 class IdSeq (s : UHomSeq R) where
-  nmII (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : Universe.IdIntro s[i]
+  nmII (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : IdIntro s[i]
   nmIEB (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) :
-    Universe.IdElimBase (nmII i ilen)
+    IdElimBase (nmII i ilen)
   nmId (i j : Nat) (ilen : i < s.length + 1 := by get_elem_tactic)
-    (jlen : j < s.length + 1 := by get_elem_tactic) : Universe.Id (nmIEB i ilen) s[j]
+    (jlen : j < s.length + 1 := by get_elem_tactic) : Id (nmIEB i ilen) s[j]
 
 section Id
 open IdSeq

@@ -1,4 +1,4 @@
-import HoTTLean.Groupoids.NaturalModelBase
+import HoTTLean.Groupoids.UnstructuredModel
 
 import HoTTLean.Model.NaturalModel
 
@@ -93,7 +93,7 @@ end CategoryTheory
 
 namespace GroupoidModel
 
-open CategoryTheory Functor.Groupoidal NaturalModel Universe
+open CategoryTheory Functor.Groupoidal
 
 
 namespace FunctorOperation

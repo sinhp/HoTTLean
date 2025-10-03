@@ -12,22 +12,20 @@ noncomputable section
 
 open CategoryTheory Limits Opposite
 
-namespace StructuredModel
+namespace Model
 
 /-- A natural model with support for dependent types (and nothing more).
 The data is a natural transformation with representable fibers,
 stored as a choice of representative for each fiber. -/
-structure Universe {Ctx : Type u} [Category Ctx] (R : MorphismProperty Ctx)
-    extends UnstructuredModel.Universe Ctx where
+structure StructuredUniverse {Ctx : Type u} [Category Ctx] (R : MorphismProperty Ctx)
+    extends UnstructuredUniverse Ctx where
   morphismProperty : R tp
 
--- FIXME: rename `Universe.toUniverse` to `Univese.toUnstructured`
+namespace StructuredUniverse
 
-namespace Universe
+open Model.UnstructuredUniverse
 
-open UnstructuredModel.Universe
-
-variable {Ctx : Type u} [Category Ctx] {R : MorphismProperty Ctx} (M : Universe R)
+variable {Ctx : Type u} [Category Ctx] {R : MorphismProperty Ctx} (M : StructuredUniverse R)
   [R.HasPullbacks] [R.IsStableUnderBaseChange]
 
 instance {Γ : Ctx} (A : Γ ⟶ M.Ty) : HasPullback A M.tp := by
@@ -43,8 +41,8 @@ def pullbackIsoExt {Γ : Ctx} (A : Γ ⟶ M.Ty) :
 /-! ## Pullback of representable natural transformation -/
 
 /-- Pull a natural model back along a type. -/
-protected def pullback {Γ : Ctx} (A : Γ ⟶ M.Ty) : Universe R where
-  __ := UnstructuredModel.Universe.pullback M.toUniverse A
+protected def pullback {Γ : Ctx} (A : Γ ⟶ M.Ty) : StructuredUniverse R where
+  __ := UnstructuredUniverse.pullback M.toUnstructuredUniverse A
   morphismProperty := R.of_isPullback (disp_pullback ..) M.morphismProperty
 
 /--
@@ -66,8 +64,8 @@ protected def pullback {Γ : Ctx} (A : Γ ⟶ M.Ty) : Universe R where
 def ofIsPullback {U E : Ctx} {π : E ⟶ U}
     {toTy : U ⟶ M.Ty} {toTm : E ⟶ M.Tm}
     (pb : IsPullback toTm π M.tp toTy) :
-    Universe R where
-  __ := UnstructuredModel.Universe.ofIsPullback M.toUniverse pb
+    StructuredUniverse R where
+  __ := UnstructuredUniverse.ofIsPullback M.toUnstructuredUniverse pb
   morphismProperty := R.of_isPullback pb M.morphismProperty
 
 /-! ## Polynomial functor on `tp`
@@ -149,7 +147,7 @@ theorem snd_comp_left {A} (eqA : fst M AB = A) {σA} (eqσ : σ ≫ A = σA) :
   convert UvPoly.Equiv.snd'_comp_left AB H1 _ H2
   apply H1.hom_ext <;> simp [substWk]
 
-theorem mk_comp_left {Δ Γ : Ctx} (M : Universe R) (σ : Δ ⟶ Γ)
+theorem mk_comp_left {Δ Γ : Ctx} (M : StructuredUniverse R) (σ : Δ ⟶ Γ)
     {X : Ctx} (A : Γ ⟶ M.Ty) (σA) (eq : σ ≫ A = σA) (B : (M.ext A) ⟶ X) :
     σ ≫ PtpEquiv.mk M A B = PtpEquiv.mk M σA ((M.substWk σ A _ eq) ≫ B) := by
   dsimp [PtpEquiv.mk]
@@ -160,7 +158,7 @@ theorem mk_comp_left {Δ Γ : Ctx} (M : Universe R) (σ : Δ ⟶ Γ)
   · simp
   · simp [substWk_disp]
 
-theorem mk_comp_right {Γ : Ctx} (M : Universe R)
+theorem mk_comp_right {Γ : Ctx} (M : StructuredUniverse R)
     {X Y : Ctx} (σ : X ⟶ Y) (A : Γ ⟶ M.Ty) (B : (M.ext A) ⟶ X) :
     PtpEquiv.mk M A B ≫ M.Ptp.map σ = PtpEquiv.mk M A (B ≫ σ) :=
   UvPoly.Equiv.mk'_comp_right ..
@@ -184,15 +182,15 @@ theorem PtpEquiv.mk_map {Γ : Ctx} {X Y : Ctx}
 
 /-! ## Polynomial composition `M.tp ▸ N.tp` -/
 
-abbrev compDom (M N : Universe R) : Ctx := M.uvPolyTp.compDom N.uvPolyTp
+abbrev compDom (M N : StructuredUniverse R) : Ctx := M.uvPolyTp.compDom N.uvPolyTp
 
-abbrev compP (M N : Universe R) : M.compDom N ⟶ M.uvPolyTp @ N.Ty :=
+abbrev compP (M N : StructuredUniverse R) : M.compDom N ⟶ M.uvPolyTp @ N.Ty :=
   (M.uvPolyTp.comp N.uvPolyTp).p
 
 namespace compDomEquiv
 open UvPoly
 
-variable {M N : Universe R} {Γ Δ : Ctx} (σ : Δ ⟶ Γ)
+variable {M N : StructuredUniverse R} {Γ Δ : Ctx} (σ : Δ ⟶ Γ)
 
 /-- Universal property of `compDom`, decomposition (part 1).
 
@@ -240,7 +238,7 @@ def dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
 
 lemma dependent_eq (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     (A := fst ab ≫ M.tp) (eq : fst ab ≫ M.tp = A := by rfl) :
-    dependent ab A eq = Universe.PtpEquiv.snd M (ab ≫ M.compP N) A (by simp [← eq, fst_tp]) := by
+    dependent ab A eq = PtpEquiv.snd M (ab ≫ M.compP N) A (by simp [← eq, fst_tp]) := by
   simp [dependent, UvPoly.compDomEquiv.dependent, PtpEquiv.snd]
 
 theorem comp_dependent (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
@@ -353,7 +351,7 @@ end compDomEquiv
 /-- The structure on three universes that for
 `A : Γ ⟶ U0.Ty` and `B : Γ.A ⟶ U1.Ty` constructs a Π-type `Π_A B : Γ ⟶ U2.Ty`.
 -/
-structure PolymorphicPi (U0 U1 U2 : Universe R) where
+structure PolymorphicPi (U0 U1 U2 : StructuredUniverse R) where
   Pi : U0.Ptp.obj U1.Ty ⟶ U2.Ty
   lam : U0.Ptp.obj U1.Tm ⟶ U2.Tm
   Pi_pullback : IsPullback lam (U0.Ptp.map U1.tp) U2.tp Pi
@@ -375,7 +373,7 @@ protected abbrev Pi := PolymorphicPi M M M
 
 namespace PolymorphicPi
 
-variable {U0 U1 U2 : Universe R} {Γ : Ctx}
+variable {U0 U1 U2 : StructuredUniverse R} {Γ : Ctx}
 
 section
 variable (P : PolymorphicPi U0 U1 U2)
@@ -552,7 +550,8 @@ theorem mkApp_mkLam {Γ : Ctx} (A : (Γ) ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
   assumption
 
 def toUnstructured :
-    UnstructuredModel.Universe.PolymorphicPi U0.toUniverse U1.toUniverse U2.toUniverse where
+    UnstructuredUniverse.PolymorphicPi U0.toUnstructuredUniverse
+    U1.toUnstructuredUniverse U2.toUnstructuredUniverse where
   Pi := P.mkPi _
   Pi_comp _ _ _ _ _ := (P.comp_mkPi ..).symm
   lam _ b _ := P.mkLam _ b
@@ -568,8 +567,9 @@ end
 
 namespace ofUnstructured
 
-variable {U0 U1 U2 : Universe R}
-    (P : UnstructuredModel.Universe.PolymorphicPi U0.toUniverse U1.toUniverse U2.toUniverse)
+variable {U0 U1 U2 : StructuredUniverse R}
+    (P : UnstructuredUniverse.PolymorphicPi U0.toUnstructuredUniverse
+    U1.toUnstructuredUniverse U2.toUnstructuredUniverse)
 
 def PiApp (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty) : Γ ⟶ U2.Ty :=
   P.Pi (PtpEquiv.snd U0 AB)
@@ -629,8 +629,8 @@ lemma lift_uniq (f : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
 
 end ofUnstructured
 
-def ofUnstructured (P : UnstructuredModel.Universe.PolymorphicPi U0.toUniverse U1.toUniverse
-    U2.toUniverse) : PolymorphicPi U0 U1 U2 where
+def ofUnstructured (P : UnstructuredUniverse.PolymorphicPi U0.toUnstructuredUniverse
+    U1.toUnstructuredUniverse U2.toUnstructuredUniverse) : PolymorphicPi U0 U1 U2 where
   Pi := ofUnstructured.Pi P
   lam := ofUnstructured.lam P
   Pi_pullback := ofYoneda_isPullback _ _ _ _ _ _ (ofUnstructured.lamApp_tp P)
@@ -645,7 +645,7 @@ end PolymorphicPi
 
 /-- The structure on three universes that for
 `A : Γ ⟶ U0.Ty` and `B : Γ.A ⟶ U1.Ty` constructs a Π-type `Σ_A B : Γ ⟶ U2.Ty`. -/
-structure PolymorphicSigma (U0 U1 U2 : Universe R) where
+structure PolymorphicSigma (U0 U1 U2 : StructuredUniverse R) where
   Sig : U0.Ptp.obj U1.Ty ⟶ U2.Ty
   pair : U0.compDom U1 ⟶ U2.Tm
   Sig_pullback : IsPullback pair (U0.compP U1) U2.tp Sig
@@ -666,7 +666,7 @@ protected abbrev Sigma := PolymorphicSigma M M M
 
 namespace PolymorphicSigma
 
-variable {U0 U1 U2 : Universe R} {Γ : Ctx}
+variable {U0 U1 U2 : StructuredUniverse R} {Γ : Ctx}
 
 section
 variable (S : PolymorphicSigma U0 U1 U2)
@@ -801,8 +801,9 @@ end
 
 namespace ofUnstructured
 
-variable {U0 U1 U2 : Universe R}
-    (S : UnstructuredModel.Universe.PolymorphicSigma U0.toUniverse U1.toUniverse U2.toUniverse)
+variable {U0 U1 U2 : StructuredUniverse R}
+    (S : UnstructuredUniverse.PolymorphicSigma U0.toUnstructuredUniverse
+    U1.toUnstructuredUniverse U2.toUnstructuredUniverse)
 
 def SigApp (AB : Γ ⟶ U0.Ptp.obj U1.Ty) : Γ ⟶ U2.Ty :=
   S.Sig (PtpEquiv.snd U0 AB)
@@ -902,8 +903,9 @@ lemma lift_uniq (ab : Γ ⟶ U2.Tm) (AB : Γ ⟶ U0.uvPolyTp @ U1.Ty)
 
 end ofUnstructured
 
-def ofUnstructured {U0 U1 U2 : Universe R}
-    (S : UnstructuredModel.Universe.PolymorphicSigma U0.toUniverse U1.toUniverse U2.toUniverse) :
+def ofUnstructured {U0 U1 U2 : StructuredUniverse R}
+    (S : UnstructuredUniverse.PolymorphicSigma U0.toUnstructuredUniverse
+    U1.toUnstructuredUniverse U2.toUnstructuredUniverse) :
     PolymorphicSigma U0 U1 U2 where
   Sig := ofUnstructured.Sig S
   pair := ofUnstructured.pair S
@@ -1061,7 +1063,7 @@ that uses the language of polynomial endofunctors.
 Note that the universe/model `N` for the motive `C` is different from the universe `M` that the
 identity type lives in.
 -/
-protected structure Id' (i : IdIntro M) (N : Universe R) where
+protected structure Id' (i : IdIntro M) (N : StructuredUniverse R) where
   j {Γ} (a : Γ ⟶ M.Tm) (C : IdIntro.motiveCtx _ a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
     (r_tp : r ≫ N.tp = (i.reflSubst a) ≫ C) :
     i.motiveCtx a ⟶ N.Tm
@@ -1079,7 +1081,7 @@ protected structure Id' (i : IdIntro M) (N : Universe R) where
 
 namespace Id'
 
-variable {M} {N : Universe R} {ii : M.IdIntro} (i : M.Id' ii N) {Γ : Ctx} (a : Γ ⟶ M.Tm)
+variable {M} {N : StructuredUniverse R} {ii : M.IdIntro} (i : M.Id' ii N) {Γ : Ctx} (a : Γ ⟶ M.Tm)
   (C : ii.motiveCtx a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
   (r_tp : r ≫ N.tp = (ii.reflSubst a) ≫ C) (b : Γ ⟶ M.Tm) (b_tp : b ≫ M.tp = a ≫ M.tp)
   (h : Γ ⟶ M.Tm) (h_tp : h ≫ M.tp = ii.isKernelPair.lift b a (by aesop) ≫ ii.Id)
@@ -1207,7 +1209,7 @@ def verticalNatTrans : ie.iFunctor ⟶ (UvPoly.id R M.Tm).functor :=
 
 section reflCase
 
-variable (i : IdIntro M) {N : Universe R}
+variable (i : IdIntro M) {N : StructuredUniverse R}
 
 variable {Γ : Ctx} (a : Γ ⟶ M.Tm) (r : Γ ⟶ N.Tm)
 
@@ -1439,7 +1441,7 @@ Here we are thinking
 This witnesses the elimination principle for identity types since
 we can take `J (y.p.C;x.r) := c`.
 -/
-structure Id {ii : IdIntro M} (ie : IdElimBase ii) (N : Universe R) where
+structure Id {ii : IdIntro M} (ie : IdElimBase ii) (N : StructuredUniverse R) where
   weakPullback : WeakPullback
     (ie.verticalNatTrans.app N.Tm)
     (ie.iFunctor.map N.tp)
@@ -1448,7 +1450,7 @@ structure Id {ii : IdIntro M} (ie : IdElimBase ii) (N : Universe R) where
 
 namespace Id
 
-variable {N : Universe R} {ii : IdIntro M} {ie : IdElimBase ii} (i : Id ie N)
+variable {N : StructuredUniverse R} {ii : IdIntro M} {ie : IdElimBase ii} (i : Id ie N)
 
 variable {Γ Δ : Ctx} (σ : Δ ⟶ Γ) (a : Γ ⟶ M.Tm)
   (C : (ii.motiveCtx a) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
