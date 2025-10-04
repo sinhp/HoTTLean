@@ -470,6 +470,28 @@ def asFunctorFrom_hom {c c' : C} (f: c ⟶ c') :
     asFunctorFrom_fib K c ⟶ F.map f ⋙ asFunctorFrom_fib K c' :=
   Grothendieck.asFunctorFrom_hom K f
 
+section
+
+variable {E : Type*} [Category E]
+variable (fib : ∀ c, F.obj c ⥤ E) (hom : ∀ {c c' : C} (f : c ⟶ c'), fib c ⟶ F.map f ⋙ fib c')
+variable (hom_id : ∀ c, hom (𝟙 c) = eqToHom (by simp only [Functor.map_id]; rfl))
+variable (hom_comp : ∀ c₁ c₂ c₃ (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃), hom (f ≫ g) =
+  hom f ≫ (F.map f).whiskerLeft (hom g) ≫ eqToHom (by simp only [Functor.map_comp]; rfl))
+
+lemma asFunctorFrom_fib_functorFrom :
+    asFunctorFrom_fib (functorFrom fib hom hom_id hom_comp) = fib := by
+  unfold asFunctorFrom_fib functorFrom
+  simp
+  sorry
+
+-- lemma asFunctorFrom_hom_functorFrom {K} {c c' : C} (f : c ⟶ c') :
+  --   asFunctorFrom_hom (functorFrom fib hom hom_id hom_comp) K f ≫ eqToHom sorry =
+  --   eqToHom sorry ≫ hom K f := by
+  -- unfold asFunctorFrom_fib functorFrom
+  -- simp
+  -- sorry
+end
+
 lemma asFunctorFrom_hom' {c c' : C} (f: c ⟶ c') :
   asFunctorFrom_hom K f = whiskerRight (ιNatTrans f) K := rfl
 
@@ -480,9 +502,6 @@ lemma asFunctorFrom_hom_app {c c' : C} (f: c ⟶ c') (p : F.obj c) :
 lemma asFunctorFrom_hom_id (c : C) : asFunctorFrom_hom K (𝟙 c) =
     eqToHom (by simp) :=
   Grothendieck.asFunctorFrom_hom_id _ _
-  --   by
-  -- ext p
-  -- simp [asFunctorFrom_hom_app, eqToHom_map, ιNatTrans_id_app]
 
 lemma asFunctorFrom_hom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g: c₂ ⟶ c₃) :
     asFunctorFrom_hom K (f ≫ g) =
