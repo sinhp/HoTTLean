@@ -46,6 +46,22 @@ lemma equivInv_comp_forget (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre
     equivInv B G hG ⋙ forget = σ := by
   simp [equivInv, Functor.IsPullback.fac_right]
 
+lemma equivInv_equivFun (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
+    equivInv B (equivFun B F hF) (equivFun_comp_forget B F hF) = F := by
+  simp only [equivFun, equivInv]
+  apply (isPullback _).hom_ext
+  · rw [Functor.IsPullback.fac_left, Functor.IsPullback.fac_left, lam_inversion]
+  · rw! [Functor.IsPullback.fac_right, hF]
+
+lemma equivFun_equivInv (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) :
+    equivFun B (equivInv B G hG) (equivInv_comp_forget B G hG) = G := by
+  simp only [equivFun, equivInv]
+  apply (isPullback B).hom_ext
+  · have : pre A σ ⋙ B = (G ⋙ toPGrpd B) ⋙ PGrpd.forgetToGrpd := by
+      rw [Functor.assoc, toPGrpd_forgetToGrpd, ← Functor.assoc, hG]
+    rw! [Functor.IsPullback.fac_left, Functor.IsPullback.fac_left, this, inversion_lam]
+  · rw [Functor.IsPullback.fac_right, hG]
+
 -- TODO: work out naturality equations for this bijection
 
 end GroupoidModel.FunctorOperation.pi
@@ -112,9 +128,17 @@ def isofibration {B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) : F.Isofibra
 
 /-- The Grothendieck construction on the classifier is isomorphic to `E`,
 now as objects in `Grpd`. -/
-def grothendieckClassifierIso {E Γ : Grpd} {F : E ⟶ Γ} (hF : IsIsofibration F) :
-    Grpd.of (∫ hF.isofibration.classifier) ≅ E :=
+def grothendieckClassifierIso {B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) :
+    Grpd.of (∫ hF.isofibration.classifier) ≅ B :=
   Grpd.mkIso (Functor.Isofibration.grothendieckClassifierIso ..)
+
+-- lemma grothendieckClassifierIso_hom_comp_eq_forget {B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) :
+--     hF.grothendieckClassifierIso.hom ⋙ F = homOf Functor.Groupoidal.forget :=
+--   sorry
+
+lemma grothendieckClassifierIso_inv_comp_forget {B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) :
+    hF.grothendieckClassifierIso.inv ⋙ homOf Functor.Groupoidal.forget = F :=
+  sorry
 
 end IsIsofibration
 
@@ -135,12 +159,15 @@ attribute [local instance] Grpd.IsIsofibration.isofibration
 
 open Functor.Isofibration
 
-def strictify {C B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
-    (hG : IsIsofibration G) : C ⟶ (Grpd.of <| ∫ classifier (hF.isofibration)) :=
-  sorry
+def strictify {C B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) (G : C ⟶ B) :
+    C ⟶ Grpd.of (∫ classifier (hF.isofibration)) :=
+  G ≫ hF.grothendieckClassifierIso.inv
 
-lemma isIsofibration_strictify {C B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
-    (hG : IsIsofibration G) : IsIsofibration (strictify hF hG) := sorry
+def isIsofibration_strictify {C B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
+    (hG : IsIsofibration G) : IsIsofibration (strictify hF G) := sorry
+
+def isofibration_strictify {C B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
+    (hG : IsIsofibration G) : (strictify hF G).Isofibration := sorry
 
 /-- The object part (a groupoid) of the pushforward along `F`, of `G`,
 defined as the Grothendieck construction applied to (unstructured) Pi-type construction
@@ -148,7 +175,7 @@ in the HoTTLean groupoid model. -/
 def pushforwardLeft {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
     (hG : IsIsofibration G) : Grpd :=
   Grpd.of <| ∫ (GroupoidModel.FunctorOperation.pi (hF.isofibration.classifier)
-    (classifier (isIsofibration_strictify hF hG).isofibration))
+    (classifier (isofibration_strictify hF hG)))
 
 /-- The morphism part (a functor) of the pushforward along `F`, of `G`.
 This is defined as the forgetful functor from the Grothendieck construction. -/
@@ -161,24 +188,82 @@ abbrev pushforward {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
     (hG : IsIsofibration G) : Over A :=
   Over.mk (pushforwardHom hF hG)
 
--- This is one step towards the equivalence `pushforwardHomEquiv`
-def pushforwardHomEquivAux {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
-    (hG : IsIsofibration G) (X : Over A) :
-    (X ⟶ pushforward hF hG) ≃
-    (f : ∫ X.hom ⋙ hF.isofibration.classifier ⥤ ∫ (isIsofibration_strictify hF hG).isofibration.classifier) ×'
-    (f ⋙ Functor.Groupoidal.forget = pre hF.isofibration.classifier X.hom) where
-  toFun f := ⟨GroupoidModel.FunctorOperation.pi.equivFun (σ := X.hom) _ f.left f.w,
-    GroupoidModel.FunctorOperation.pi.equivFun_comp_forget (σ := X.hom) _ f.left f.w⟩
-  invFun := sorry
+open Limits in
+lemma pullback_isPullback {B A} {F : B ⟶ A} (hF : IsIsofibration F) (σ : Over A) :
+    IsPullback (pullback.snd σ.hom F ≫ hF.grothendieckClassifierIso.inv) (pullback.fst σ.hom F)
+    (homOf Functor.Groupoidal.forget) (homOf σ.hom) :=
+  IsPullback.of_iso (IsPullback.of_hasPullback σ.hom F).flip (Iso.refl _)
+    (hF.grothendieckClassifierIso ..).symm (Iso.refl _) (Iso.refl _) (by simp) (by simp) (by
+      simpa using hF.grothendieckClassifierIso_inv_comp_forget.symm )
+    (by simp)
+
+lemma pre_classifier_isPullback {B A} {F : B ⟶ A} (hF : IsIsofibration F) (σ : Over A) :
+    IsPullback (homOf (pre hF.isofibration.classifier σ.hom)) (homOf Functor.Groupoidal.forget)
+    (homOf Functor.Groupoidal.forget) (homOf σ.hom) := by
+  have outer_pb := Functor.Groupoidal.isPullback (σ.hom ⋙ hF.isofibration.classifier)
+  have right_pb := Functor.Groupoidal.isPullback (hF.isofibration.classifier)
+  have left_pb := Functor.IsPullback.Paste.ofRight' outer_pb.comm_sq outer_pb right_pb.comm_sq
+    right_pb (pre _ _) (by
+    apply right_pb.hom_ext
+    · simp [Functor.IsPullback.fac_left]
+    · simp [Functor.IsPullback.fac_right, pre_comp_forget])
+  exact Grpd.isPullback left_pb
+
+/--
+∫(σ ⋙ classifier) --> ∫ classifier ≅ B
+      |                   |
+      |                   | forget ≅ F
+      |                   |
+      V                   V
+      Δ   ------------->  A
+                  σ
+The two versions of the pullback are isomorphic.
+-/
+def pullbackIsoGrothendieck {B A} {F : B ⟶ A} (hF : IsIsofibration F) (σ : Over A) :
+    Grpd.of (∫ σ.hom ⋙ hF.isofibration.classifier) ≅ Limits.pullback σ.hom F :=
+  (pre_classifier_isPullback hF σ).isoIsPullback _ _ (pullback_isPullback hF σ)
+
+open GroupoidModel.FunctorOperation.pi in
+/-- `∫ σ.hom ⋙ hF.isofibration.classifier` is the pullback of `F` along `σ`,
+`∫ (isofibration_strictify hF hG).classifier` is isomorphic to `G`.
+So up to isomorphism this is the hom set bijection we want. -/
+def pushforwardHomEquivAux1 {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
+    (hG : IsIsofibration G) (σ : Over A) :
+    (σ ⟶ pushforward hF hG) ≃
+    {f : ∫ σ.hom ⋙ hF.isofibration.classifier ⥤ ∫ (isofibration_strictify hF hG).classifier //
+      f ⋙ Functor.Groupoidal.forget = pre hF.isofibration.classifier σ.hom } where
+  toFun f := ⟨equivFun _ f.left f.w, equivFun_comp_forget ..⟩
+  invFun f := Over.homMk (equivInv _ f.1 f.2)
+    (equivInv_comp_forget ..)
+  left_inv f := by
+    ext
+    simp [equivInv_equivFun]
+  right_inv f := by
+    ext
+    simp [equivFun_equivInv]
+
+def pushforwardHomEquivAux2 {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
+    (hG : IsIsofibration G) (σ : Over A) :
+    { f : ∫ σ.hom ⋙ hF.isofibration.classifier ⥤ ∫ (isofibration_strictify hF hG).classifier //
+      f ⋙ Functor.Groupoidal.forget = pre hF.isofibration.classifier σ.hom } ≃
+    ((Over.pullback F).obj σ ⟶ Over.mk G) where
+  toFun f := Over.homMk ((pullbackIsoGrothendieck hF σ).inv ≫ Grpd.homOf f.1 ≫
+    ((isIsofibration_strictify hF hG)).grothendieckClassifierIso.hom) sorry
+  invFun f := ⟨(pullbackIsoGrothendieck hF σ).hom ≫ f.left ≫
+    ((isIsofibration_strictify hF hG)).grothendieckClassifierIso.inv, sorry⟩
   left_inv := sorry
   right_inv := sorry
 
+open GroupoidModel.FunctorOperation.pi in
 /-- The universal property of the pushforward, expressed as a (natural) bijection of hom sets. -/
 def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
-    (hG : IsIsofibration G) (X : Over A) :
-    (X ⟶ pushforward hF hG) ≃ ((Over.pullback F).obj X ⟶ Over.mk G) := by
-  dsimp [pushforward, pushforwardHom]
-  sorry
+    (hG : IsIsofibration G) (σ : Over A) :
+    (σ ⟶ pushforward hF hG) ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) :=
+  calc (σ ⟶ pushforward hF hG)
+  _ ≃ {f : ∫ σ.hom ⋙ hF.isofibration.classifier ⥤ ∫ (isofibration_strictify hF hG).classifier //
+      (f ⋙ Functor.Groupoidal.forget = pre hF.isofibration.classifier σ.hom)} :=
+    pushforwardHomEquivAux1 ..
+  _ ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) := pushforwardHomEquivAux2 ..
 
 /-- Naturality in the universal property of the pushforward. -/
 lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
