@@ -1,7 +1,5 @@
 import HoTTLean.Groupoids.UnstructuredModel
 
-import HoTTLean.Model.NaturalModel
-
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 
 universe w v u v₁ u₁ v₂ u₂
