@@ -74,7 +74,7 @@ structure Functor.Isofibration {C : Type u} {D : Type u₁} [Category.{v} C] [Ca
     (F : C ⥤ D) where
   liftObj {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) : C
   liftIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) : X' ⟶ liftObj f hX'
-  is_hom_lift_hom {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) :
+  isHomLift {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) :
     F.IsHomLift f (liftIso f hX')
 
 namespace Functor.Isofibration
@@ -93,13 +93,12 @@ instance {X : Γ} : Groupoid (F.Fiber X) := Groupoid.ofIsGroupoid
 /-- Any isofibration `F : E ⥤ Γ` of groupoids is classified by a functor `classifier : Γ ⥤ Grpd`.
 -/
 
-def classifier.map.obj  {X Y} (f: X ⟶ Y) (a:(Grpd.of (F.Fiber X))) : Grpd.of (F.Fiber Y) :=
- ⟨liftObj hF f a.2,
-      by
-       have p : F.IsHomLift f (hF.liftIso f _) := hF.is_hom_lift_hom f (X' := a.1) a.2
-       (apply @IsHomLift.codomain_eq (f := f) (φ:= liftIso (X' := a.1) hF f a.2)  ) ⟩
+def classifier.map.obj  {X Y} (f : X ⟶ Y) (a : F.Fiber X) : F.Fiber Y :=
+  ⟨liftObj hF f a.2, by
+    have p : F.IsHomLift f (hF.liftIso f _) := hF.isHomLift f (X' := a.1) a.2
+    apply @IsHomLift.codomain_eq (f := f) (φ := liftIso (X' := a.1) hF f a.2) ⟩
 
-def classifier.map.map  {X Y} (f: X ⟶ Y) {a b: Grpd.of (F.Fiber X)} (m: a ⟶ b) :
+def classifier.map.map  {X Y} (f: X ⟶ Y) {a b: F.Fiber X} (m: a ⟶ b) :
   map.obj hF f a ⟶ map.obj hF f b := by
   --let i1 : a ⟶ liftObj hF f a.2 := liftIso hF f a.2
   let i2 := liftIso hF f b.2
@@ -173,8 +172,6 @@ instance : IsIsofibration.IsMultiplicative := by
 
 instance : IsIsofibration.HasObjects := by
   sorry
-
-instance IsIsofibration.RespectsIso : IsIsofibration.RespectsIso := by sorry
 
 section
 
@@ -303,15 +300,18 @@ lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G 
   sorry
 
 
-def Grpd.pushforward.IsPushforward  {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
-    (hG : IsIsofibration G) : IsPushforward F (Over.mk G) (pushforward hF hG) :=
-    --Functor.RepresentableBy.ofIso sorry
-    sorry
+def pushforward_isPushforward  {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
+    (hG : IsIsofibration G) : IsPushforward F (Over.mk G) (pushforward hF hG) where
+  homEquiv := pushforwardHomEquiv ..
+  homEquiv_comp f g := pushforwardHomEquiv_comp hF hG f g
 
+instance : IsIsofibration.HasPushforwards IsIsofibration :=
+  fun F _ G => {
+    has_representation := ⟨pushforward F.2 G.2, ⟨pushforward_isPushforward F.2 G.2⟩⟩ }
 
-def IsPushforward.Grpd.pushforward  {B A} {F : B ⟶ A} (hF : IsIsofibration F)
+def isoPushforwardOfIsPushforward  {B A} {F : B ⟶ A} (hF : IsIsofibration F)
  (G: Over B) (hG : IsIsofibration G.hom) (G': Over A)
- (h: IsPushforward F G G') : G' ≅ Grpd.pushforward hF hG :=
+ (h: IsPushforward F G G') : G' ≅ pushforward hF hG :=
   CategoryTheory.Functor.RepresentableBy.uniqueUpToIso
   (F := (Over.pullback F).op ⋙ yoneda.obj G)
   (by simp[IsPushforward] at h; assumption)
@@ -320,18 +320,16 @@ def IsPushforward.Grpd.pushforward  {B A} {F : B ⟶ A} (hF : IsIsofibration F)
     homEquiv_comp f g := by apply pushforwardHomEquiv_comp ..
   } )
 
-instance : IsIsofibration.HasPushforwards IsIsofibration :=
-  fun F _ G => {
-    has_representation := ⟨pushforward F.2 G.2, ⟨{
-      homEquiv := pushforwardHomEquiv ..
-      homEquiv_comp f g := pushforwardHomEquiv_comp F.2 G.2 f g }⟩⟩ }
-
 -- This should follow from `Groupoidal.forget` being an isofibration.
 -- (If we manage to directly define the pushforward
 -- as a grothendieck construction)
 theorem isIsofibration_pushforward {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
     (hG : IsIsofibration G) : IsIsofibration (pushforwardHom hF hG) :=
   sorry
+
+-- FIXME. For some reason needed in the proof
+-- `IsIsofibration.IsStableUnderPushforward IsIsofibration`
+instance IsIsofibration.RespectsIso : IsIsofibration.RespectsIso := inferInstance
 
 /-  TODO: following instance can be proven like so
   1. any pushforward is isomorphic to a chosen pushforward
@@ -349,7 +347,7 @@ instance : IsIsofibration.IsStableUnderPushforward IsIsofibration where
   of_isPushforward F G P := by
     intro h
     have p:  (Over.mk P) ≅ Grpd.pushforward (F.snd) (G.snd) :=
-     IsPushforward.Grpd.pushforward F.snd (Over.mk G.fst) G.snd (Over.mk P) h
+      isoPushforwardOfIsPushforward F.snd (Over.mk G.fst) G.snd (Over.mk P) h
     have i1 : IsIsofibration (pushforwardHom (F.snd) (G.snd)) := by
      apply isIsofibration_pushforward
     have e : P = (p.hom).left ≫ (pushforwardHom (F.snd) (G.snd)) := by
