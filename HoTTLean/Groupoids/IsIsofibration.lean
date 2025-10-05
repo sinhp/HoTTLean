@@ -99,8 +99,11 @@ def classifier.map.obj  {X Y} (f: X ⟶ Y) (a:(Grpd.of (F.Fiber X))) : Grpd.of (
        have p : F.IsHomLift f (hF.liftIso f _) := hF.is_hom_lift_hom f (X' := a.1) a.2
        (apply @IsHomLift.codomain_eq (f := f) (φ:= liftIso (X' := a.1) hF f a.2)  ) ⟩
 
-def classifier.map.map  {X Y} (f: X ⟶ Y) {a b:(Grpd.of (F.Fiber X))} (m: a ⟶ b) :
-  map.obj hF f a ⟶ map.obj hF f b :=
+def classifier.map.map  {X Y} (f: X ⟶ Y) {a b: Grpd.of (F.Fiber X)} (m: a ⟶ b) :
+  map.obj hF f a ⟶ map.obj hF f b := by
+  --let i1 : a ⟶ liftObj hF f a.2 := liftIso hF f a.2
+  let i2 := liftIso hF f b.2
+  --let i := m ≫ i2
   sorry
 
 
