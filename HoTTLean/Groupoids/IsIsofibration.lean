@@ -92,9 +92,27 @@ instance {X : Γ} : Groupoid (F.Fiber X) := Groupoid.ofIsGroupoid
 
 /-- Any isofibration `F : E ⥤ Γ` of groupoids is classified by a functor `classifier : Γ ⥤ Grpd`.
 -/
+
+def classifier.map.obj  {X Y} (f: X ⟶ Y) (a:(Grpd.of (F.Fiber X))) : Grpd.of (F.Fiber Y) :=
+ ⟨liftObj hF f a.2,
+      by
+       have p : F.IsHomLift f (hF.liftIso f _) := hF.is_hom_lift_hom f (X' := a.1) a.2
+       (apply @IsHomLift.codomain_eq (f := f) (φ:= liftIso (X' := a.1) hF f a.2)  ) ⟩
+
+def classifier.map.map  {X Y} (f: X ⟶ Y) {a b:(Grpd.of (F.Fiber X))} (m: a ⟶ b) :
+  map.obj hF f a ⟶ map.obj hF f b :=
+  sorry
+
+
+def classifier.map {X Y} (f: X ⟶ Y) : (Grpd.of (F.Fiber X) ⟶ Grpd.of (F.Fiber Y)) where
+  obj := classifier.map.obj hF f
+  map {a b} m := classifier.map.map hF f m
+  map_id := sorry
+  map_comp := sorry
+
 def classifier : Γ ⥤ Grpd.{v,u} where
   obj X := Grpd.of (F.Fiber X)
-  map :=
+  map f :=
     have : Isofibration F := hF -- TODO: remove. This is just to ensure variables used
     sorry -- use lifting of isomorphisms!
   map_id := sorry
@@ -153,6 +171,8 @@ instance : IsIsofibration.IsMultiplicative := by
 instance : IsIsofibration.HasObjects := by
   sorry
 
+instance IsIsofibration.RespectsIso : IsIsofibration.RespectsIso := by sorry
+
 section
 
 attribute [local instance] Grpd.IsIsofibration.isofibration
@@ -187,6 +207,10 @@ def pushforwardHom {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
 abbrev pushforward {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
     (hG : IsIsofibration G) : Over A :=
   Over.mk (pushforwardHom hF hG)
+
+lemma pushforward.hom {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
+    (hG : IsIsofibration G) :
+    (pushforward hF hG).hom = pushforwardHom .. := rfl
 
 open Limits in
 lemma pullback_isPullback {B A} {F : B ⟶ A} (hF : IsIsofibration F) (σ : Over A) :
@@ -265,6 +289,8 @@ def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶
     pushforwardHomEquivAux1 ..
   _ ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) := pushforwardHomEquivAux2 ..
 
+
+
 /-- Naturality in the universal property of the pushforward. -/
 lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
     (hG : IsIsofibration G)
@@ -272,6 +298,24 @@ lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G 
     (pushforwardHomEquiv hF hG X) (f ≫ g) =
     (Over.pullback F).map f ≫ (pushforwardHomEquiv hF hG X') g := by
   sorry
+
+
+def Grpd.pushforward.IsPushforward  {C B A} {F : B ⟶ A} (hF : IsIsofibration F) {G : C ⟶ B}
+    (hG : IsIsofibration G) : IsPushforward F (Over.mk G) (pushforward hF hG) :=
+    --Functor.RepresentableBy.ofIso sorry
+    sorry
+
+
+def IsPushforward.Grpd.pushforward  {B A} {F : B ⟶ A} (hF : IsIsofibration F)
+ (G: Over B) (hG : IsIsofibration G.hom) (G': Over A)
+ (h: IsPushforward F G G') : G' ≅ Grpd.pushforward hF hG :=
+  CategoryTheory.Functor.RepresentableBy.uniqueUpToIso
+  (F := (Over.pullback F).op ⋙ yoneda.obj G)
+  (by simp[IsPushforward] at h; assumption)
+  ({
+    homEquiv := pushforwardHomEquiv ..
+    homEquiv_comp f g := by apply pushforwardHomEquiv_comp ..
+  } )
 
 instance : IsIsofibration.HasPushforwards IsIsofibration :=
   fun F _ G => {
@@ -297,5 +341,18 @@ theorem isIsofibration_pushforward {C B A} {F : B ⟶ A} (hF : IsIsofibration F)
     `MorphismProperty.rlp_isMultiplicative`
     `MorphismProperty.respectsIso_of_isStableUnderComposition`
   3. The chosen pushforward is an isofibration `isIsofibration_pushforward` -/
+
 instance : IsIsofibration.IsStableUnderPushforward IsIsofibration where
-  of_isPushforward F G P := sorry
+  of_isPushforward F G P := by
+    intro h
+    have p:  (Over.mk P) ≅ Grpd.pushforward (F.snd) (G.snd) :=
+     IsPushforward.Grpd.pushforward F.snd (Over.mk G.fst) G.snd (Over.mk P) h
+    have i1 : IsIsofibration (pushforwardHom (F.snd) (G.snd)) := by
+     apply isIsofibration_pushforward
+    have e : P = (p.hom).left ≫ (pushforwardHom (F.snd) (G.snd)) := by
+     have ee := Over.w p.hom
+     simp at ee
+     simp[ee]
+    simp only[e]
+    apply (IsIsofibration.RespectsIso).precomp
+    assumption
