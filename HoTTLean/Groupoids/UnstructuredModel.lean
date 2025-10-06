@@ -4,7 +4,6 @@ import Mathlib.CategoryTheory.Category.Cat.Limit
 import HoTTLean.Model.UHom
 import HoTTLean.Grothendieck.Groupoidal.IsPullback
 import HoTTLean.Groupoids.IsPullback
-import HoTTLean.ForMathlib.CategoryTheory.IsIsofibration
 
 /-!
 Here we construct universes for the groupoid natural model.
