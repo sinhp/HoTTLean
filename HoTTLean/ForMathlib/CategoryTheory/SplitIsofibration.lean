@@ -1,7 +1,7 @@
 import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
 import Mathlib.CategoryTheory.FiberedCategory.HomLift
 import Mathlib.CategoryTheory.FiberedCategory.Fiber
-import HoTTLean.ForMathlib.CategoryTheory.Grpd
+import HoTTLean.Grothendieck.Groupoidal.IsPullback
 
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 
@@ -76,6 +76,8 @@ structure SplitClovenIsofibration {C : Type u} {D : Type u₁} [Category.{v} C] 
 
 namespace SplitClovenIsofibration
 
+open ClovenIsofibration
+
 variable {Γ : Type u} {E : Type u} [Groupoid.{v} Γ] [Groupoid.{v} E] {F : E ⥤ Γ}
   (I : SplitClovenIsofibration F)
 
@@ -86,52 +88,129 @@ def classifier.map.obj {X Y : Γ} (f : X ⟶ Y) (a : F.Fiber X) : F.Fiber Y :=
     have p : F.IsHomLift f (I.liftIso f _) := I.isHomLift f (X' := a.1) a.2
     apply @IsHomLift.codomain_eq (f := f) (φ := I.liftIso (X' := a.1) f a.2) ⟩
 
-def classifier.map.map  {X Y} (f: X ⟶ Y) {a b: F.Fiber X} (m: a ⟶ b) :
-  map.obj I f a ⟶ map.obj I f b := by
-  --let i1 : a ⟶ liftObj hF f a.2 := liftIso hF f a.2
-  let i2 := I.liftIso f b.2
-  --let i := m ≫ i2
-  sorry
+lemma classifier.fac' {X} {a b : F.Fiber X} (m : a ⟶ b) :
+    F.map m.1 = eqToHom (by rw [a.2, b.2]) := by
+  rw [@IsHomLift.fac' _ _ _ _ F _ _ _ _ (𝟙 X) _ m.2]
+  simp
 
+def classifier.map.map  {X Y} (f: X ⟶ Y) {a b : F.Fiber X} (m : a ⟶ b) :
+    map.obj I f a ⟶ map.obj I f b :=
+  let i1 : a.1 ⟶ I.liftObj f a.2 := I.liftIso f a.2
+  let i2 := I.liftIso f b.2
+  let i := Groupoid.inv i1 ≫ m.1 ≫ i2
+  have e :𝟙 Y = eqToHom (by simp[obj_liftObj]) ≫
+     F.map (CategoryTheory.inv i1 ≫ m.1 ≫ i2) ≫ eqToHom (by simp[obj_liftObj])
+     := by
+      simp[i1, i2, classifier.fac', Functor.map_inv,map_liftIso']
+  have : F.IsHomLift (𝟙 Y) i := by
+    simp only[i, e]
+    apply IsHomLift.of_fac _ _ _ (ClovenIsofibration.obj_liftObj ..)
+      (ClovenIsofibration.obj_liftObj ..)
+    simp
+  Fiber.homMk F _ i
+
+lemma classifier.map.map_id {X Y} (f : X ⟶ Y) (a: F.Fiber X):
+  map.map I f (𝟙 a) = 𝟙 (map.obj I f a) := by
+   ext
+   simp[classifier.map.map]
+   simp[Fiber.fiberInclusion]
+   simp[CategoryStruct.id]
+   simp[classifier.map.obj]
+
+lemma classifier.map.map_comp {X Y} (f: X ⟶ Y) {a b c: F.Fiber X} (m1 : a ⟶ b) (m2: b ⟶ c):
+  map.map I f (m1 ≫ m2) = map.map I f m1 ≫ map.map I f m2 := by
+   ext
+   simp[classifier.map.map]
+   simp[CategoryStruct.comp]
+
+@[simps]
 def classifier.map {X Y} (f : X ⟶ Y) : F.Fiber X ⥤ F.Fiber Y where
   obj := classifier.map.obj I f
-  map {a b} m := classifier.map.map I f m
-  map_id := sorry
-  map_comp := sorry
+  map := classifier.map.map I f
+  map_id := classifier.map.map_id I f
+  map_comp := classifier.map.map_comp I f
+
+lemma classifier.map_id (X : Γ) : classifier.map I (𝟙 X) = 𝟙 (Grpd.of (F.Fiber X)) := by
+  fapply Functor.ext
+  · intro a
+    apply Subtype.ext
+    simp [map.obj, I.liftObjId]
+  · intro a b f
+    simp
+    ext
+    simp [map.map, I.liftIsoId, eqToHom_map, Grpd.id_eq_id, ← heq_eq_eq]
+    rfl
 
 def classifier : Γ ⥤ Grpd.{v,u} where
   obj X := Grpd.of (F.Fiber X)
-  map f :=
-    have : SplitClovenIsofibration F := I -- TODO: remove. This is just to ensure variables used
-    sorry -- use lifting of isomorphisms!
-  map_id := sorry
+  map f := Grpd.homOf (classifier.map I f)
+  map_id _ := classifier.map_id ..
   map_comp := sorry
+
+open CategoryTheory.Functor.Groupoidal
 
 /-- The Grothendieck construction on the classifier is isomorphic to `E`.
 TODO: add commuting triangles for `Grothendieck.forget` and `F` with `.hom` and `.inv`.
 TODO: draw pullback diagram. -/
-def grothendieckClassifierIso : ∫ classifier hF ≅≅ E where
+def grothendieckClassifierIso : ∫ (@classifier Γ E _ _ F I) ≅≅ E where
   hom :=
     sorry
   inv := sorry
   hom_inv_id := sorry
   inv_hom_id := sorry
 
-end Functor.Isofibration
+/-- `IsMultiplicative` 1/2 -/
+def id {A : Type u} [Category.{v} A] :
+    SplitClovenIsofibration (𝟭 A) where
+  liftObj := sorry
+  liftIso := sorry
+  isHomLift := sorry
+  liftObjId := sorry
+  liftIsoId := sorry
+  liftObjComp := sorry
+  liftIsoComp := sorry
 
-namespace Grpd
+/-- `IsMultiplicative` 1/2 -/
+def comp {A B C : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} C] {F : A ⥤ B}
+    (IF : SplitClovenIsofibration F) {G : B ⥤ C} (IG : SplitClovenIsofibration G) :
+    SplitClovenIsofibration (F ⋙ G) where
+  liftObj := sorry
+  liftIso := sorry
+  isHomLift := sorry
+  liftObjId := sorry
+  liftIsoId := sorry
+  liftObjComp := sorry
+  liftIsoComp := sorry
 
-attribute [simp] comp_eq_comp id_eq_id in
-@[simps]
-def Grpd.mkIso {Δ Γ : Grpd} (F : Δ ≅≅ Γ) : Δ ≅ Γ where
-  hom := F.hom
-  inv := F.inv
-  hom_inv_id := by simp
-  inv_hom_id := by simp
+/-- `IsStableUnderBaseChange` -/
+def ofIsPullback {A B A' B' : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} A']
+    [Category.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
+    (isPullback : Functor.IsPullback top F' F bot) (IF : SplitClovenIsofibration F) :
+    SplitClovenIsofibration F' where
+  liftObj := sorry
+  liftIso := sorry
+  isHomLift := sorry
+  liftObjId := sorry
+  liftIsoId := sorry
+  liftObjComp := sorry
+  liftIsoComp := sorry
 
+-- def toTerminal {A : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} A']
+--     [Category.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
+--     (isPullback : Functor.IsPullback top F' F bot) (IF : SplitClovenIsofibration F) :
+--     SplitClovenIsofibration F' where
+--   liftObj := sorry
+--   liftIso := sorry
+--   isHomLift := sorry
+--   liftObjId := sorry
+--   liftIsoId := sorry
+--   liftObjComp := sorry
+--   liftIsoComp := sorry
+
+#exit
 namespace IsIsofibration
 
-def isofibration {B A : Grpd} {F : B ⟶ A} (hF : IsIsofibration F) : F.Isofibration := sorry
+def isofibration B A : Grpd {F : B ⟶ A} (hF : IsIsofibration F) : F.Isofibration := sorry
 
 /-- The Grothendieck construction on the classifier is isomorphic to `E`,
 now as objects in `Grpd`. -/

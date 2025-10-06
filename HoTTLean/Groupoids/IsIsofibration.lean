@@ -112,6 +112,7 @@ def classifier.map {X Y} (f: X ⟶ Y) : (Grpd.of (F.Fiber X) ⟶ Grpd.of (F.Fibe
   map_id := sorry
   map_comp := sorry
 
+-- DEPRECATED: we think `map_id, map_comp` are impossible to prove
 def classifier : Γ ⥤ Grpd.{v,u} where
   obj X := Grpd.of (F.Fiber X)
   map f :=

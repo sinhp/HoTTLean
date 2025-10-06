@@ -226,4 +226,16 @@ lemma Grpd.NatTrans.hext {X X' Y Y' : Grpd.{v,u}} (hX : X = X') (hY : Y = Y')
   aesop_cat
 
 end
+
+namespace Grpd
+
+attribute [simp] comp_eq_comp id_eq_id in
+@[simps]
+def Grpd.mkIso {Δ Γ : Grpd} (F : Δ ≅≅ Γ) : Δ ≅ Γ where
+  hom := F.hom
+  inv := F.inv
+  hom_inv_id := by simp
+  inv_hom_id := by simp
+
+end Grpd
 end CategoryTheory
