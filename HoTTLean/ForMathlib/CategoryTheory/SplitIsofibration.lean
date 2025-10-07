@@ -141,28 +141,154 @@ lemma classifier.map_id (X : Γ) : classifier.map I (𝟙 X) = 𝟙 (Grpd.of (F.
     simp [map.map, I.liftIsoId, eqToHom_map, Grpd.id_eq_id, ← heq_eq_eq]
     rfl
 
+
+lemma classifier.map_comp {X Y Z: Γ} (f : X⟶ Y) (g : Y ⟶ Z):
+ classifier.map I (f ≫ g) = classifier.map I f ⋙ classifier.map I g := by
+  fapply Functor.ext
+  · intro a
+    simp[map.obj, I.liftObjComp]
+  · intro a b f
+    simp
+    ext
+    simp [map.map,  eqToHom_map, Grpd.id_eq_id, ← heq_eq_eq,← Category.assoc]
+    simp[I.liftIsoComp,← Category.assoc]
+    congr 1
+    simp[Category.assoc]
+    congr
+    simp[]
+
+
+
 def classifier : Γ ⥤ Grpd.{v,u} where
   obj X := Grpd.of (F.Fiber X)
   map f := Grpd.homOf (classifier.map I f)
   map_id _ := classifier.map_id ..
-  map_comp := sorry
+  map_comp := by
+   apply classifier.map_comp
 
 open CategoryTheory.Functor.Groupoidal
 
 /-- The Grothendieck construction on the classifier is isomorphic to `E`.
 TODO: add commuting triangles for `Grothendieck.forget` and `F` with `.hom` and `.inv`.
 TODO: draw pullback diagram. -/
-def grothendieckClassifierIso : ∫ (@classifier Γ E _ _ F I) ≅≅ E where
-  hom :=
-    sorry
-  inv := sorry
+
+def grothendieckClassifierIso.hom.obj (pair: ∫ I.classifier) : E := pair.fiber.1
+
+
+lemma grothendieckClassifierIso.hom.map_aux
+ {X Y: Γ} (f: X ⟶ Y) (a: I.classifier.obj X)
+ : (I.classifier.map f).obj a = ⟨I.liftObj (X' := a.1) f a.2, obj_liftObj ..⟩ := by
+  simp[classifier,classifier.map.obj]
+
+
+-- lemma grothendieckClassifierIso.hom.hom.map_aux
+--  {X Y: Γ} (f: X ⟶ Y) (a: I.classifier.obj X) (b: I.classifier.obj Y)
+--  (h: (I.classifier.map f).obj a ⟶ b )
+--  : (I.classifier.map f).obj a = sorry := by
+
+--   simp[classifier,classifier.map.obj]
+--   sorry
+
+
+/-
+
+Want: F.obj ↑p1.fiber = p1.base
+
+p1 : ∫ I.classifier
+
+p1.base : Γ
+
+p1.fiber : I.classifier.obj p1.base
+
+ Grpd.of (F.Fiber p1.base) =
+I.classifier.obj p1.base = F.Fiber p1.base
+
+p1.fiber : F.Fiber p1.base
+
+F.obj p1.fiber = p1.base
+
+-/
+
+lemma grothendieckClassifierIso.hom.map_aux2
+ (X: Γ) (a: I.classifier.obj X) : F.obj a.1 = X := by
+  simp[classifier] at a
+  simp[a.2]
+
+
+def grothendieckClassifierIso.hom.map {p1 p2: ∫ I.classifier} (h: p1 ⟶ p2) :
+ (p1.fiber.1 ⟶ p2.fiber.1) :=
+  I.liftIso h.base
+   (hom.map_aux2 ..) ≫ (eqToHom (by simp[grothendieckClassifierIso.hom.map_aux] )) ≫
+   h.fiber.1
+
+
+def grothendieckClassifierIso.hom.map' {p1 p2: ∫ I.classifier} (h: p1 ⟶ p2) :
+ (p1.fiber.1 ⟶ p2.fiber.1) :=
+  I.liftIso h.base
+   (hom.map_aux2 ..) ≫
+   (eqToHom (by simp[grothendieckClassifierIso.hom.map_aux,Fiber.fiberInclusion] )) ≫
+   Fiber.fiberInclusion.map h.fiber ≫
+   (eqToHom (by simp[Fiber.fiberInclusion] ))
+
+
+
+lemma grothendieckClassifierIso.hom.map_id (X : ∫ I.classifier) :
+hom.map I (𝟙 X) = 𝟙 _ := by
+ convert_to _ ≫ _ ≫ Fiber.fiberInclusion.map (Hom.fiber (𝟙 X)) = _
+ simp [liftIsoId, eqToHom_map]
+ --convert_to
+ -- rw! (castMode := .all) [Grpd.id_eq_id,hom.map_aux,liftObjId]
+
+
+lemma grothendieckClassifierIso.hom.map_comp {X Y Z: ∫ I.classifier} (f : X ⟶ Y) (g : Y ⟶ Z) :
+hom.map' I (f ≫ g) = hom.map' I f ≫ hom.map' I g := by
+ --convert_to _ ≫ _ ≫ Fiber.fiberInclusion.map (Hom.fiber (𝟙 X)) = _
+ simp [map',liftIsoComp,classifier]
+ congr 1
+ convert_to _ ≫ _ ≫ _ ≫ _ ≫ _ = _
+ simp[← Category.assoc]
+ congr 1
+ simp[classifier.map.map]
+ simp[← Category.assoc]
+ congr
+ simp[Category.assoc]
+ simp[Hom.fiber]
+ congr
+ --simp[Category.assoc]
+
+ sorry
+ --convert_to _ ≫ eqToHom _ ≫ Fiber.fiberInclusion.map _ ≫ _ = _
+
+
+def grothendieckClassifierIso.hom : ∫ I.classifier ⥤  E where
+  obj p := p.fiber.1
+  map := grothendieckClassifierIso.hom.map I
+  map_id X := by apply grothendieckClassifierIso.hom.map_id ..
+  map_comp := sorry--grothendieckClassifierIso.hom.map_comp I
+
+
+def grothendieckClassifierIso.inv : E ⥤ ∫ I.classifier where
+  obj := sorry
+  map := sorry
+  map_id := sorry
+  map_comp := sorry
+
+
+def grothendieckClassifierIso : ∫ I.classifier ≅≅ E where
+  hom := grothendieckClassifierIso.hom ..
+  inv := grothendieckClassifierIso.inv ..
   hom_inv_id := sorry
   inv_hom_id := sorry
 
+
+
 /-- `IsMultiplicative` 1/2 -/
+def id.liftObj {A : Type u} [Category.{v} A] {X Y}
+ (f : X ⟶ Y) [IsIso f]  {X' : A} (e : (𝟭 A).obj X' = X) : A := X
+
 def id {A : Type u} [Category.{v} A] :
     SplitClovenIsofibration (𝟭 A) where
-  liftObj := sorry
+  liftObj := id.liftObj
   liftIso := sorry
   isHomLift := sorry
   liftObjId := sorry
