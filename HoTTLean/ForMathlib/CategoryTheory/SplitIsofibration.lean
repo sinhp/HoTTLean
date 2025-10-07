@@ -263,22 +263,38 @@ hom.map' I (f ≫ g) = hom.map' I f ≫ hom.map' I g := by
 --  sorry
  --convert_to _ ≫ eqToHom _ ≫ Fiber.fiberInclusion.map _ ≫ _ = _
 
-
-def grothendieckClassifierIso.hom' : ∫ I.classifier ⥤  E :=
-  Groupoidal.functorFrom (fun x => Fiber.fiberInclusion) (fun f => sorry) sorry sorry
-
-def grothendieckClassifierIso.hom : ∫ I.classifier ⥤  E where
-  obj p := p.fiber.1
-  map := grothendieckClassifierIso.hom.map I
-  map_id X := by apply grothendieckClassifierIso.hom.map_id ..
-  map_comp := sorry--grothendieckClassifierIso.hom.map_comp I
+def grothendieckClassifierIso.hom'.hom {X Y} (f : X ⟶ Y)
+  : Fiber.fiberInclusion ⟶ I.classifier.map f ⋙ Fiber.fiberInclusion where
+    app _ := I.liftIso f ..
+    naturality := by
+     intro a b g
+     simp[Fiber.fiberInclusion,classifier,classifier.map.map,Fiber.homMk]
 
 
-def grothendieckClassifierIso.inv : E ⥤ ∫ I.classifier where
-  obj := sorry
-  map := sorry
-  map_id := sorry
-  map_comp := sorry
+def grothendieckClassifierIso.hom : ∫ I.classifier ⥤  E :=
+  Groupoidal.functorFrom (fun x => Fiber.fiberInclusion)
+  (grothendieckClassifierIso.hom'.hom I)
+    (by intro X; ext;simp[hom'.hom,liftIsoId])
+    (by intro X Y Z f g; ext; simp[hom'.hom,liftIsoComp])
+
+-- def grothendieckClassifierIso.hom : ∫ I.classifier ⥤  E where
+--   obj p := p.fiber.1
+--   map := grothendieckClassifierIso.hom.map I
+--   map_id X := by apply grothendieckClassifierIso.hom.map_id ..
+--   map_comp := sorry--grothendieckClassifierIso.hom.map_comp I
+
+def grothendieckClassifierIso.inv.fibMap {X Y}(f : X ⟶ Y) :
+ ((F ⋙ I.classifier).map f).obj ⟨X,rfl⟩  ⟶ ⟨Y, rfl⟩  := by
+  simp[classifier]
+ -- exact (Fiber.homMk sorry sorry sorry)
+  --apply (I.liftIso f ..).inv
+  sorry
+
+
+def grothendieckClassifierIso.inv : E ⥤ ∫ I.classifier :=
+  Groupoidal.functorTo F (fun x => ⟨x, rfl⟩)
+  (fun f => grothendieckClassifierIso.inv.fibMap I f)
+  sorry sorry
 
 
 def grothendieckClassifierIso : ∫ I.classifier ≅≅ E where
