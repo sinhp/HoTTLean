@@ -309,15 +309,24 @@ def grothendieckClassifierIso : ∫ I.classifier ≅≅ E where
 def id.liftObj {A : Type u} [Category.{v} A] {X Y}
  (f : X ⟶ Y) [IsIso f]  {X' : A} (e : (𝟭 A).obj X' = X) : A := X
 
+def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
+    SplitClovenIsofibration F.hom where
+  liftObj {b0 b1} f hf x hF := F.inv.obj b1
+  liftIso {b0 b1} f hf x hF := eqToHom (by simp [← hF, ← Functor.comp_obj]) ≫ F.inv.map f
+  isHomLift f hf x hF := IsHomLift.of_fac' _ _ _ hF (by simp [← Functor.comp_obj])
+    (by
+      simp only [map_comp, eqToHom_map, ← comp_map]
+      rw! (castMode := .all) [F.inv_hom_id];
+      simp [← heq_eq_eq]
+      rfl)
+  liftObjId h := by simp [← h, ← Functor.comp_obj]
+  liftIsoId := by simp
+  liftObjComp := by simp
+  liftIsoComp := by simp
+
 def id {A : Type u} [Category.{v} A] :
-    SplitClovenIsofibration (𝟭 A) where
-  liftObj := id.liftObj
-  liftIso := sorry
-  isHomLift := sorry
-  liftObjId := sorry
-  liftIsoId := sorry
-  liftObjComp := sorry
-  liftIsoComp := sorry
+    SplitClovenIsofibration (𝟭 A) :=
+  iso <| Functor.Iso.refl _
 
 /-- `IsMultiplicative` 1/2 -/
 def comp {A B C : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} C] {F : A ⥤ B}

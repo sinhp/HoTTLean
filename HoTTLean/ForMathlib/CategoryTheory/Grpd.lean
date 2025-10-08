@@ -127,28 +127,28 @@ theorem eqToHom_hom {C1 C2 : Grpd.{v,u}} {x y: C1} (f : x ⟶ y) (eq : C1 = C2) 
 
 open MonoidalCategory MorphismProperty
 
-def Interval : Type u := Codiscrete (ULift Bool)
+-- def Interval : Type u := Codiscrete (ULift Bool)
 
-instance : Groupoid (Codiscrete Bool) where
-  inv f := ⟨⟩
-  inv_comp := by aesop
-  comp_inv := by aesop
+-- instance : Groupoid (Codiscrete Bool) where
+--   inv f := ⟨⟩
+--   inv_comp := by aesop
+--   comp_inv := by aesop
 
-namespace IsIsofibration
+-- namespace IsIsofibration
 
-def generatingTrivialCofibrationHom : 𝟙_ Grpd ⟶ Grpd.of $ AsSmall $ Codiscrete Bool where
-  obj X := ⟨⟨.false⟩⟩
-  map _ := ⟨⟨⟩⟩
-  map_id := by aesop
-  map_comp := by aesop
+-- def generatingTrivialCofibrationHom : 𝟙_ Grpd ⟶ Grpd.of $ AsSmall $ Codiscrete Bool where
+--   obj X := ⟨⟨.false⟩⟩
+--   map _ := ⟨⟨⟩⟩
+--   map_id := by aesop
+--   map_comp := by aesop
 
-def generatingTrivialCofibration : MorphismProperty Grpd.{u,u} :=
-  ofHoms (fun _ : Unit => generatingTrivialCofibrationHom)
+-- def generatingTrivialCofibration : MorphismProperty Grpd.{u,u} :=
+--   ofHoms (fun _ : Unit => generatingTrivialCofibrationHom)
 
-end IsIsofibration
+-- end IsIsofibration
 
-def IsIsofibration : MorphismProperty Grpd :=
-  rlp $ IsIsofibration.generatingTrivialCofibration
+-- def IsIsofibration : MorphismProperty Grpd :=
+--   rlp $ IsIsofibration.generatingTrivialCofibration
 
 end Grpd
 

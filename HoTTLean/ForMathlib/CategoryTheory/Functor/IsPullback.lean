@@ -1,6 +1,7 @@
 import HoTTLean.ForMathlib
 import Mathlib.CategoryTheory.Widesubcategory
 import HoTTLean.ForMathlib.CategoryTheory.Functor.Iso
+import HoTTLean.ForMathlib.CategoryTheory.FreeGroupoid
 
 universe v u v₁ u₁ v₂ u₂ v₃ u₃
 
@@ -796,6 +797,22 @@ def isPullback : IsPullback (homOf north) (homOf west) (homOf east)
   IsPullback.of_isLimit (PullbackCone.IsLimit.mk
     comm_sq (lift h) (fac_left _) (fac_right _) (uniq _))
 
+noncomputable def functorIsPullback
+    (h : IsPullback (homOf north) (homOf west) (homOf east) (homOf south)) :
+    Functor.IsPullback north west east south := by
+  have hChosen : IsPullback (P := Cat.of (Functor.IsPullback.Chosen east south))
+    (homOf IsPullback.Chosen.north) (homOf IsPullback.Chosen.west) (homOf east)
+    (homOf south) :=
+    isPullback Functor.IsPullback.Chosen.comm_sq (Functor.IsPullback.Chosen.isPullback east south)
+  let i := IsPullback.isoIsPullback _ _ h hChosen
+  convert Functor.IsPullback.ofIsoChosen east south i.hom i.inv ?_ ?_
+  · symm
+    exact IsPullback.isoIsPullback_hom_fst _ _ h hChosen
+  · symm
+    exact IsPullback.isoIsPullback_hom_snd _ _ h hChosen
+  · exact i.hom_inv_id
+  · exact i.inv_hom_id
+
 end
 end Cat
 
@@ -824,10 +841,19 @@ def uniq (m : s.pt ⟶ of Libya) (hl : m ≫ homOf north = s.fst)
   · convert (fac_left h s).symm
   · convert (fac_right h s).symm
 
-def isPullback : IsPullback (homOf north) (homOf west) (homOf east)
-    (homOf south) :=
+def isPullback : IsPullback (homOf north) (homOf west) (homOf east) (homOf south) :=
   IsPullback.of_isLimit (PullbackCone.IsLimit.mk
     h.comm_sq (lift h) (fac_left _) (fac_right _) (uniq _))
+
+noncomputable def functorIsPullback {Libya Egypt Chad Sudan : Type v} [Groupoid.{v} Libya]
+    [Groupoid.{v} Egypt] [Groupoid.{v} Chad] [Groupoid.{v} Sudan]
+    {north : Libya ⥤ Egypt} {west : Libya ⥤ Chad}
+    {east : Egypt ⥤ Sudan} {south : Chad ⥤ Sudan}
+    (h : IsPullback (homOf north) (homOf west) (homOf east) (homOf south)) :
+    Functor.IsPullback north west east south :=
+  Cat.functorIsPullback <|
+    @Functor.map_isPullback _ _ _ _ Grpd.forgetToCat (Grpd.of Libya) (Grpd.of Egypt) (Grpd.of Chad)
+    (Grpd.of Sudan) (homOf north) (homOf west) (homOf east) (homOf south) _ h
 
 end Grpd
 
