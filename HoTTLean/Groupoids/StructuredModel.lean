@@ -1,4 +1,4 @@
-import HoTTLean.Groupoids.IsIsofibration
+import HoTTLean.Groupoids.SplitClovenIsofibration
 
 /-!
 Here we construct universes for the groupoid natural model.

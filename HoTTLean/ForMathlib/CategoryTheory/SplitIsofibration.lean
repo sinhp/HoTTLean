@@ -50,8 +50,9 @@ lemma ClovenIsofibration.map_liftIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
   symm
   apply IsHomLift.fac
 
-lemma ClovenIsofibration.map_liftIso' {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) :
-     F.map (I.liftIso f hX')  = eqToHom hX' ≫ f ≫ eqToHom (by simp[obj_liftObj]) := by
+lemma ClovenIsofibration.map_liftIso' {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
+    (hX' : F.obj X' = X) : F.map (I.liftIso f hX') =
+    eqToHom hX' ≫ f ≫ eqToHom (by simp[obj_liftObj]) := by
     simp[← map_liftIso I f hX']
 
 lemma ClovenIsofibration.liftObj_comp_aux {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
@@ -360,21 +361,23 @@ def grothendieckClassifierIso : ∫ I.classifier ≅≅ E where
    sorry
   inv_hom_id := sorry
 
+def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
+    SplitClovenIsofibration F.hom where
+  liftObj {b0 b1} f hf x hF := F.inv.obj b1
+  liftIso {b0 b1} f hf x hF := eqToHom (by simp [← hF, ← Functor.comp_obj]) ≫ F.inv.map f
+  isHomLift f hf x hF := IsHomLift.of_fac' _ _ _ hF (by simp [← Functor.comp_obj])
+    (by
+      simp only [map_comp, eqToHom_map, ← comp_map]
+      rw! (castMode := .all) [F.inv_hom_id];
+      simp [← heq_eq_eq]
+      rfl)
+  liftObj_id h := by simp [← h, ← Functor.comp_obj]
+  liftIso_id := by simp
+  liftObj_comp := by simp
+  liftIso_comp := by simp
 
-
-/-- `IsMultiplicative` 1/2 -/
-def id.liftObj {A : Type u} [Category.{v} A] {X Y}
- (f : X ⟶ Y) [IsIso f]  {X' : A} (e : (𝟭 A).obj X' = X) : A := X
-
-def id {A : Type u} [Category.{v} A] :
-    SplitClovenIsofibration (𝟭 A) where
-  liftObj := id.liftObj
-  liftIso := sorry
-  isHomLift := sorry
-  liftObj_id := sorry
-  liftIso_id := sorry
-  liftObj_comp := sorry
-  liftIso_comp := sorry
+def id {A : Type u} [Category.{v} A] : SplitClovenIsofibration (𝟭 A) :=
+  iso (Functor.Iso.refl _)
 
 /-- `IsMultiplicative` 1/2 -/
 def comp {A B C : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} C] {F : A ⥤ B}
