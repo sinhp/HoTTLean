@@ -243,7 +243,7 @@ structure PolymorphicPi (U0 U1 U2 : UnstructuredUniverse Ctx) where
     (Pi_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
       Pi (U0.substWk σ A σA eq ≫ B) = σ ≫ Pi B)
     (lam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
-      (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B), Γ ⟶ U2.Tm)
+      (b : U0.ext A ⟶ U1.Tm), b ≫ U1.tp = B → (Γ ⟶ U2.Tm))
     (lam_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) (B : U0.ext A ⟶ U1.Ty)
       (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B),
       lam (U0.substWk σ A σA eq ≫ B) (U0.substWk σ A σA eq ≫ b) (by cat_disch) =
