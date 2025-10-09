@@ -370,6 +370,14 @@ attribute [local simp] eqToHom_map
 
 variable {F}
 
+lemma ext {x y : ∫ F} (hbase : x.base = y.base)
+    (hfiber : (F.map (eqToHom hbase)).obj x.fiber = y.fiber) : x = y := by
+  cases x; cases y
+  congr
+  · simp only [eqToHom_map] at hbase hfiber
+    subst hbase
+    simp [← hfiber]
+
 /-- A morphism in the Grothendieck category `F : C ⥤ Cat` consists of
 `base : X.base ⟶ Y.base` and `f.fiber : (F.map base).obj X.fiber ⟶ Y.fiber`.
 -/

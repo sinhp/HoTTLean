@@ -298,6 +298,11 @@ def grothendieckClassifierIso.hom : ∫ I.classifier ⥤  E :=
     (by intro X; ext;simp[hom'.hom,liftIso_id])
     (by intro X Y Z f g; ext; simp[hom'.hom,liftIso_comp])
 
+lemma grothendieckClassifierIso.hom_comp_self : hom I ⋙ F = Groupoidal.forget := by
+
+  #check functorFrom_ext
+  sorry
+
 -- def grothendieckClassifierIso.hom : ∫ I.classifier ⥤  E where
 --   obj p := p.fiber.1
 --   map := grothendieckClassifierIso.hom.map I
@@ -315,54 +320,68 @@ def grothendieckClassifierIso.inv.fibMap {X Y}(f : X ⟶ Y) :
     · rfl
     · simp[Functor.map_inv,ClovenIsofibration.map_liftIso']
 
+lemma grothendieckClassifierIso.inv.fibMap_id (x : E) :
+    inv.fibMap I (𝟙 x) = eqToHom (by simp) := by
+  apply Fiber.hom_ext
+  simp [inv.fibMap]
+  rw![Functor.map_id,liftIso_id]
+  simp[inv_eqToHom,eqToHom_map]
 
+lemma grothendieckClassifierIso.inv.fibMap_comp {x y z : E} (f : x ⟶ y) (g : y ⟶ z) :
+    inv.fibMap I (f ≫ g) =
+    eqToHom (by simp) ≫
+    (I.classifier.map (F.map g)).map (inv.fibMap I f) ≫ inv.fibMap I g := by
+  simp[inv.fibMap]
+  apply Fiber.hom_ext
+  rw![Functor.map_comp]
+  simp[liftIso_comp]
+  simp[eqToHom_map,classifier,classifier.map.map]
 
 def grothendieckClassifierIso.inv : E ⥤ ∫ I.classifier :=
   Groupoidal.functorTo F (fun x => ⟨x, rfl⟩)
-  (fun f => grothendieckClassifierIso.inv.fibMap I f)
-  (fun x => by
-    apply Fiber.hom_ext
-    simp [inv.fibMap]
-    rw![Functor.map_id,liftIso_id]
-    simp[inv_eqToHom,eqToHom_map])
-  (by
-    intro x y z f g
-    simp[inv.fibMap]
-    apply Fiber.hom_ext
-    rw![Functor.map_comp]
-    simp[liftIso_comp]
-    simp[eqToHom_map,classifier,classifier.map.map]
-    )
+  (fun f => inv.fibMap I f)
+  (fun x => inv.fibMap_id I x)
+  (fun f g => inv.fibMap_comp I f g)
 
+lemma grothendieckClassifierIso.inv_comp_forget : grothendieckClassifierIso.inv I ⋙
+    Groupoidal.forget = F :=
+  Groupoidal.functorTo_forget
 
 def grothendieckClassifierIso : ∫ I.classifier ≅≅ E where
   hom := grothendieckClassifierIso.hom ..
   inv := grothendieckClassifierIso.inv ..
   hom_inv_id := by
-   fapply ext
-   · intro p
-     simp[grothendieckClassifierIso.hom,grothendieckClassifierIso.inv]
-     fapply CategoryTheory.Functor.Groupoidal.hext
-     · rw[functorTo_obj_base]
-       · apply grothendieckClassifierIso.hom.map_aux2
-       intro x y z f g
-       simp[grothendieckClassifierIso.inv.fibMap,classifier,classifier.map.map]
-       rw![Functor.map_comp]
-       simp[Fiber.homMk,liftIso_comp]
-       ext
-       simp[eqToHom_map]
-       congr
+    fapply Functor.Groupoidal.FunctorTo.hext
+    · simp [Functor.assoc, grothendieckClassifierIso.inv_comp_forget,grothendieckClassifierIso.hom_comp_self]
+    · sorry
+    · sorry
+-- fapply ext
+    -- · intro p
+    --   simp[grothendieckClassifierIso.hom,grothendieckClassifierIso.inv]
+--       fapply CategoryTheory.Functor.Groupoidal.ext
+--       · rw[functorTo_obj_base]
+--         · apply grothendieckClassifierIso.hom.map_aux2
+--         · intro x y z f g
+--           simp[grothendieckClassifierIso.inv.fibMap,classifier,classifier.map.map]
+--           rw![Functor.map_comp]
+--           simp[Fiber.homMk,liftIso_comp]
+--           ext
+--           simp[eqToHom_map]
+--           congr
+--       · rw![functorTo_obj_fiber]
+--         · simp
+--           simp[grothendieckClassifierIso.inv.fibMap,classifier, classifier.map.obj]
+--           rw![grothendieckClassifierIso.hom.map_aux2]
+--           rw! (castMode := .all) [functorTo_obj_base]
+-- --F.obj (I.liftObj (eqToHom ⋯) ⋯) = p.base
+--           --apply Fiber.hom_ext
+--         --fapply CategoryTheory.Functor.Groupoidal.hext
+--         --simp[eqToHom_map]
+--           sorry
 
-     rw![functorTo_obj_fiber]
-     · simp
-       simp[grothendieckClassifierIso.inv.fibMap,classifier]
+--         · sorry
 
-       --fapply CategoryTheory.Functor.Groupoidal.hext
-       --simp[eqToHom_map]
-       sorry
 
-     sorry
-   sorry
   inv_hom_id := sorry
 
 def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :

@@ -288,6 +288,10 @@ variable {F}
 
 section ext
 
+theorem ext {x y : ∫ F} (hbase : x.base = y.base)
+    (hfiber : (F.map (eqToHom hbase)).obj x.fiber = y.fiber) : x = y := by
+  apply Functor.Grothendieck.ext hbase hfiber
+
 theorem hext {x y : ∫ F} (hbase : x.base = y.base) (hfiber : HEq x.fiber y.fiber) : x = y := by
   rcases x with ⟨xbase, xfiber⟩
   subst hbase
