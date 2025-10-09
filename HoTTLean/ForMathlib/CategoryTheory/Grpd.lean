@@ -3,6 +3,7 @@ import Mathlib.CategoryTheory.MorphismProperty.LiftingProperty
 import Mathlib.CategoryTheory.CodiscreteCategory
 import Mathlib.CategoryTheory.Monad.Limits
 import Mathlib.CategoryTheory.Category.Cat.Limit
+import HoTTLean.ForMathlib.CategoryTheory.Functor.Iso
 
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 

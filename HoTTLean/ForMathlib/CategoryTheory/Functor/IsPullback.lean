@@ -2,6 +2,7 @@ import HoTTLean.ForMathlib
 import Mathlib.CategoryTheory.Widesubcategory
 import HoTTLean.ForMathlib.CategoryTheory.Functor.Iso
 import HoTTLean.ForMathlib.CategoryTheory.FreeGroupoid
+import Mathlib.Tactic.DepRewrite
 
 universe v u v₁ u₁ v₂ u₂ v₃ u₃
 
@@ -578,8 +579,8 @@ def lift : C ⥤ Algeria :=
 def universal : (lift : C ⥤ Algeria) ×'
     lift ⋙ no = Cn ∧ lift ⋙ west = Cw ∧
     ∀ {l0 l1 : C ⥤ Algeria}, l0 ⋙ no = l1 ⋙ no → l0 ⋙ west = l1 ⋙ west → l0 = l1 :=
-  ⟨ lift esah_pb.comm_sq outer_pb Cn Cw hC,
-  by constructor
+  ⟨ lift esah_pb.comm_sq outer_pb Cn Cw hC, by
+     constructor
      . apply esah_pb.hom_ext
        . exact outer_pb.fac_left _ _ _
        . rw [Functor.assoc, wsah, ← Functor.assoc, hC]

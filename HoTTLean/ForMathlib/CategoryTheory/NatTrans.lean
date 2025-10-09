@@ -149,4 +149,11 @@ theorem hComp {w : TwoSquare T L R B} {w' : TwoSquare T' R R' B'}
     (isCartesian_of_isIso _)
 
 end IsCartesian
+
+lemma hext {A : Type u} [Category.{v} A] {B: Type u₁} [Groupoid.{v₁} B]
+    {F F' G G' : A ⥤ B} (α : F ⟶ G) (β : F' ⟶ G')
+    (hF : F = F') (hG : G = G') (happ : ∀ x, α.app x ≍ β.app x) :
+    α ≍ β := by
+  aesop_cat
+
 end NatTrans

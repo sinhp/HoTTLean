@@ -549,8 +549,8 @@ theorem ι_sigma_comp_map_fstAux (x) : ι (sigma A B) x ⋙ map (fstAux B)
     · rfl
     · simp
 
-theorem functorFrom_comp_fib_assocFib_forget :
-  functorFrom_comp_fib (assocFib B) forget = asFunctorFrom_fib (map (fstAux B)) := by
+theorem functorFromCompFib_assocFib_forget :
+  functorFromCompFib (assocFib B) forget = asFunctorFromFib (map (fstAux B)) := by
   ext x
   exact (ι_sigma_comp_map_fstAux B x).symm
 
@@ -565,7 +565,7 @@ theorem assoc_forget : assoc B ⋙ forget = fstAux' B := by
   simp only [assoc, fstAux', functorFrom_comp]
   rw [← asFunctorFrom (map (fstAux B))]
   fapply Functor.Grothendieck.functorFrom_eq_of -- FIXME: bleeding Grothendieck
-  · exact functorFrom_comp_fib_assocFib_forget B
+  · exact functorFromCompFib_assocFib_forget B
   · intro c₁ c₂ f
     rw [comp_eqToHom_iff]
     ext x

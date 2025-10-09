@@ -68,4 +68,13 @@ def whiskeringLeftObjWhiskeringRightObj : (A ⥤ B) ⥤ (C ⥤ D) :=
 
 end
 
+lemma comp_whiskerRight {A B C D : Type*} [Category A] [Category B] [Category C] [Category D]
+    {H0 H1 : D ⥤ A} (α : H0 ⟶ H1) (F : A ⥤ B)
+    (G : B ⥤ C) : whiskerRight α (F ⋙ G) = whiskerRight (whiskerRight α F) G :=
+  rfl
+
+lemma id_whiskerRight {A B : Type*} [Category A] [Category B]
+    {H0 H1 : B ⥤ A} (α : H0 ⟶ H1) : whiskerRight α (𝟭 A) = α :=
+  rfl
+
 end CategoryTheory.Functor
