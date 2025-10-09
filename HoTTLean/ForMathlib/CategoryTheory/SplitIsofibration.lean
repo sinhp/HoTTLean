@@ -350,13 +350,17 @@ def grothendieckClassifierIso : ∫ I.classifier ≅≅ E where
        rw![Functor.map_comp]
        simp[Fiber.homMk,liftIso_comp]
        ext
-       simp[Fiber.fiberInclusion]
+       simp[eqToHom_map]
        congr
 
+     rw![functorTo_obj_fiber]
+     · simp
+       simp[grothendieckClassifierIso.inv.fibMap,classifier]
 
-       --rw![liftIso_comp]
-
+       --fapply CategoryTheory.Functor.Groupoidal.hext
+       --simp[eqToHom_map]
        sorry
+
      sorry
    sorry
   inv_hom_id := sorry
