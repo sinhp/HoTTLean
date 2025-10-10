@@ -9,9 +9,39 @@ noncomputable section
 
 namespace CategoryTheory
 
+lemma eqToHom_heq_id {C : Type*} [Category C] (x y z : C) (h : x = y)
+    (hz : z = x) : eqToHom h ≍ 𝟙 z := by cat_disch
+
 namespace Functor
 
 namespace Fiber
+section
+
+variable {𝒮 : Type u₁} {𝒳 : Type u₂} [Category.{v₁} 𝒮] [Category.{v₂} 𝒳]
+variable {p : 𝒳 ⥤ 𝒮} {S : 𝒮}
+
+@[simp]
+lemma functor_obj_fiberInclusion_obj (a : Fiber p S) :
+    p.obj (Fiber.fiberInclusion.obj a) = S := by
+  exact a.2
+
+lemma functor_map_fiberInclusion_map {a b : Fiber p S}
+    (f : a ⟶ b) :
+    p.map (Fiber.fiberInclusion.map f) = eqToHom (by simp) := by
+  have H := f.2
+  simpa using IsHomLift.fac' p (𝟙 S) f.1
+
+lemma hext {S'} (hS : S' ≍ S) {a : Fiber p S}
+    {a' : Fiber p S'} (h : Fiber.fiberInclusion.obj a ≍ Fiber.fiberInclusion.obj a') : a ≍ a' := by
+  subst hS
+  simpa using Subtype.ext h.eq
+
+lemma hom_hext {S'} (hS : S' ≍ S) {a b : Fiber p S}
+    {a' b' : Fiber p S'} (ha : a ≍ a') (hb : b ≍ b') {φ : a ⟶ b}
+    {ψ : a' ⟶ b'} (h : Fiber.fiberInclusion.map φ ≍ Fiber.fiberInclusion.map ψ) : φ ≍ ψ := by
+  aesop_cat
+
+end
 
 variable {Γ : Type u} {E : Type u} [Groupoid.{v} Γ] [Groupoid.{v} E] {F : E ⥤ Γ}
 
@@ -47,6 +77,7 @@ variable {F : C ⥤ D} (I : ClovenIsofibration F)
 instance {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) :
   F.IsHomLift f (I.liftIso f hX') := I.isHomLift f hX'
 
+@[simp]
 lemma ClovenIsofibration.obj_liftObj {X Y : D} (f : X ⟶ Y) [IsIso f]
     {X' : C} (hX' : F.obj X' = X) : F.obj (I.liftObj f hX') = Y :=
   IsHomLift.codomain_eq F f (I.liftIso f hX')
@@ -67,6 +98,13 @@ lemma ClovenIsofibration.liftObj_comp_aux {X Y : D} (f : X ⟶ Y) [IsIso f] {X' 
     (hX' : F.obj X' = X) (Y' : C) (hY' : I.liftObj f hX' = Y') : F.obj Y' = Y := by
   subst hY'
   apply ClovenIsofibration.obj_liftObj I f
+
+lemma ClovenIsofibration.eqToHom_comp_liftIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' X'' : C}
+    (hX' : F.obj X' = X) (hX'' : X'' = X') :
+    eqToHom hX'' ≫ I.liftIso f hX' =
+    I.liftIso f (X' := X'') (by rw [hX'', hX']) ≫ eqToHom (by subst hX''; rfl) := by
+  subst hX''
+  simp
 
 end
 
@@ -93,6 +131,20 @@ namespace SplitClovenIsofibration
 
 open ClovenIsofibration
 
+@[simp]
+lemma liftObj_eqToHom {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D]
+    (F : C ⥤ D) (I : SplitClovenIsofibration F) {X Y : D} (h : X = Y) {X' : C}
+    (hX' : F.obj X' = X) : I.liftObj (eqToHom h) hX' = X' := by
+  subst h
+  simp [liftObj_id]
+
+@[simp]
+lemma liftIso_eqToHom {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D] (F : C ⥤ D)
+    (I : SplitClovenIsofibration F) {X Y : D} (h : X = Y) {X' : C} (hX' : F.obj X' = X) :
+    I.liftIso (eqToHom h) hX' = eqToHom (by simp) := by
+  subst h
+  simp [liftIso_id]
+
 variable {Γ : Type u} {E : Type u} [Groupoid.{v} Γ] [Groupoid.{v} E] {F : E ⥤ Γ}
   (I : SplitClovenIsofibration F)
 
@@ -102,17 +154,7 @@ variable {Γ : Type u} {E : Type u} [Groupoid.{v} Γ] [Groupoid.{v} E] {F : E �
 /-- Any isofibration `F : E ⥤ Γ` of groupoids is classified by a functor `classifier : Γ ⥤ Grpd`.
 -/
 def classifier.map.obj {X Y : Γ} (f : X ⟶ Y) (a : F.Fiber X) : F.Fiber Y :=
-  ⟨I.liftObj f a.2, by
-    have p : F.IsHomLift f (I.liftIso f _) := I.isHomLift f (X' := a.1) a.2
-    apply @IsHomLift.codomain_eq (f := f) (φ := I.liftIso (X' := a.1) f a.2) ⟩
-
-lemma classifier.fac' {X} {a b : F.Fiber X} (m : a ⟶ b) :
-    F.map (Fiber.fiberInclusion.map m) =
-      eqToHom (by simp [Fiber.fiberInclusion, a.2, b.2]) := by
-  erw [@IsHomLift.fac' _ _ _ _ F _ _ _ _ (𝟙 X) _ m.2]
-  simp
-
-
+  ⟨I.liftObj f a.2, ClovenIsofibration.obj_liftObj ..⟩
 
 def classifier.map.map  {X Y} (f: X ⟶ Y) {a b : F.Fiber X} (m : a ⟶ b) :
     map.obj I f a ⟶ map.obj I f b :=
@@ -121,8 +163,7 @@ def classifier.map.map  {X Y} (f: X ⟶ Y) {a b : F.Fiber X} (m : a ⟶ b) :
   let i := Groupoid.inv i1 ≫ Fiber.fiberInclusion.map m ≫ i2
   have e :𝟙 Y = eqToHom (by simp[obj_liftObj]) ≫
      F.map (CategoryTheory.inv i1 ≫ Fiber.fiberInclusion.map m ≫ i2) ≫ eqToHom (by simp[obj_liftObj])
-     := by
-      simp[i1, i2, classifier.fac', Functor.map_inv,map_liftIso']
+     := by simp[i1, i2, Fiber.functor_map_fiberInclusion_map, Functor.map_inv,map_liftIso']
   have : F.IsHomLift (𝟙 Y) i := by
     simp only[i, e]
     apply IsHomLift.of_fac _ _ _ (ClovenIsofibration.obj_liftObj ..)
@@ -200,8 +241,12 @@ def classifier : Γ ⥤ Grpd.{v,u} where
   obj X := Grpd.of (F.Fiber X)
   map f := Grpd.homOf (classifier.map I f)
   map_id _ := classifier.map_id ..
-  map_comp := by
-   apply classifier.map_comp
+  map_comp _ _ := classifier.map_comp ..
+
+@[simp]
+lemma fiberInclusion_obj_classifier_map_obj {x y} (f : x ⟶ y) (p) :
+    Fiber.fiberInclusion.obj ((I.classifier.map f).obj p) = I.liftObj f p.2 := by
+  simp [classifier, classifier.map.obj, Fiber.fiberInclusion]
 
 open CategoryTheory.Functor.Groupoidal
 
@@ -300,24 +345,25 @@ hom.map' I (f ≫ g) = hom.map' I f ≫ hom.map' I g := by
 --  sorry
  --convert_to _ ≫ eqToHom _ ≫ Fiber.fiberInclusion.map _ ≫ _ = _
 
-def grothendieckClassifierIso.hom'.hom {X Y} (f : X ⟶ Y)
-  : Fiber.fiberInclusion ⟶ I.classifier.map f ⋙ Fiber.fiberInclusion where
-    app _ := I.liftIso f ..
-    naturality := by
-     intro a b g
-     simp[Fiber.fiberInclusion,classifier,classifier.map.map,Fiber.homMk]
+@[simps!]
+def grothendieckClassifierIso.hom.hom {X Y} (f : X ⟶ Y) :
+    Fiber.fiberInclusion ⟶ I.classifier.map f ⋙ Fiber.fiberInclusion where
+  app _ := I.liftIso f ..
+  naturality := by
+   intro a b g
+   simp[Fiber.fiberInclusion,classifier,classifier.map.map,Fiber.homMk]
 
 
-def grothendieckClassifierIso.hom : ∫ I.classifier ⥤  E :=
+def grothendieckClassifierIso.hom : ∫ I.classifier ⥤ E :=
   Groupoidal.functorFrom (fun x => Fiber.fiberInclusion)
-  (grothendieckClassifierIso.hom'.hom I)
-    (by intro X; ext;simp[hom'.hom,liftIso_id])
-    (by intro X Y Z f g; ext; simp[hom'.hom,liftIso_comp])
+  (grothendieckClassifierIso.hom.hom I)
+    (by intro X; ext;simp[hom.hom,liftIso_id])
+    (by intro X Y Z f g; ext; simp[hom.hom,liftIso_comp])
 
-lemma grothendieckClassifierIso.hom_comp_self : hom I ⋙ F = Groupoidal.forget := by
+-- lemma grothendieckClassifierIso.hom_comp_self : hom I ⋙ F = Groupoidal.forget := by
 
-  #check functorFrom_ext
-  sorry
+--   #check functorFrom_ext
+--   sorry
 
 -- def grothendieckClassifierIso.hom : ∫ I.classifier ⥤  E where
 --   obj p := p.fiber.1
@@ -330,7 +376,7 @@ def grothendieckClassifierIso.inv.fibMap {X Y}(f : X ⟶ Y) :
   -- simp[classifier,classifier.map.obj]
   refine @Fiber.homMk _ _ _ _ F (F.obj Y) _ _ ?_ ?_
   · exact CategoryTheory.inv (I.liftIso (F.map f) rfl) ≫ f
-  · simp[]
+  · simp
     fapply IsHomLift.of_fac
     · simp[ClovenIsofibration.obj_liftObj]
     · rfl
@@ -353,104 +399,122 @@ lemma grothendieckClassifierIso.inv.fibMap_comp {x y z : E} (f : x ⟶ y) (g : y
   simp[liftIso_comp]
   simp[eqToHom_map,classifier,classifier.map.map]
 
-def grothendieckClassifierIso.inv : E ⥤ ∫ I.classifier :=
-  Groupoidal.functorTo F (fun x => ⟨x, rfl⟩)
-  (fun f => inv.fibMap I f)
-  (fun x => inv.fibMap_id I x)
-  (fun f g => inv.fibMap_comp I f g)
+-- def grothendieckClassifierIso.inv : E ⥤ ∫ I.classifier :=
+--   Groupoidal.functorTo F (fun x => ⟨x, rfl⟩)
+--   (fun f => inv.fibMap I f)
+--   (fun x => inv.fibMap_id I x)
+--   (fun f g => inv.fibMap_comp I f g)
 
-lemma grothendieckClassifierIso.inv_comp_forget : grothendieckClassifierIso.inv I ⋙
-    Groupoidal.forget = F :=
-  Groupoidal.functorTo_forget
+-- lemma grothendieckClassifierIso.inv_comp_forget : grothendieckClassifierIso.inv I ⋙
+  --   Groupoidal.forget = F :=
+  -- Groupoidal.functorTo_forget
+
+lemma ι_classifier_comp_forget {x} : ι I.classifier x ⋙ Groupoidal.forget =
+    Fiber.fiberInclusion ⋙ F := by
+  fapply Functor.ext
+  · intro p
+    exact p.2.symm
+  · intro p q f
+    simpa using IsHomLift.fac ..
+
+lemma _root_.Subtype.hext {α α' : Sort u} (hα : α ≍ α') {p : α → Prop} {p' : α' → Prop}
+    (hp : p ≍ p') {a : { x // p x }} {a' : { x // p' x }} (ha : a.1 ≍ a'.1) : a ≍ a' := by
+  subst hα hp
+  simp only [heq_eq_eq]
+  ext
+  simpa [← heq_eq_eq]
+
+@[simp]
+lemma liftObj_map_fiberInclusion_map {S} {X Y : Fiber F S} {X' : E} (f : X ⟶ Y)
+    [IsIso (F.map (Fiber.fiberInclusion.map f))] {hX' : X' = Fiber.fiberInclusion.obj X} :
+    I.liftObj (F.map (Fiber.fiberInclusion.map f)) (X' := X') (by simp [hX'])
+    = Fiber.fiberInclusion.obj X := by
+  rw! [Fiber.functor_map_fiberInclusion_map, liftObj_eqToHom, hX']
+
+@[simp]
+lemma liftIso_map_fiberInclusion_map {S} {X Y : Fiber F S} {X' : E} (f : X ⟶ Y)
+    [IsIso (F.map (Fiber.fiberInclusion.map f))] {hX' : X' = Fiber.fiberInclusion.obj X} :
+    I.liftIso (F.map (Fiber.fiberInclusion.map f)) (X' := X') (by simp [hX'])
+    = eqToHom (by simp [hX']) := by
+  rw! [Fiber.functor_map_fiberInclusion_map, liftIso_eqToHom]
+
+open grothendieckClassifierIso in
+def grothendieckClassifierIso : ∫ I.classifier ≅≅ E :=
+  Groupoidal.functorIsoFrom (fun x => Fiber.fiberInclusion)
+  (hom.hom I) (by intro X; ext; simp [liftIso_id])
+  (by intro X Y Z f g; ext; simp [liftIso_comp])
+  F (fun x => ⟨x, rfl⟩) (inv.fibMap I) (inv.fibMap_id I) (inv.fibMap_comp I)
+  (by simp [ι_classifier_comp_forget])
+  (by
+    intro x p
+    simp only [comp_obj]
+    apply Subtype.hext HEq.rfl
+    · simp [Functor.Fiber.functor_obj_fiberInclusion_obj]
+    · simp [Fiber.fiberInclusion])
+  (by
+    intro x p q f
+    simp only [inv.fibMap]
+    apply Fiber.hom_hext
+    any_goals apply Fiber.hext
+    all_goals simp [Fiber.functor_obj_fiberInclusion_obj q])
+  (by intro x; simp [Fiber.fiberInclusion])
+  (by
+    intro x y f
+    simp [inv.fibMap])
+  (by simp)
+  (by simp [I.map_liftIso'])
+  (by
+    intro x y f p
+    simp only [inv.fibMap]
+    apply Fiber.hom_hext
+    any_goals apply Fiber.hext
+    any_goals simp
+    · rw! [map_liftIso', I.liftObj_comp _ _ _ _ rfl, I.liftObj_comp _ _ _ _ rfl]
+      simp [liftObj_eqToHom]
+    · rw! [map_liftIso', I.liftIso_comp _ _ _ _ rfl, I.liftIso_comp _ _ _ _ rfl]
+      simp only [liftIso_eqToHom, eqToHom_refl, eqToHom_trans, Category.id_comp, Category.assoc,
+        IsIso.inv_comp, inv_eqToHom, eqToHom_comp_liftIso, IsIso.inv_hom_id_assoc]
+      rw! [eqToHom_heq_id_cod]
+      apply eqToHom_heq_id
+      rw [I.liftObj_comp _ _ _ _ rfl, I.liftObj_comp _ _ _ _ rfl]
+      simp)
+
+-- def grothendieckClassifierIso' : ∫ I.classifier ≅≅ E where
+--   hom := grothendieckClassifierIso.hom ..
+--   inv := grothendieckClassifierIso.inv ..
+--   hom_inv_id := by
+--     fapply Functor.Groupoidal.FunctorTo.hext
+--     · simp [Functor.assoc, grothendieckClassifierIso.inv_comp_forget,grothendieckClassifierIso.hom_comp_self]
+--     · sorry
+--     · sorry
+-- -- fapply ext
+--     -- · intro p
+--     --   simp[grothendieckClassifierIso.hom,grothendieckClassifierIso.inv]
+-- --       fapply CategoryTheory.Functor.Groupoidal.ext
+-- --       · rw[functorTo_obj_base]
+-- --         · apply grothendieckClassifierIso.hom.map_aux2
+-- --         · intro x y z f g
+-- --           simp[grothendieckClassifierIso.inv.fibMap,classifier,classifier.map.map]
+-- --           rw![Functor.map_comp]
+-- --           simp[Fiber.homMk,liftIso_comp]
+-- --           ext
+-- --           simp[eqToHom_map]
+-- --           congr
+-- --       · rw![functorTo_obj_fiber]
+-- --         · simp
+-- --           simp[grothendieckClassifierIso.inv.fibMap,classifier, classifier.map.obj]
+-- --           rw![grothendieckClassifierIso.hom.map_aux2]
+-- --           rw! (castMode := .all) [functorTo_obj_base]
+-- -- --F.obj (I.liftObj (eqToHom ⋯) ⋯) = p.base
+-- --           --apply Fiber.hom_ext
+-- --         --fapply CategoryTheory.Functor.Groupoidal.hext
+-- --         --simp[eqToHom_map]
+-- --           sorry
+
+-- --         · sorry
 
 
-lemma Fiber.fiberInclusion.obj.fiber (p : ∫ I.classifier):
- F.obj (Fiber.fiberInclusion.obj p.fiber) = p.base := by
-  apply grothendieckClassifierIso.hom.map_aux2
-
--- lemma Fiber.hext {x y} {a: F.Fiber x} {b: F.Fiber y}
---  (hbase: x = y)
---  (hfib :
---    Fiber.fiberInclusion.obj b =
-
---     (F.map (eqToHom hbase)).obj sorry ) : a ≍ b := sorry
-
-#check Fiber.hom_ext
-
-
-lemma hom_hext {x : Γ } {a b : Fiber F x} (φ ψ : a ⟶ b)
-    (h : Fiber.fiberInclusion.map φ = Fiber.fiberInclusion.map ψ) : φ ≍ ψ := sorry
-  --Subtype.ext h
-
-def grothendieckClassifierIso : ∫ I.classifier ≅≅ E where
-  hom := grothendieckClassifierIso.hom ..
-  inv := grothendieckClassifierIso.inv ..
-  hom_inv_id := by
-    fapply Functor.Groupoidal.FunctorTo.hext
-    · simp [Functor.assoc, grothendieckClassifierIso.inv_comp_forget,grothendieckClassifierIso.hom_comp_self]
-    · intro p
-      simp[grothendieckClassifierIso.inv]
-      simp[grothendieckClassifierIso.hom]
-      rw[Subtype.heq_iff_coe_eq]
-      · simp;rfl
-      · intro
-        simp
-        rw[Fiber.fiberInclusion.obj.fiber]
-    · intro x y f
-      simp
-      /- (I.classifier.map (Hom.base f)).obj x.fiber ⟶ y.fiber : ↑(I.classifier.obj y.base)
-         in E
-        f : x ⟶ y
-
-
-      -/
-      congr
-      · simp[grothendieckClassifierIso.inv,grothendieckClassifierIso.hom ]
-        apply Functor.Groupoidal.ext
-        · simp[classifier,classifier.map.obj]
-
-          sorry
-        sorry
-      · sorry
-      · apply Functor.Groupoidal.Hom.hext' sorry sorry sorry
-        · simp[grothendieckClassifierIso.inv,grothendieckClassifierIso.hom]
-          simp[grothendieckClassifierIso.hom'.hom,← Functor.map_comp]
-          sorry
-        · sorry
-      -- apply hom_hext
-      -- simp[grothendieckClassifierIso.inv,grothendieckClassifierIso.hom]
-      -- simp[grothendieckClassifierIso.inv.fibMap]
-      -- apply Groupoidal.Hom.hext'
-      -- simp[functorFrom_map]
-      -- sorry
--- fapply ext
-    -- · intro p
-    --   simp[grothendieckClassifierIso.hom,grothendieckClassifierIso.inv]
---       fapply CategoryTheory.Functor.Groupoidal.ext
---       · rw[functorTo_obj_base]
---         · apply grothendieckClassifierIso.hom.map_aux2
---         · intro x y z f g
---           simp[grothendieckClassifierIso.inv.fibMap,classifier,classifier.map.map]
---           rw![Functor.map_comp]
---           simp[Fiber.homMk,liftIso_comp]
---           ext
---           simp[eqToHom_map]
---           congr
---       · rw![functorTo_obj_fiber]
---         · simp
---           simp[grothendieckClassifierIso.inv.fibMap,classifier, classifier.map.obj]
---           rw![grothendieckClassifierIso.hom.map_aux2]
---           rw! (castMode := .all) [functorTo_obj_base]
--- --F.obj (I.liftObj (eqToHom ⋯) ⋯) = p.base
---           --apply Fiber.hom_ext
---         --fapply CategoryTheory.Functor.Groupoidal.hext
---         --simp[eqToHom_map]
---           sorry
-
---         · sorry
-
-
-  inv_hom_id := sorry
+--   inv_hom_id := sorry
 
 def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
     SplitClovenIsofibration F.hom where
@@ -506,24 +570,24 @@ def comp.isHomLift {X Y: C} (f: X ⟶ Y) [i:IsIso f] {X': A} (hX': (F ⋙ G).obj
 lemma comp.liftObj_id {X: C} {X': A} (hX': (F ⋙ G).obj X' = X):
  comp.liftObj IF IG (𝟙 X) hX' = X' := by
  simp[comp.liftObj,liftIso_id]
- rw![liftIso_id]
- --have i: IsIso (eqToHom sorry ≫ 𝟙 _) := sorry
- have h1 : eqToHom (Eq.symm (IG.liftObj_id hX')) = eqToHom (Eq.symm (IG.liftObj_id hX')) ≫ 𝟙 _ := sorry
- rw![h1]
- rw [liftObj_comp]
- have e0 : IG.liftObj (𝟙 X) hX' = F.obj X' := sorry
- rw![e0]
- ·
-   sorry
- · sorry
- --convert_to @liftObj _ _ _ _ _ _ _ IF _ _ (𝟙 (F.obj X')) _ = _
- · sorry
- --apply liftObj_id
+--  rw![liftIso_id]
+--  --have i: IsIso (eqToHom sorry ≫ 𝟙 _) := sorry
+--  have h1 : eqToHom (Eq.symm (IG.liftObj_id hX')) = eqToHom (Eq.symm (IG.liftObj_id hX')) ≫ 𝟙 _ := sorry
+--  rw![h1]
+--  rw [liftObj_comp]
+--  have e0 : IG.liftObj (𝟙 X) hX' = F.obj X' := sorry
+--  rw![e0]
+--  ·
+--    sorry
+--  · sorry
+--  --convert_to @liftObj _ _ _ _ _ _ _ IF _ _ (𝟙 (F.obj X')) _ = _
+--  · sorry
+--  --apply liftObj_id
 
---  have h : IF.liftObj (eqToHom (Eq.symm (IG.liftObj_id hX'))) rfl = X':= sorry
---  have h: IF.liftObj (eqToHom (Eq.symm (IG.liftObj_id hX')) ≫ 𝟙 (F.obj X')) (by sorry) = X' := sorry
---  simp[eqToHom]
---  sorry
+-- --  have h : IF.liftObj (eqToHom (Eq.symm (IG.liftObj_id hX'))) rfl = X':= sorry
+-- --  have h: IF.liftObj (eqToHom (Eq.symm (IG.liftObj_id hX')) ≫ 𝟙 (F.obj X')) (by sorry) = X' := sorry
+-- --  simp[eqToHom]
+-- --  sorry
 
 
 

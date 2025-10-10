@@ -1261,18 +1261,19 @@ variable (A : E ⥤ C) (fibObj : (x : E) → (A ⋙ F).obj x)
 
 @[simps!]
 def functorIsoFrom (fib_comp : ∀ c, fib c ⋙ A = ι F c ⋙ forget F)
-  (fibObj_fib_obj : ∀ {c} x, fibObj ((fib c).obj x) ≍ x)
-  (fibMap_fib_map : ∀ {c} {x y} (f : x ⟶ y), fibMap ((fib c).map f) ≍ f)
-  (fib_obj_fibObj : ∀ x, (fib (A.obj x)).obj (fibObj x) = x)
-  (hom_map_app_fibObj : ∀ {x y} (f : x ⟶ y), (hom (A.map f)).app (fibObj x) ≫
-    (fib (A.obj y)).map (fibMap f) ≍ f)
-  (whiskerRight_functorTo : ∀ {x y} (f : x ⟶ y), whiskerRight (hom f)
-    (functorTo A fibObj fibMap map_id map_comp) ≍ ιNatTrans (F := F) f)
-  : ∫ F ≅≅ E where
+    (fibObj_fib_obj : ∀ c x, fibObj ((fib c).obj x) ≍ x)
+    (fibMap_fib_map : ∀ c {x y} (f : x ⟶ y), fibMap ((fib c).map f) ≍ f)
+    (fib_obj_fibObj : ∀ x, (fib (A.obj x)).obj (fibObj x) = x)
+    (hom_map_app_fibObj : ∀ {x y} (f : x ⟶ y), (hom (A.map f)).app (fibObj x) ≫
+      (fib (A.obj y)).map (fibMap f) ≍ f)
+    (obj_fib_obj : ∀ c x, A.obj ((fib c).obj x) = c)
+    (map_hom_app : ∀ {c c'} (f : c ⟶ c') x, A.map ((hom f).app x) ≍ f)
+    (fibMap_hom_app : ∀ {c c'} (f : c ⟶ c') x, fibMap ((hom f).app x) ≍ 𝟙 ((F.map f).obj x)) :
+    ∫ F ≅≅ E where
   hom := functorFrom fib hom hom_id hom_comp
   inv := functorTo A fibObj fibMap map_id map_comp
   hom_inv_id := by
-    fapply functorFrom_hext
+    fapply functorFrom_ext
     · intro c
       rw [← Functor.assoc, ι_comp_functorFrom]
       apply FunctorTo.hext
@@ -1284,9 +1285,15 @@ def functorIsoFrom (fib_comp : ∀ c, fib c ⋙ A = ι F c ⋙ forget F)
         rw! [eqToHom_comp_heq, heq_cast_iff_heq]
         apply fibMap_fib_map
     · intro c c' f
-      simp only [comp_whiskerRight, whiskerRight_ιNatTrans_functorFrom, whiskerRight_comp,
-        eqToHom_whiskerRight, id_whiskerRight, eqToHom_comp_heq_iff, comp_eqToHom_heq_iff]
-      apply whiskerRight_functorTo
+      apply NatTrans.ext
+      ext x
+      simp only [comp_obj, functorFrom_obj, ι_obj_base, ι_obj_fiber, id_obj, comp_whiskerRight,
+        whiskerRight_ιNatTrans_functorFrom, whiskerRight_comp, eqToHom_whiskerRight, Category.assoc,
+        eqToHom_trans, NatTrans.comp_app, eqToHom_app, eqToHom_refl, whiskerRight_app,
+        Category.id_comp, id_whiskerRight, ← heq_eq_eq, heq_eqToHom_comp_iff, comp_eqToHom_heq_iff]
+      apply Grothendieck.Hom.hext' rfl
+      any_goals apply Grothendieck.hext' rfl
+      all_goals simp [obj_fib_obj, fibObj_fib_obj, fibMap_hom_app, map_hom_app]
   inv_hom_id := by
     fapply Functor.ext
     · intro x

@@ -282,7 +282,7 @@ theorem ι_map (c : C) {X Y : F.obj c} (f : X ⟶ Y) :
     ((ι F c).map f).fiber = eqToHom (by simp) ≫ f :=
   rfl
 
-@[simp] theorem ι_comp_forget (c : C) : ι F c ⋙ forget = (const (F.obj c)).obj c :=
+theorem ι_comp_forget (c : C) : ι F c ⋙ forget = (const (F.obj c)).obj c :=
   rfl
 
 variable {F}
@@ -356,6 +356,54 @@ theorem FunctorTo.hext (G H : D ⥤ ∫ F)
 
 end ext
 
+section
+variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
+variable {F : C ⥤ Grpd.{v₂, u₂}} (A : D ⥤ C) (fibObj : Π (x : D), (A ⋙ F).obj x)
+    (fibMap : Π {x y : D} (f : x ⟶ y),
+      ((A ⋙ F).map f).obj (fibObj x) ⟶ fibObj y)
+
+theorem functorTo_map_id_aux (x : D) : ((A ⋙ F).map (𝟙 x)).obj (fibObj x) = fibObj x := by
+  simp
+
+theorem functorTo_map_comp_aux {x y z : D} (f : x ⟶ y) (g : y ⟶ z) :
+    ((A ⋙ F).map (f ≫ g)).obj (fibObj x)
+    = (F.map (A.map g)).obj (((A ⋙ F).map f).obj (fibObj x)) := by
+  simp
+
+variable
+    (map_id : Π (x : D), fibMap (CategoryStruct.id x)
+      = eqToHom (functorTo_map_id_aux A fibObj x))
+    (map_comp : Π {x y z : D} (f : x ⟶ y) (g : y ⟶ z), fibMap (f ≫ g)
+      = eqToHom (functorTo_map_comp_aux A fibObj f g)
+      ≫ (F.map (A.map g)).map (fibMap f) ≫ fibMap g)
+
+/-- To define a functor into `Grothendieck F` we can make use of an existing
+  functor into the base. -/
+def functorTo : D ⥤ ∫(F) := Grothendieck.functorTo A fibObj fibMap map_id map_comp
+
+@[simp] theorem functorTo_obj_base (x) :
+    ((functorTo A fibObj fibMap map_id map_comp).obj x).base = A.obj x :=
+  rfl
+
+@[simp] theorem functorTo_obj_fiber (x) :
+    ((functorTo A fibObj fibMap map_id map_comp).obj x).fiber = fibObj x :=
+  rfl
+
+@[simp] theorem functorTo_map_base {x y} (f : x ⟶ y) :
+    ((functorTo A fibObj fibMap map_id map_comp).map f).base = A.map f :=
+  rfl
+
+@[simp] theorem functorTo_map_fiber {x y} (f : x ⟶ y) :
+    ((functorTo A fibObj fibMap map_id map_comp).map f).fiber = fibMap f :=
+  rfl
+
+variable {A} {fibObj} {fibMap} {map_id} {map_comp}
+@[simp] theorem functorTo_forget :
+    functorTo _ _ _ map_id map_comp ⋙ Grothendieck.forget _ = A :=
+  rfl
+
+end
+
 /-- Every morphism `f : X ⟶ Y` in the base category induces a natural transformation from the fiber
 inclusion `ι F X` to the composition `F.map f ⋙ ι F Y`. -/
 def ιNatTrans {X Y : C} (f : X ⟶ Y) : ι F X ⟶ F.map f ⋙ ι F Y :=
@@ -408,6 +456,12 @@ def ιCompFunctorFrom (c : C) : ι F c ⋙ (functorFrom fib hom hom_id hom_comp)
 
 def ι_comp_functorFrom (c : C) : ι F c ⋙ (functorFrom fib hom hom_id hom_comp) = fib c :=
   Grothendieck.ι_comp_functorFrom _ _ _ _ _
+
+lemma whiskerRight_ιNatTrans_functorFrom {x y} (f : x ⟶ y) :
+    Functor.whiskerRight (ιNatTrans f) (functorFrom fib hom hom_id hom_comp) =
+    eqToHom (ι_comp_functorFrom ..) ≫ hom f ≫
+    eqToHom (by rw [Functor.assoc, ι_comp_functorFrom]) :=
+  Grothendieck.whiskerRight_ιNatTrans_functorFrom ..
 
 section
 
@@ -518,6 +572,31 @@ theorem functorFrom_hext {K K' : ∫(F) ⥤ E}
     : K = K' :=
   Grothendieck.functorFrom_hext hfib hhom
 
+section
+variable (A : E ⥤ C) (fibObj : (x : E) → (A ⋙ F).obj x)
+    (fibMap : {x y : E} → (f : x ⟶ y) → ((A ⋙ F).map f).obj (fibObj x) ⟶ fibObj y)
+    (map_id : (x : E) → fibMap (CategoryStruct.id x)
+      = eqToHom (functorTo_map_id_aux A fibObj x))
+    (map_comp : {x y z : E} → (f : x ⟶ y) → (g : y ⟶ z) → fibMap (f ≫ g)
+      = eqToHom (functorTo_map_comp_aux A fibObj f g)
+      ≫ (F.map (A.map g)).map (fibMap f) ≫ fibMap g)
+
+@[simps!]
+def functorIsoFrom (fib_comp : ∀ c, fib c ⋙ A = ι F c ⋙ forget)
+    (fibObj_fib_obj : ∀ c x, fibObj ((fib c).obj x) ≍ x)
+    (fibMap_fib_map : ∀ c {x y} (f : x ⟶ y), fibMap ((fib c).map f) ≍ f)
+    (fib_obj_fibObj : ∀ x, (fib (A.obj x)).obj (fibObj x) = x)
+    (hom_map_app_fibObj : ∀ {x y} (f : x ⟶ y), (hom (A.map f)).app (fibObj x) ≫
+      (fib (A.obj y)).map (fibMap f) ≍ f)
+    (obj_fib_obj : ∀ c x, A.obj ((fib c).obj x) = c)
+    (map_hom_app : ∀ {c c'} (f : c ⟶ c') x, A.map ((hom f).app x) ≍ f)
+    (fibMap_hom_app : ∀ {c c'} (f : c ⟶ c') x, fibMap ((hom f).app x) ≍ 𝟙 ((F.map f).obj x)) :
+    ∫ F ≅≅ E :=
+  Grothendieck.functorIsoFrom fib hom hom_id hom_comp A fibObj fibMap map_id map_comp
+    fib_comp fibObj_fib_obj fibMap_fib_map fib_obj_fibObj hom_map_app_fibObj
+    obj_fib_obj map_hom_app fibMap_hom_app
+
+end
 end
 end FunctorFrom
 
@@ -768,54 +847,6 @@ theorem ιNatIso_comp {x y z : Γ} (f : x ⟶ y) (g : y ⟶ z) :
     ≪≫ eqToIso (by simp) := by
   ext
   simp [ιNatIso]
-
-end
-
-section
-variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
-variable {F : C ⥤ Grpd.{v₂, u₂}} (A : D ⥤ C) (fibObj : Π (x : D), (A ⋙ F).obj x)
-    (fibMap : Π {x y : D} (f : x ⟶ y),
-      ((A ⋙ F).map f).obj (fibObj x) ⟶ fibObj y)
-
-theorem functorTo_map_id_aux (x : D) : ((A ⋙ F).map (𝟙 x)).obj (fibObj x) = fibObj x := by
-  simp
-
-theorem functorTo_map_comp_aux {x y z : D} (f : x ⟶ y) (g : y ⟶ z) :
-    ((A ⋙ F).map (f ≫ g)).obj (fibObj x)
-    = (F.map (A.map g)).obj (((A ⋙ F).map f).obj (fibObj x)) := by
-  simp
-
-variable
-    (map_id : Π (x : D), fibMap (CategoryStruct.id x)
-      = eqToHom (functorTo_map_id_aux A fibObj x))
-    (map_comp : Π {x y z : D} (f : x ⟶ y) (g : y ⟶ z), fibMap (f ≫ g)
-      = eqToHom (functorTo_map_comp_aux A fibObj f g)
-      ≫ (F.map (A.map g)).map (fibMap f) ≫ fibMap g)
-
-/-- To define a functor into `Grothendieck F` we can make use of an existing
-  functor into the base. -/
-def functorTo : D ⥤ ∫(F) := Grothendieck.functorTo A fibObj fibMap map_id map_comp
-
-@[simp] theorem functorTo_obj_base (x) :
-    ((functorTo A fibObj fibMap map_id map_comp).obj x).base = A.obj x :=
-  rfl
-
-@[simp] theorem functorTo_obj_fiber (x) :
-    ((functorTo A fibObj fibMap map_id map_comp).obj x).fiber = fibObj x :=
-  rfl
-
-@[simp] theorem functorTo_map_base {x y} (f : x ⟶ y) :
-    ((functorTo A fibObj fibMap map_id map_comp).map f).base = A.map f :=
-  rfl
-
-@[simp] theorem functorTo_map_fiber {x y} (f : x ⟶ y) :
-    ((functorTo A fibObj fibMap map_id map_comp).map f).fiber = fibMap f :=
-  rfl
-
-variable {A} {fibObj} {fibMap} {map_id} {map_comp}
-@[simp] theorem functorTo_forget :
-    functorTo _ _ _ map_id map_comp ⋙ Grothendieck.forget _ = A :=
-  rfl
 
 end
 
