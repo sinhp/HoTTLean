@@ -1,5 +1,4 @@
-import HoTTLean.Groupoids.NaturalModelBase
-import HoTTLean.Model.NaturalModel
+import HoTTLean.Groupoids.UnstructuredModel
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 
 universe v u v₁ u₁ v₂ u₂ v₃ u₃
@@ -8,7 +7,7 @@ noncomputable section
 
 namespace GroupoidModel
 
-open CategoryTheory NaturalModel Universe Opposite Functor.Groupoidal PGrpd
+open CategoryTheory Model UnstructuredUniverse Opposite Functor.Groupoidal PGrpd
 
 attribute [local simp] eqToHom_map Grpd.id_eq_id Grpd.comp_eq_comp Functor.id_comp
 
@@ -49,19 +48,6 @@ def sigmaMap : sigmaObj B x ⥤ sigmaObj B y :=
 
 theorem ιNatTrans_app_base (a : sigmaObj B x) : ((ιNatTrans f).app a.base) = homMk f (𝟙 (A.map f).obj a.base) :=
   rfl
-
--- theorem sigmaMap_obj (a) : (sigmaMap B f).obj a =
---     objMk ((A.map f).obj a.base)
---       ((B.map
---         (homMk
---           (X := (ι A x).obj (base a))
---           (Y := (ι A y).obj ((A.map f).obj (base a))) f
---           (𝟙 _))).obj (a.fiber)) := by
---   apply hext
---   · simp
---   · simp only [sigmaObj, sigmaMap_obj_base, Functor.comp_obj, sigmaMap_obj_fiber, ι_obj_base,
---        ι_obj_fiber, objMk_base, objMk_fiber, heq_eq_eq]
---     congr
 
 @[simp] theorem sigmaMap_map_base {a b : sigmaObj B x} {p : a ⟶ b} :
     ((sigmaMap B f).map p).base = (A.map f).map p.base := rfl
@@ -463,6 +449,14 @@ variable {Γ : Type u₂} [Category.{v₂} Γ] {A : Γ ⥤ Grpd.{v₁,u₁}} (B 
 @[simps] def fstAux : sigma A B ⟶ A where
   app x := Grpd.homOf forget
 
+lemma fstAux_comp {Δ : Type u₃} [Category.{v₃} Δ] (σ : Δ ⥤ Γ) : fstAux (pre A σ ⋙ B) =
+    eqToHom (sigma_naturality ..).symm ≫ Functor.whiskerLeft σ (fstAux B) := by
+  ext
+  simp only [sigma_obj, Functor.comp_obj, fstAux_app, NatTrans.comp_app, eqToHom_app,
+    Functor.whiskerLeft_app, ← heq_eq_eq, heq_eqToHom_comp_iff]
+  congr
+  all_goals rw [← Functor.assoc, ι_comp_pre]
+
 def fstAux' : ∫(sigma A B) ⥤ ∫(A) :=
   map (fstAux B)
 
@@ -474,6 +468,12 @@ theorem fst_forgetToGrpd : fst B ⋙ forgetToGrpd = forget ⋙ A := by
   dsimp only [fst, fstAux']
   rw [Functor.assoc, (Functor.Groupoidal.isPullback A).comm_sq,
     ← Functor.assoc, map_forget]
+
+lemma fst_comp {Δ : Type u₃} [Category.{v₃} Δ] (σ : Δ ⥤ Γ) :
+    fst (pre A σ ⋙ B) = map (eqToHom (sigma_naturality B σ).symm) ⋙ pre (sigma A B) σ ⋙ fst B := by
+  simp [fst, fstAux']
+  rw [fstAux_comp, map_comp_eq, ← pre_toPGrpd]
+  rfl -- FIXME: heavy rfl
 
 end
 
@@ -517,8 +517,21 @@ theorem assocHom_comp {x y z : Γ} (f : x ⟶ y) (g : y ⟶ z) :
 def assoc : ∫(sigma A B) ⥤ ∫(B) :=
   functorFrom (assocFib B) (assocHom B) (by simp) (by simp [assocHom_comp])
 
+lemma assoc_pre {Δ : Type u₃} [Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ) :
+    assoc (pre A σ ⋙ B) ⋙ pre B (pre A σ) =
+    (map (eqToHom (sigma_naturality ..).symm) ⋙ pre (sigma A B) σ) ⋙ assoc B := by
+  dsimp [assoc]
+  rw [functorFrom_comp]
+  sorry
+
 def snd : ∫(sigma A B) ⥤ PGrpd :=
   assoc B ⋙ toPGrpd B
+
+lemma snd_comp {Δ : Type u₃} [Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ) : snd (A := σ ⋙ A) (pre A σ ⋙ B) =
+    map (eqToHom (sigma_naturality ..).symm) ⋙ pre (sigma A B) σ ⋙ snd B := by
+  dsimp [snd]
+  have : toPGrpd (pre A σ ⋙ B) = pre B (pre A σ) ⋙ toPGrpd B := rfl
+  simp only [this, ← Functor.assoc, assoc_pre]
 
 theorem ι_sigma_comp_map_fstAux (x) : ι (sigma A B) x ⋙ map (fstAux B)
     = forget ⋙ ι A x := by
@@ -536,17 +549,8 @@ theorem ι_sigma_comp_map_fstAux (x) : ι (sigma A B) x ⋙ map (fstAux B)
     · rfl
     · simp
 
--- lemma asFunctorFrom_fib_map_fstAux {x : Γ} :
---     asFunctorFrom_fib (map (fstAux B)) x = ι (sigma A B) x ⋙ map (fstAux B) :=
---   rfl
-
--- lemma asFunctorFrom_hom_map_fstAux {c c' : Γ} (f : c ⟶ c') :
---     asFunctorFrom_hom (map (fstAux B)) f =
---     Functor.whiskerRight (ιNatTrans f) (map (fstAux B)) := by
---   sorry
-
-theorem functorFrom_comp_fib_assocFib_forget :
-  functorFrom_comp_fib (assocFib B) forget = asFunctorFrom_fib (map (fstAux B)) := by
+theorem functorFromCompFib_assocFib_forget :
+  functorFromCompFib (assocFib B) forget = asFunctorFromFib (map (fstAux B)) := by
   ext x
   exact (ι_sigma_comp_map_fstAux B x).symm
 
@@ -561,7 +565,7 @@ theorem assoc_forget : assoc B ⋙ forget = fstAux' B := by
   simp only [assoc, fstAux', functorFrom_comp]
   rw [← asFunctorFrom (map (fstAux B))]
   fapply Functor.Grothendieck.functorFrom_eq_of -- FIXME: bleeding Grothendieck
-  · exact functorFrom_comp_fib_assocFib_forget B
+  · exact functorFromCompFib_assocFib_forget B
   · intro c₁ c₂ f
     rw [comp_eqToHom_iff]
     ext x
@@ -626,6 +630,14 @@ def fst' : Γ ⥤ PGrpd := sec (sigma A B) αβ hαβ ⋙ fst B
 @[inherit_doc fst'] theorem fst'_forgetToGrpd : fst' B αβ hαβ ⋙ forgetToGrpd = A :=
   rfl
 
+lemma fst'_comp {Δ : Type u₃} [Category.{v₃} Δ] (σ : Δ ⥤ Γ) :
+    fst' (A := σ ⋙ A) (pre A σ ⋙ B) (σ ⋙ αβ) (by simp [Functor.assoc, hαβ, sigma_naturality]) =
+    σ ⋙ fst' B αβ hαβ := by
+  dsimp [fst']
+  conv => right; rw [← Functor.assoc, Functor.Groupoidal.sec_naturality, Functor.assoc]
+  rw! [fst_comp, ← sigma_naturality]
+  simp [map_id_eq]
+
 @[inherit_doc fst'] def dependent' : ∫(fst' B αβ hαβ ⋙ forgetToGrpd) ⥤ Grpd :=
   map (eqToHom rfl) ⋙ B
 
@@ -636,6 +648,15 @@ variable {Γ : Type u₂} [Groupoid.{v₂} Γ] {A : Γ ⥤ Grpd.{v₁,u₁}} (B 
   (αβ : Γ ⥤ PGrpd.{v₁,u₁}) (hαβ : αβ ⋙ forgetToGrpd = sigma A B)
 
 @[inherit_doc fst'] def snd' : Γ ⥤ PGrpd := sec (sigma A B) αβ hαβ ⋙ snd B
+
+lemma snd'_comp {Δ : Type u₃} [Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ) :
+    snd' (A := σ ⋙ A) (pre A σ ⋙ B) (σ ⋙ αβ) (by rw [Functor.assoc, hαβ, sigma_naturality]) =
+    σ ⋙ snd' B αβ hαβ := by
+  dsimp [snd']
+  conv => right; rw [← Functor.assoc, sec_naturality]
+  rw! [snd_comp, ← sigma_naturality]
+  simp [map_id_eq]
+  rfl
 
 @[simp] theorem fst'_obj_base {x} : ((fst' B αβ hαβ).obj x).base =
     A.obj x := rfl
@@ -813,199 +834,203 @@ end FunctorOperation
 
 open FunctorOperation
 
-/--
-Behavior of the Σ-type former (a natural transformation) on an input.
-By Yoneda, "an input" is the same as a map from a representable into the domain.
--/
-def smallUSig.Sig_app {Γ : Ctx}
-    (AB : y(Γ) ⟶ smallU.{v}.Ptp.obj smallU.{v}.Ty) :
-    y(Γ) ⟶ smallU.{v}.Ty :=
-  yonedaCategoryEquiv.symm (sigma _ (smallU.PtpEquiv.snd AB))
+section
+
+@[simp]
+abbrev USig.SigAux {X : Type (v + 1)} [Category.{v} X]
+    (S : ∀ {Γ : Ctx} (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ X), Γ ⥤ X)
+    {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ Ctx.coreAsSmall X) :
+    Γ ⟶ Ctx.coreAsSmall X :=
+  toCoreAsSmallEquiv.symm (S (toCoreAsSmallEquiv A) (toCoreAsSmallEquiv B))
+
+theorem USig.SigAux_comp {X : Type (v + 1)} [Category.{v} X]
+    (S : ∀ {Γ : Ctx} (A : Γ ⥤ Grpd.{v,v}) (B : ∫(A) ⥤ X), Γ ⥤ X)
+    (S_naturality : ∀ {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⥤ Grpd}
+      {B : ∫(A) ⥤ X}, σ ⋙ S A B = S (σ ⋙ A) (pre A σ ⋙ B))
+    {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} {σA : Δ ⟶ U.Ty}
+    (eq : σ ≫ A = σA) (B : U.ext A ⟶ Ctx.coreAsSmall X) :
+    USig.SigAux S (U.substWk σ A σA eq ≫ B) = σ ≫ USig.SigAux S B := by
+  simp only [USig.SigAux, Grpd.comp_eq_comp]
+  rw [← toCoreAsSmallEquiv_symm_apply_comp_left]
+  congr 1
+  rw [S_naturality]
+  subst eq
+  simp only [Grpd.comp_eq_comp]
+  conv => left; right; rw! [toCoreAsSmallEquiv_apply_comp_left]
+  rw! (castMode := .all) [toCoreAsSmallEquiv_apply_comp_left]
+  simp [U.substWk_eq, map_id_eq]
+  rfl
+
+def USig.Sig {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty) : Γ ⟶ U.{v}.Ty :=
+  USig.SigAux sigma B
 
 /--
 Naturality for the formation rule for Σ-types.
-Also known as Beck-Chevalley
+Also known as Beck-Chevalley.
 -/
-theorem smallUSig.Sig_naturality {Γ Δ : Ctx} (σ : Δ ⟶ Γ)
-    (AB : y(Γ) ⟶ smallU.{v}.Ptp.obj smallU.{v}.Ty) :
-    smallUSig.Sig_app (ym(σ) ≫ AB) = ym(σ) ≫ smallUSig.Sig_app AB := by
-  dsimp only [smallUSig.Sig_app]
-  rw [← yonedaCategoryEquiv_symm_naturality_left, sigma_naturality,
-  -- note the order of rewrite is first the fiber, then the base
-  -- this allows rw! to cast the proof in the `eqToHom`
-    smallU.PtpEquiv.snd_comp_left]
-  rw! [smallU.PtpEquiv.fst_comp_left]
+theorem USig.Sig_comp {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} {σA : Δ ⟶ U.Ty}
+    (eq : σ ≫ A = σA) (B : U.ext A ⟶ U.{v}.Ty) :
+    USig.Sig (U.substWk σ A σA eq ≫ B) = σ ≫ USig.Sig B :=
+  USig.SigAux_comp sigma (by intros; rw [sigma_naturality]) σ eq B
+
+lemma USig.pair_aux {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty) (a : Γ ⟶ U.Tm)
+    (a_tp : a ≫ U.tp = A) (b : Γ ⟶ U.Tm) (b_tp : b ≫ U.tp = U.sec A a a_tp ≫ B) :
+    toCoreAsSmallEquiv b ⋙ forgetToGrpd =
+    sec (toCoreAsSmallEquiv a ⋙ forgetToGrpd) (toCoreAsSmallEquiv a) rfl ⋙
+    map (eqToHom (by rw [← a_tp, ← toCoreAsSmallEquiv_apply_comp_right]; rfl)) ⋙
+    toCoreAsSmallEquiv B := by
+  rw [← toCoreAsSmallEquiv_apply_comp_right, ← toCoreAsSmallEquiv_apply_comp_left,
+    ← toCoreAsSmallEquiv_apply_comp_left]
+  congr 1
+  simp only [Grpd.comp_eq_comp, U.tp] at b_tp
+  rw [b_tp]
+  subst a_tp
+  simp [map_id_eq]
+  rfl
+
+def USig.pair {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty) (a : Γ ⟶ U.Tm)
+    (a_tp : a ≫ U.tp = A) (b : Γ ⟶ U.Tm) (b_tp : b ≫ U.tp = U.sec A a a_tp ≫ B) :
+    Γ ⟶ U.{v}.Tm :=
+  toCoreAsSmallEquiv.symm <|
+    FunctorOperation.pair (toCoreAsSmallEquiv a) (toCoreAsSmallEquiv b)
+    (map (eqToHom (by
+      rw [← a_tp, ← toCoreAsSmallEquiv_apply_comp_right, Grpd.comp_eq_comp, U.tp])) ⋙
+    toCoreAsSmallEquiv B) <| pair_aux B a a_tp b b_tp
+
+theorem USig.pair_comp {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} {σA : Δ ⟶ U.Ty}
+    (eq : σ ≫ A = σA) (B : U.ext A ⟶ U.{v}.Ty) (a : Γ ⟶ U.Tm)
+    (a_tp : a ≫ U.tp = A) (b : Γ ⟶ U.Tm) (b_tp : b ≫ U.tp = U.sec A a a_tp ≫ B) :
+  USig.pair (U.substWk σ A σA eq ≫ B) (σ ≫ a) (by cat_disch) (σ ≫ b)
+    (by rw! [Category.assoc, b_tp, comp_sec_assoc]) = σ ≫ USig.pair B a a_tp b b_tp := by
+  dsimp [pair]
+  rw [← toCoreAsSmallEquiv_symm_apply_comp_left, FunctorOperation.pair_naturality]
   congr 2
-  · simp [map_id_eq, Functor.id_comp]
+  slice_rhs 2 3 => rw [← toCoreAsSmallEquiv_apply_comp_left]
+  subst a_tp eq
+  simp [← toCoreAsSmallEquiv_apply_comp_left, map_id_eq, U.substWk_eq]
+  rfl
 
-/-- The formation rule for Σ-types for the ambient natural model `base`
-  If possible, don't use NatTrans.app on this,
-  instead precompose it with maps from representables.
--/
-def smallUSig.Sig : smallU.{v}.Ptp.obj smallU.{v}.Ty
-  ⟶ smallU.{v}.Ty :=
-  NatTrans.yonedaMk smallUSig.Sig_app smallUSig.Sig_naturality
+lemma USig.pair_tp {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty) (a : Γ ⟶ U.Tm)
+    (a_tp : a ≫ U.tp = A) (b : Γ ⟶ U.Tm) (b_tp : b ≫ U.tp = U.sec A a a_tp ≫ B) :
+    USig.pair B a a_tp b b_tp ≫ U.tp = USig.Sig B := by
+  dsimp [pair, Sig, U.tp]
+  rw [← toCoreAsSmallEquiv_symm_apply_comp_right, FunctorOperation.pair_comp_forgetToGrpd,
+    ← toCoreAsSmallEquiv_apply_comp_left]
+  subst a_tp
+  congr 3
+  convert_to Grpd.homOf (map (eqToHom _)) ≫ B = 𝟙 (U.ext (a ≫ U.tp)) ≫ B
+  rw [← eqToHom_eq_homOf_map]
+  simp
 
-lemma smallUSig.Sig_app_eq {Γ : Ctx} (AB : y(Γ) ⟶ _) : AB ≫ smallUSig.Sig =
-    smallUSig.Sig_app AB := by
-  simp only [smallUSig.Sig, NatTrans.yonedaMk_app]
+lemma USig.fst_aux {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty)
+    (s : Γ ⟶ U.Tm) (s_tp : s ≫ U.tp = USig.Sig B) :
+    toCoreAsSmallEquiv s ⋙ forgetToGrpd = sigma (toCoreAsSmallEquiv A) (toCoreAsSmallEquiv B) := by
+  dsimp only [U.tp, Grpd.comp_eq_comp, Sig] at s_tp
+  rw [← toCoreAsSmallEquiv_apply_comp_right, s_tp]
+  simp
 
-open smallU.compDom
+def USig.fst {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.Ty)
+    (s : Γ ⟶ U.Tm) (s_tp : s ≫ U.tp = USig.Sig B) : Γ ⟶ U.Tm.{v} :=
+  toCoreAsSmallEquiv.symm <| FunctorOperation.sigma.fst' (toCoreAsSmallEquiv B)
+    (toCoreAsSmallEquiv s) <| fst_aux B s s_tp
 
-def smallUSig.pair_app {Γ : Ctx}
-    (ab : y(Γ) ⟶ smallU.{v}.uvPolyTp.compDom smallU.{v}.uvPolyTp)
-    : y(Γ) ⟶ smallU.{v}.Tm :=
-  yonedaCategoryEquiv.symm (pair _ _ _ (snd_forgetToGrpd ab))
+lemma USig.fst_comp {Γ Δ : Grpd} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.Ty} {σA : Δ ⟶ U.Ty} (eq : σ ≫ A = σA)
+    (B : U.ext A ⟶ U.Ty) (s : Γ ⟶ U.Tm) (s_tp : s ≫ U.tp = USig.Sig B) :
+    USig.fst (U.substWk σ A σA eq ≫ B) (σ ≫ s) (by rw [Category.assoc, s_tp, Sig_comp]) =
+    σ ≫ USig.fst B s s_tp := by
+  dsimp [fst]
+  rw [← toCoreAsSmallEquiv_symm_apply_comp_left, ← sigma.fst'_comp]
+  subst eq
+  rw! [toCoreAsSmallEquiv_apply_comp_left, U.substWk_eq]
+  simp [map_id_eq]
+  rfl
 
-theorem smallUSig.pair_naturality {Γ Δ : Ctx} (f : Δ ⟶ Γ)
-    (ab : y(Γ) ⟶ smallU.compDom.{v}) :
-    smallUSig.pair_app (ym(f) ≫ ab) = ym(f) ≫ smallUSig.pair_app ab := by
-  dsimp only [smallUSig.pair_app]
-  rw [← yonedaCategoryEquiv_symm_naturality_left, FunctorOperation.pair_naturality]
-  -- Like with `smallUSig.Sig_naturality` rw from inside to outside (w.r.t type dependency)
-  rw! (castMode := .all) [dependent_naturality, snd_naturality, fst_naturality]
-  simp [map_id_eq, Functor.id_comp]
+lemma USig.fst_tp {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.Ty)
+    (s : Γ ⟶ U.Tm) (s_tp : s ≫ U.tp = USig.Sig B) :
+    USig.fst B s s_tp ≫ U.tp = A := by
+  dsimp [fst, U.tp]
+  rw [← toCoreAsSmallEquiv_symm_apply_comp_right, sigma.fst'_forgetToGrpd]
+  simp
 
-def smallUSig.pair : smallU.compDom.{v} ⟶ smallU.{v}.Tm :=
-  NatTrans.yonedaMk smallUSig.pair_app smallUSig.pair_naturality
+def USig.snd {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.Ty)
+    (s : Γ ⟶ U.Tm) (s_tp : s ≫ U.tp = USig.Sig B) : Γ ⟶ U.Tm.{v} :=
+  toCoreAsSmallEquiv.symm <| FunctorOperation.sigma.snd' (toCoreAsSmallEquiv B)
+    (toCoreAsSmallEquiv s) <| fst_aux B s s_tp
 
-lemma smallUSig.pair_app_eq {Γ : Ctx} (ab : y(Γ) ⟶ _) : ab ≫ smallUSig.pair =
-    yonedaCategoryEquiv.symm (FunctorOperation.pair _ _ _ (snd_forgetToGrpd ab)) := by
-  simp only [smallUSig.pair, smallUSig.pair_app, NatTrans.yonedaMk_app]
+lemma USig.snd_comp {Γ Δ : Grpd} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.Ty} {σA : Δ ⟶ U.Ty} (eq : σ ≫ A = σA)
+    (B : U.ext A ⟶ U.Ty) (s : Γ ⟶ U.Tm) (s_tp : s ≫ U.tp = USig.Sig B) :
+    USig.snd (U.substWk σ A σA eq ≫ B) (σ ≫ s) (by rw [Category.assoc, s_tp, Sig_comp]) =
+    σ ≫ USig.snd B s s_tp := by
+  dsimp [snd]
+  rw [← toCoreAsSmallEquiv_symm_apply_comp_left]
+  congr 1
+  rw [← sigma.snd'_comp]
+  subst eq
+  congr 1
+  rw [toCoreAsSmallEquiv_apply_comp_left, U.substWk_eq]
+  simp [map_id_eq]
+  rfl
 
-namespace SigPullback
+def USig.snd_tp {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.Ty)
+    (s : Γ ⟶ U.Tm) (s_tp : s ≫ U.tp = USig.Sig B) :
+    USig.snd B s s_tp ≫ U.tp = U.sec A (USig.fst B s s_tp) (fst_tp ..) ≫ B := by
+  dsimp [snd, U.tp]
+  rw [← toCoreAsSmallEquiv_symm_apply_comp_right, sigma.snd'_forgetToGrpd,
+    toCoreAsSmallEquiv.symm_apply_eq, toCoreAsSmallEquiv_apply_comp_left]
+  simp [sigma.dependent', map_id_eq]
+  rfl
 
-open Limits
+lemma USig.fst_pair {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty) (a : Γ ⟶ U.Tm)
+    (a_tp : a ≫ U.tp = A) (b : Γ ⟶ U.Tm) (b_tp : b ≫ U.tp = U.sec A a a_tp ≫ B) :
+    fst B (USig.pair B a a_tp b b_tp) (pair_tp ..) = a := by
+  dsimp [fst, pair]
+  rw [toCoreAsSmallEquiv.symm_apply_eq]
+  subst a_tp
+  simp only [Grpd.comp_eq_comp, eqToHom_refl, map_id_eq, Cat.of_α, Functor.id_comp,
+    Equiv.apply_symm_apply]
+  exact sigma.fst'_pair (α := toCoreAsSmallEquiv a) (β := toCoreAsSmallEquiv b)
+      (B := toCoreAsSmallEquiv B) (by rw [pair_aux B a rfl b b_tp]; simp [map_id_eq]; rfl)
 
-section
+lemma USig.snd_pair {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.{v}.Ty) (a : Γ ⟶ U.Tm)
+    (a_tp : a ≫ U.tp = A) (b : Γ ⟶ U.Tm) (b_tp : b ≫ U.tp = U.sec A a a_tp ≫ B) :
+    USig.snd B (USig.pair B a a_tp b b_tp) (pair_tp ..) = b := by
+  dsimp [snd, pair]
+  rw [toCoreAsSmallEquiv.symm_apply_eq]
+  subst a_tp
+  simp only [Grpd.comp_eq_comp, eqToHom_refl, map_id_eq, Cat.of_α, Functor.id_comp,
+    Equiv.apply_symm_apply]
+  exact sigma.snd'_pair (α := toCoreAsSmallEquiv a) (β := toCoreAsSmallEquiv b)
+      (B := toCoreAsSmallEquiv B) (by rw [pair_aux B a rfl b b_tp]; simp [map_id_eq]; rfl)
 
-theorem smallUSig.pair_tp : smallUSig.pair.{v} ≫ smallU.{v}.tp =
-    smallU.comp.{v} ≫ smallUSig.Sig.{v} := by
-  apply hom_ext_yoneda
-  intros Γ ab
-  rw [← Category.assoc, ← Category.assoc, smallUSig.pair_app_eq,
-    smallUSig.Sig_app_eq, smallU_tp, π,
-    ← yonedaCategoryEquiv_symm_naturality_right,
-    pair_comp_forgetToGrpd, smallUSig.Sig_app]
-  congr 2
-  · rw [fst_forgetToGrpd]
-  · exact dependent_heq.{v} ab
+lemma USig.eta {Γ : Grpd} {A : Γ ⟶ U.Ty} (B : U.ext A ⟶ U.Ty) (s : Γ ⟶ U.Tm)
+    (s_tp : s ≫ U.tp = USig.Sig B) :
+    USig.pair B (USig.fst B s s_tp) (fst_tp ..) (USig.snd B s s_tp) (snd_tp ..) = s := by
+  dsimp [pair]
+  rw [toCoreAsSmallEquiv.symm_apply_eq]
+  have h := FunctorOperation.sigma.eta (toCoreAsSmallEquiv B) (toCoreAsSmallEquiv s)
+    (by rwa [fst_aux])
+  simp only [map_id_eq, Cat.of_α, Functor.id_comp]
+  rw [← h]
+  congr 1
+  simp [sigma.dependent', map_id_eq]
 
-section
-variable {Γ : Ctx} (AB : y(Γ) ⟶ smallU.Ptp.obj.{v} y(U.{v}))
-  (αβ : y(Γ) ⟶ y(E.{v})) (hαβ : αβ ≫ ym(π) = AB ≫ smallUSig.Sig)
-
-include hαβ in
-theorem yonedaCategoryEquiv_forgetToGrpd : yonedaCategoryEquiv αβ ⋙ forgetToGrpd
-    = sigma (smallU.PtpEquiv.fst AB) (smallU.PtpEquiv.snd AB) := by
-  erw [← yonedaCategoryEquiv_naturality_right, hαβ]
-  rw [smallUSig.Sig_app_eq, smallUSig.Sig_app, yonedaCategoryEquiv.apply_symm_apply]
-
-def lift : y(Γ) ⟶ smallU.compDom.{v} :=
-  let β' := smallU.PtpEquiv.snd AB
-  let αβ' := yonedaCategoryEquiv αβ
-  let hαβ' : yonedaCategoryEquiv αβ ⋙ forgetToGrpd
-    = sigma (smallU.PtpEquiv.fst AB) (smallU.PtpEquiv.snd AB) :=
-    yonedaCategoryEquiv_forgetToGrpd _ _ hαβ
-  mk (sigma.fst' β' αβ' hαβ') (sigma.dependent' β' αβ' hαβ')
-  (sigma.snd' β' αβ' hαβ') (sigma.snd'_forgetToGrpd β' αβ' hαβ')
-
-theorem fac_left : lift.{v} AB αβ hαβ ≫ smallUSig.pair.{v} = αβ := by
-  rw [smallUSig.pair_app_eq]
-  dsimp only [lift]
-  rw! (castMode := .all) [dependent_mk, snd_mk, fst_mk]
-  simp only [eqToHom_refl, map_id_eq, Cat.of_α, Functor.id_comp]
-  rw [yonedaCategoryEquiv.symm_apply_eq, sigma.eta]
-
-theorem fac_right : lift.{v} AB αβ hαβ ≫ smallU.comp.{v} = AB := by
-  apply smallU.PtpEquiv.hext
-  · rw [← fst_forgetToGrpd]
-    dsimp only [lift]
-    rw [fst_mk, sigma.fst'_forgetToGrpd]
-  · apply HEq.trans (dependent_heq _).symm
-    rw [lift, dependent_mk]
-    dsimp [sigma.dependent']
-    simp [map_id_eq, Functor.id_comp]
-    apply map_eqToHom_comp_heq
-
-theorem hom_ext (m n : y(Γ) ⟶ smallU.compDom.{v})
-    (hComp : m ≫ smallU.comp = n ≫ smallU.comp)
-    (hPair : m ≫ smallUSig.pair = n ≫ smallUSig.pair) : m = n := by
-  have h : (pair (fst m) (snd m) (dependent m)
-        (snd_forgetToGrpd m)) =
-      (pair (fst n) (snd n) (dependent n)
-        (snd_forgetToGrpd n)) :=
-      calc _
-        _ = yonedaCategoryEquiv (m ≫ smallUSig.pair) := by
-          simp [smallUSig.pair_app_eq m]
-        _ = yonedaCategoryEquiv (n ≫ smallUSig.pair) := by rw [hPair]
-        _ = _ := by
-          simp [smallUSig.pair_app_eq n]
-  have hdep : HEq (dependent m) (dependent n) := by
-    refine (dependent_heq _).trans
-      $ HEq.trans ?_ $ (dependent_heq _).symm
-    rw [hComp]
-  have : fst m ⋙ forgetToGrpd = fst n ⋙ forgetToGrpd := by
-    rw [fst_forgetToGrpd, fst_forgetToGrpd, hComp]
-  apply smallU.compDom.hext
-  · calc fst m
-      _ = sigma.fst' _ (FunctorOperation.pair (fst m) (snd m)
-        (dependent m) (snd_forgetToGrpd m)) _ :=
-          (sigma.fst'_pair _).symm
-      _ = sigma.fst' _ (FunctorOperation.pair (fst n) (snd n)
-        (dependent n) (snd_forgetToGrpd n)) _ := by
-          rw! [h]
-          congr!
-      _ = fst n := sigma.fst'_pair _
-  · exact hdep
-  · calc snd m
-      _ = sigma.snd' _ (FunctorOperation.pair (fst m) (snd m)
-        (dependent m) (snd_forgetToGrpd m)) _ :=
-          (sigma.snd'_pair _).symm
-      _ = sigma.snd' _ (FunctorOperation.pair (fst n) (snd n)
-        (dependent n) (snd_forgetToGrpd n)) _ := by
-          rw! [h]
-          congr!
-      _ = snd n := sigma.snd'_pair _
-
-theorem uniq (m : y(Γ) ⟶ smallU.compDom)
-    (hmAB : m ≫ smallU.comp = AB) (hmαβ : m ≫ smallUSig.pair = αβ) :
-    m = lift AB αβ hαβ := by
-  apply hom_ext
-  · rw [hmAB, fac_right]
-  · rw [hmαβ, fac_left]
+def USig : PolymorphicSigma U.{v} U.{v} U.{v} where
+  Sig := USig.Sig
+  Sig_comp := USig.Sig_comp
+  pair := USig.pair
+  pair_comp := USig.pair_comp
+  pair_tp := USig.pair_tp
+  fst := USig.fst
+  fst_comp := USig.fst_comp
+  fst_tp := USig.fst_tp
+  snd := USig.snd
+  snd_comp := USig.snd_comp
+  snd_tp := USig.snd_tp
+  fst_pair := USig.fst_pair
+  snd_pair := USig.snd_pair
+  eta := USig.eta
 
 end
-end
-
-end SigPullback
-
-open SigPullback
-
-theorem smallUSig.isPullback : IsPullback smallUSig.pair.{v,u} smallU.comp.{v,u}
-    smallU.{v, u}.tp smallUSig.Sig.{v, u} :=
-  Limits.RepPullbackCone.is_pullback smallUSig.pair_tp.{v,u}
-    (fun s => lift s.snd s.fst s.condition)
-    (fun s => fac_left.{v,u} _ _ s.condition)
-    (fun s => fac_right.{v,u} _ _ s.condition)
-    (fun s m fac_left fac_right => uniq.{v,u} _ _ s.condition m fac_right fac_left)
-
-def smallUSig : Universe.Sigma smallU.{v} where
-  Sig := smallUSig.Sig
-  pair := smallUSig.pair
-  Sig_pullback := smallUSig.isPullback
-
-def uHomSeqSigs' (i : ℕ) (ilen : i < 4) :
-    Universe.Sigma (uHomSeqObjs i ilen) :=
-  match i with
-  | 0 => smallUSig.{0, 4}
-  | 1 => smallUSig.{1, 4}
-  | 2 => smallUSig.{2, 4}
-  | 3 => smallUSig.{3, 4}
-  | (n+4) => by omega
-
-instance uHomSeqSigma : uHomSeq.SigSeq where
-  nmSig := uHomSeqSigs'
 
 end GroupoidModel
 end

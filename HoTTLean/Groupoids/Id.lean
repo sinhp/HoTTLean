@@ -1,6 +1,4 @@
-import HoTTLean.Groupoids.NaturalModelBase
-
-import HoTTLean.Model.NaturalModel
+import HoTTLean.Groupoids.UnstructuredModel
 
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 
@@ -93,7 +91,7 @@ end CategoryTheory
 
 namespace GroupoidModel
 
-open CategoryTheory Functor.Groupoidal NaturalModel Universe
+open CategoryTheory Functor.Groupoidal
 
 
 namespace FunctorOperation
@@ -449,7 +447,7 @@ category of contexts
 -/
 
 
-
+#exit
 /-
 This is the equivelant of Id above
 -/

@@ -9,7 +9,6 @@ import Mathlib.Data.Part
 import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 import Mathlib.CategoryTheory.Core
 import Mathlib.CategoryTheory.Adjunction.Limits
-import HoTTLean.ForMathlib.CategoryTheory.Bicategory.Grothendieck
 
 /-! This file contains declarations missing from mathlib,
 to be upstreamed. -/
@@ -353,6 +352,30 @@ def functorToAsSmallEquiv {D : Type u₁} [Category.{v₁} D] {C : Type u} [Cate
   left_inv _ := rfl
   right_inv _ := rfl
 
+section
+
+variable {D : Type u₁} [Category.{v₁} D] {C : Type u} [Category.{v} C]
+  {E : Type u₂} [Category.{v₂} E] (A : D ⥤ AsSmall.{w} C) (B : D ⥤ C)
+
+lemma functorToAsSmallEquiv_apply_comp_left (F : E ⥤ D) :
+    functorToAsSmallEquiv (F ⋙ A) = F ⋙ functorToAsSmallEquiv A :=
+  rfl
+
+lemma functorToAsSmallEquiv_symm_apply_comp_left (F : E ⥤ D) :
+    functorToAsSmallEquiv.symm (F ⋙ B) = F ⋙ functorToAsSmallEquiv.symm B :=
+  rfl
+
+lemma functorToAsSmallEquiv_apply_comp_right (F : C ⥤ E) :
+    functorToAsSmallEquiv (A ⋙ AsSmall.down ⋙ F ⋙ AsSmall.up) = functorToAsSmallEquiv A ⋙ F :=
+  rfl
+
+lemma functorToAsSmallEquiv_symm_apply_comp_right (F : C ⥤ E) :
+    functorToAsSmallEquiv.symm (B ⋙ F) =
+    functorToAsSmallEquiv.symm B ⋙ AsSmall.down ⋙ F ⋙ AsSmall.up :=
+  rfl
+
+end
+
 open ULift
 
 instance (C : Type u) [Category.{v} C] :
@@ -390,154 +413,6 @@ theorem Cat.map_id_map {A : Γ ⥤ Cat.{v₁,u₁}}
   exact Functor.congr_hom this f
 
 end
-
-namespace Functor.Grothendieck
-
-variable {Γ : Type*} [Category Γ] {A : Γ ⥤ Cat}
-  {x y : Grothendieck A}
-
-theorem cast_eq {F G : Γ ⥤ Cat}
-    (h : F = G) (p : Grothendieck F) :
-    (cast (by subst h; rfl) p : Grothendieck G)
-    = ⟨ p.base , cast (by subst h; rfl) p.fiber ⟩ := by
-  subst h
-  rfl
-
-theorem map_eqToHom_base_pf {G1 G2 : Grothendieck A} (eq : G1 = G2) :
-    A.obj G1.base = A.obj G2.base := by subst eq; rfl
-
-theorem map_eqToHom_base {G1 G2 : Grothendieck A} (eq : G1 = G2)
-    : A.map (eqToHom eq).base = eqToHom (map_eqToHom_base_pf eq) := by
-  simp [eqToHom_map]
-
-theorem map_eqToHom_obj_base {F G : Γ ⥤ Cat.{v,u}} (h : F = G)
-  (x) : ((Grothendieck.map (eqToHom h)).obj x).base = x.base := rfl
-
-theorem map_forget {F G : Γ ⥤ Cat.{v,u}} (α : F ⟶ G) :
-    Grothendieck.map α ⋙ Grothendieck.forget G =
-    Grothendieck.forget F :=
-  rfl
-
-variable {C : Type u} [Category.{v} C]
-    {F : C ⥤ Cat.{v₁,u₁}}
-
-variable {E : Type*} [Category E]
-variable (fib : ∀ c, F.obj c ⥤ E) (hom : ∀ {c c' : C} (f : c ⟶ c'), fib c ⟶ F.map f ⋙ fib c')
-variable (hom_id : ∀ c, hom (𝟙 c) = eqToHom (by simp only [Functor.map_id]; rfl))
-variable (hom_comp : ∀ c₁ c₂ c₃ (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃), hom (f ≫ g) =
-  hom f ≫ Functor.whiskerLeft (F.map f) (hom g) ≫ eqToHom (by simp only [Functor.map_comp]; rfl))
-
-variable (K : Grothendieck F ⥤ E)
-
-def asFunctorFrom_fib (c : C) : (F.obj c) ⥤ E := ι F c ⋙ K
-
-def asFunctorFrom_hom {c c' : C} (f: c ⟶ c') :
-    asFunctorFrom_fib K c ⟶ F.map f ⋙ asFunctorFrom_fib K c' :=
-  Functor.whiskerRight (ιNatTrans f) K
-
-lemma asFunctorFrom_hom_app {c c' : C} (f: c ⟶ c') (p : F.obj c) :
-    (asFunctorFrom_hom K f).app p = K.map ((ιNatTrans f).app p) :=
-  rfl
-
-lemma asFunctorFrom_hom_id (c : C) : asFunctorFrom_hom K (𝟙 c) =
-    eqToHom (by simp only[Functor.map_id,Cat.id_eq_id,Functor.id_comp]) := by
-  ext p
-  simp [asFunctorFrom_hom_app, eqToHom_map, ιNatTrans_id_app]
-
-lemma asFunctorFrom_hom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g: c₂ ⟶ c₃) :
-    asFunctorFrom_hom K (f ≫ g) =
-    asFunctorFrom_hom K f ≫ Functor.whiskerLeft (F.map f) (asFunctorFrom_hom K g) ≫ eqToHom
-    (by simp[← Functor.assoc]; congr) := by
-  ext p
-  simp [asFunctorFrom_hom, eqToHom_map, ιNatTrans_comp_app]
-
-theorem asFunctorFrom : Grothendieck.functorFrom (asFunctorFrom_fib K) (asFunctorFrom_hom K)
-    (asFunctorFrom_hom_id K) (asFunctorFrom_hom_comp K) = K := by
-  fapply CategoryTheory.Functor.ext
-  · intro X
-    rfl
-  · intro x y f
-    simp only [functorFrom_obj, asFunctorFrom_fib, Functor.comp_obj, functorFrom_map,
-      asFunctorFrom_hom, Functor.whiskerRight_app, Functor.comp_map, ← Functor.map_comp,
-      eqToHom_refl, Category.comp_id, Category.id_comp]
-    congr
-    fapply Hom.ext
-    · simp
-    · simp
-
-variable {D : Type*} [Category D] (G : E ⥤ D)
-
-def functorFrom_comp_fib (c : C) : F.obj c ⥤ D := fib c ⋙ G
-
-def functorFrom_comp_hom {c c' : C} (f : c ⟶ c') :
-    functorFrom_comp_fib fib G c ⟶ F.map f ⋙ functorFrom_comp_fib fib G c' :=
-  Functor.whiskerRight (hom f) G
-
-include hom_id in
-lemma functorFrom_comp_hom_id (c : C) : functorFrom_comp_hom fib hom G (𝟙 c)
-    = eqToHom (by simp [Cat.id_eq_id, Functor.id_comp]) := by
-  ext x
-  simp [hom_id, eqToHom_map, functorFrom_comp_hom]
-
-include hom_comp in
-lemma functorFrom_comp_hom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃):
-    functorFrom_comp_hom fib (fun {c c'} ↦ hom) G (f ≫ g)
-    = functorFrom_comp_hom fib (fun {c c'} ↦ hom) G f ≫
-    Functor.whiskerLeft (F.map f) (functorFrom_comp_hom fib hom G g) ≫
-    eqToHom (by simp[Cat.comp_eq_comp, Functor.map_comp, Functor.assoc]) := by
-  ext
-  simp [functorFrom_comp_hom, hom_comp, eqToHom_map]
-
-theorem functorFrom_comp : functorFrom fib hom hom_id hom_comp ⋙ G =
-    functorFrom (functorFrom_comp_fib fib G) (functorFrom_comp_hom fib hom G)
-  (functorFrom_comp_hom_id fib hom hom_id G)
-  (functorFrom_comp_hom_comp fib hom hom_comp G) := by
-  fapply CategoryTheory.Functor.ext
-  · intro X
-    simp [functorFrom_comp_fib]
-  · intro x y f
-    simp [functorFrom_comp_hom, functorFrom_comp_fib]
-
-variable (fib' : ∀ c, F.obj c ⥤ E) (hom' : ∀ {c c' : C} (f : c ⟶ c'), fib' c ⟶ F.map f ⋙ fib' c')
-variable (hom_id' : ∀ c, hom' (𝟙 c) = eqToHom (by simp only [Functor.map_id]; rfl))
-variable (hom_comp' : ∀ c₁ c₂ c₃ (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃), hom' (f ≫ g) =
-  hom' f ≫ Functor.whiskerLeft (F.map f) (hom' g) ≫ eqToHom (by simp only [Functor.map_comp]; rfl))
-
-theorem functorFrom_eq_of (ef : fib = fib')
-    (hhom : ∀ {c c' : C} (f : c ⟶ c'), hom f ≫ eqToHom (by rw[ef]) = eqToHom (by rw[ef]) ≫ hom' f) :
-    functorFrom fib hom hom_id hom_comp = functorFrom fib' hom' hom_id' hom_comp' := by
-  subst ef
-  congr!
-  · aesop_cat
-
-theorem functorFrom_ext {K K' : Grothendieck F ⥤ E}
-    (hfib : asFunctorFrom_fib K = asFunctorFrom_fib K')
-    (hhom : ∀ {c c' : C} (f : c ⟶ c'), asFunctorFrom_hom K f ≫ eqToHom (by rw [hfib])
-      = eqToHom (by rw[hfib]) ≫ asFunctorFrom_hom K' f)
-    : K = K' :=
-    calc K
-     _ = functorFrom (asFunctorFrom_fib K) (asFunctorFrom_hom K)
-         (asFunctorFrom_hom_id K) (asFunctorFrom_hom_comp K) :=
-         (asFunctorFrom K).symm
-     _ = functorFrom (asFunctorFrom_fib K') (asFunctorFrom_hom K')
-         (asFunctorFrom_hom_id K') (asFunctorFrom_hom_comp K') := by
-         apply functorFrom_eq_of
-         · exact hhom
-         · exact hfib
-     _ = K' := asFunctorFrom K'
-
-theorem functorFrom_hext {K K' : Grothendieck F ⥤ E}
-    (hfib : asFunctorFrom_fib K = asFunctorFrom_fib K')
-    (hhom : ∀ {c c' : C} (f : c ⟶ c'), asFunctorFrom_hom K f ≍ asFunctorFrom_hom K' f)
-    : K = K' := by
-  fapply functorFrom_ext
-  · assumption
-  · intros
-    apply eq_of_heq
-    simp only [heq_eqToHom_comp_iff, comp_eqToHom_heq_iff]
-    apply hhom
-
-end Functor.Grothendieck
 
 section
 variable {C : Type u₁} [Category.{v₁} C]
@@ -600,6 +475,63 @@ end CategoryTheory.IsPullback
 
 namespace CategoryTheory
 
+def ofYoneda {C : Type*} [Category C] {X Y : C}
+    (app : ∀ {Γ}, (Γ ⟶ X) ⟶ (Γ ⟶ Y))
+    (naturality : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), app (σ ≫ A) = σ ≫ app A) :
+    X ⟶ Y :=
+  Yoneda.fullyFaithful.preimage {
+    app Γ := app
+    naturality Δ Γ σ := by ext; simp [naturality] }
+
+@[simp]
+lemma ofYoneda_comp_left {C : Type*} [Category C] {X Y : C}
+    (app : ∀ {Γ}, (Γ ⟶ X) ⟶ (Γ ⟶ Y))
+    (naturality : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (A), app (σ ≫ A) = σ ≫ app A)
+    {Γ} (A : Γ ⟶ X) : A ≫ ofYoneda app naturality = app A := by
+  apply Yoneda.fullyFaithful.map_injective
+  ext
+  simp [ofYoneda, naturality]
+
+lemma ofYoneda_comm_sq {C : Type*} [Category C] {TL TR BL BR : C}
+    (left : TL ⟶ BL) (right : TR ⟶ BR)
+    (top : ∀ {Γ}, (Γ ⟶ TL) ⟶ (Γ ⟶ TR))
+    (top_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (tr), top (σ ≫ tr) = σ ≫ top tr)
+    (bottom : ∀ {Γ}, (Γ ⟶ BL) ⟶ (Γ ⟶ BR))
+    (bottom_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (br), bottom (σ ≫ br) = σ ≫ bottom br)
+    (comm_sq : ∀ {Γ} (ab : Γ ⟶ TL), top ab ≫ right = bottom (ab ≫ left)) :
+  (ofYoneda top top_comp) ≫ right = left ≫ (ofYoneda bottom bottom_comp) := by
+  apply Yoneda.fullyFaithful.map_injective
+  ext Γ ab
+  simp [comm_sq, ofYoneda]
+
+open Limits in
+lemma ofYoneda_isPullback {C : Type u} [Category.{v} C] {TL TR BL BR : C}
+    (left : TL ⟶ BL) (right : TR ⟶ BR)
+    (top : ∀ {Γ}, (Γ ⟶ TL) ⟶ (Γ ⟶ TR))
+    (top_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (tr), top (σ ≫ tr) = σ ≫ top tr)
+    (bot : ∀ {Γ}, (Γ ⟶ BL) ⟶ (Γ ⟶ BR))
+    (bot_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (br), bot (σ ≫ br) = σ ≫ bot br)
+    (comm_sq : ∀ {Γ} (ab : Γ ⟶ TL), top ab ≫ right = bot (ab ≫ left))
+    (lift : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), Γ ⟶ TL)
+    (top_lift : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), top (lift t p ht) = t)
+    (lift_comp_left : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), lift t p ht ≫ left = p)
+    (lift_uniq : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p) (m : Γ ⟶ TL),
+      top m = t → m ≫ left = p → m = lift t p ht) :
+    IsPullback (ofYoneda top top_comp) left right (ofYoneda bot bot_comp) := by
+  let c : PullbackCone right (ofYoneda bot bot_comp) :=
+    PullbackCone.mk (ofYoneda top top_comp) left
+    (ofYoneda_comm_sq _ _ _ _ _ _ comm_sq)
+  apply IsPullback.of_isLimit (c := c)
+  apply c.isLimitAux (fun s => lift (PullbackCone.fst s) (PullbackCone.snd s) (by
+      simp [PullbackCone.condition s]))
+  · simp [c, top_lift]
+  · simp [c, lift_comp_left]
+  · intro s m h
+    apply lift_uniq
+    · specialize h (some .left)
+      simpa [c] using h
+    · specialize h (some .right)
+      exact h
 variable {C : Type u₁} [SmallCategory C] {F G : Cᵒᵖ ⥤ Type u₁}
   (app : ∀ {X : C}, (yoneda.obj X ⟶ F) → (yoneda.obj X ⟶ G))
   (naturality : ∀ {X Y : C} (f : X ⟶ Y) (α : yoneda.obj Y ⟶ F),
