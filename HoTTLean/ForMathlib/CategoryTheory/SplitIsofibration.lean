@@ -590,6 +590,20 @@ lemma comp.liftObj_id {X: C} {X': A} (hX': (F ⋙ G).obj X' = X):
 -- --  sorry
 
 
+lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X):
+comp.liftIso IF IG (𝟙 X) hX' = eqToHom (by simp[comp.liftObj_id]) := by
+ simp[comp.liftIso]
+ have e : (IG.liftIso (𝟙 X) hX') = eqToHom (by simp[SplitClovenIsofibration.liftObj_id]) := by
+  apply SplitClovenIsofibration.liftIso_id
+
+ --let e:= SplitClovenIsofibration.liftIso_id (X' := F.obj X')
+ --rw! (castMode := .all)[liftIso_eqToHom]
+ rw! (castMode := .all)[e]
+ rw[liftIso_eqToHom]
+ rw!(castMode := .all)[liftObj_eqToHom]
+
+ sorry
+
 
 /-- `IsMultiplicative` 1/2 -/
 def comp  :
@@ -600,7 +614,9 @@ def comp  :
   liftObj_id  := by
    intro X X' hX'
    apply comp.liftObj_id
-  liftIso_id := sorry
+  liftIso_id := by
+   intro X X' hX'
+   apply comp.liftIso_id
   liftObj_comp := by
    sorry
   liftIso_comp := sorry
