@@ -590,19 +590,23 @@ lemma comp.liftObj_id {X: C} {X': A} (hX': (F ⋙ G).obj X' = X):
 -- --  sorry
 
 
-lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X):
-comp.liftIso IF IG (𝟙 X) hX' = eqToHom (by simp[comp.liftObj_id]) := by
- simp[comp.liftIso]
- have e : (IG.liftIso (𝟙 X) hX') = eqToHom (by simp[SplitClovenIsofibration.liftObj_id]) := by
-  apply SplitClovenIsofibration.liftIso_id
+lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X) :
+    comp.liftIso IF IG (𝟙 X) hX' = eqToHom (by simp[comp.liftObj_id]) := by
+  simp [comp.liftIso]
+  rw! (castMode := .all) [IG.liftIso_id]
+  simp [← heq_eq_eq]
+  apply HEq.trans (eqToHom_heq_id_dom _ _ _) (eqToHom_heq_id_dom _ _ _).symm
 
- --let e:= SplitClovenIsofibration.liftIso_id (X' := F.obj X')
- --rw! (castMode := .all)[liftIso_eqToHom]
- rw! (castMode := .all)[e]
- rw[liftIso_eqToHom]
- rw!(castMode := .all)[liftObj_eqToHom]
+  -- have e : (IG.liftIso (𝟙 X) hX') = eqToHom (by simp[SplitClovenIsofibration.liftObj_id]) := by
+  --   apply SplitClovenIsofibration.liftIso_id
 
- sorry
+  --   --let e:= SplitClovenIsofibration.liftIso_id (X' := F.obj X')
+  --   --rw! (castMode := .all)[liftIso_eqToHom]
+  -- rw! (castMode := .all)[e]
+  -- rw[liftIso_eqToHom]
+  -- rw!(castMode := .all)[liftObj_eqToHom]
+
+  -- sorry
 
 
 /-- `IsMultiplicative` 1/2 -/
