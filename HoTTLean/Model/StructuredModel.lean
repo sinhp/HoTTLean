@@ -558,7 +558,6 @@ def toUnstructured :
   lam_comp σ A σA eq _ b _ := (P.comp_mkLam σ A σA eq b).symm
   lam_tp B b b_tp := P.mkLam_tp _ B b b_tp
   unLam := P.unLam _
-  unLam_comp σ A σA eq _ f f_tp := (P.comp_unLam σ A σA eq _ f f_tp).symm
   unLam_tp B f f_tp := P.unLam_tp _ B f f_tp
   unLam_lam B b b_tp := P.unLam_mkLam _ B b b_tp _
   lam_unLam B := P.mkLam_unLam _ B
