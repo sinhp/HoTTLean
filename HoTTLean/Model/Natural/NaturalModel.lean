@@ -7,6 +7,7 @@ import HoTTLean.ForMathlib.Tactic.CategoryTheory.FunctorMap
 import HoTTLean.ForMathlib.CategoryTheory.Yoneda
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 import HoTTLean.ForMathlib.CategoryTheory.WeakPullback
+import Mathlib.Tactic.DepRewrite
 
 universe v u
 
