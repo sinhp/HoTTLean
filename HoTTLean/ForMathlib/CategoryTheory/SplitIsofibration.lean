@@ -54,7 +54,7 @@ instance {X : Γ} : IsGroupoid (F.Fiber X) where
 instance {X : Γ} : Groupoid (F.Fiber X) := Groupoid.ofIsGroupoid
 
 end Fiber
-
+section
 variable {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D]
 
 structure ClovenIsofibration (F : C ⥤ D) where
@@ -67,7 +67,6 @@ structure ClovenIsofibration (F : C ⥤ D) where
 
 
 
-
 section
 variable {F : C ⥤ D} (I : ClovenIsofibration F)
 
@@ -76,6 +75,10 @@ variable {F : C ⥤ D} (I : ClovenIsofibration F)
 
 instance {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) :
   F.IsHomLift f (I.liftIso f hX') := I.isHomLift f hX'
+
+instance liftIso_IsIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X):
+  IsIso (ClovenIsofibration.liftIso I f hX') := ClovenIsofibration.liftIso_IsIso I f hX'
+
 
 @[simp]
 lemma ClovenIsofibration.obj_liftObj {X Y : D} (f : X ⟶ Y) [IsIso f]
@@ -126,7 +129,7 @@ structure SplitIsofibration {C : Type u} {D : Type u₁} [Category.{v} C] [Categ
 -- lemma liftObj_codomain (F : C ⥤ D) {X Y Z: D} (f: X ⟶ Y) [IsIso f] {X': C} (hX': F.obj X' = X) (e: Y = Z):
 --   I.liftObj f hX' =
 
-
+end
 namespace SplitIsofibration
 
 open ClovenIsofibration
@@ -136,15 +139,16 @@ lemma liftObj_eqToHom {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v
     (F : C ⥤ D) (I : SplitIsofibration F) {X Y : D} (h : X = Y) {X' : C}
     (hX' : F.obj X' = X) : I.liftObj (eqToHom h) hX' = X' := by
   subst h
-  simp [liftObj_id]
+  simp [SplitIsofibration.liftObj_id]
 
 @[simp]
 lemma liftIso_eqToHom {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D] (F : C ⥤ D)
     (I : SplitIsofibration F) {X Y : D} (h : X = Y) {X' : C} (hX' : F.obj X' = X) :
     I.liftIso (eqToHom h) hX' = eqToHom (by simp) := by
   subst h
-  simp [liftIso_id]
+  simp [SplitIsofibration.liftIso_id]
 
+section
 variable {Γ : Type u} {E : Type u} [Groupoid.{v} Γ] [Groupoid.{v} E] {F : E ⥤ Γ}
   (I : SplitIsofibration F)
 
@@ -516,6 +520,8 @@ def grothendieckClassifierIso : ∫ I.classifier ≅≅ E :=
 
 --   inv_hom_id := sorry
 
+end
+
 def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
     SplitIsofibration F.hom where
   liftObj {b0 b1} f hf x hF := F.inv.obj b1
@@ -544,14 +550,19 @@ variables {A B C : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} C] {F
 def comp.liftObj {X Y: C} (f: X ⟶ Y) [i:IsIso f] {X': A} (hX': (F ⋙ G).obj X' = X) : A
  :=
     let f1 := IG.liftIso (X' := F.obj X') f (by simp at hX'; assumption)
-    have i0 : IsIso f1 := sorry
+    --have i0 : IsIso f1 := sorry
     IF.liftObj (X' := X') f1 rfl
+
+
+lemma comp.obj_liftObj {X Y: C} (f: X ⟶ Y) [i:IsIso f] {X': A} (hX': (F ⋙ G).obj X' = X):
+(F ⋙ G).obj (liftObj IF IG f hX') = Y := by
+  simp[liftObj]
 
 def comp.liftIso {X Y: C} (f: X ⟶ Y) [i:IsIso f] {X': A} (hX': (F ⋙ G).obj X' = X)
 : X' ⟶ comp.liftObj IF IG f hX' :=
   let f1 := IG.liftIso (X' := F.obj X') f (by simp at hX'; assumption)
-    have i0 : IsIso f1 := sorry
-    IF.liftIso (X' := X') f1 rfl
+    --have i0 : IsIso f1 := sorry
+  IF.liftIso (X' := X') f1 rfl
 
 def comp.isHomLift {X Y: C} (f: X ⟶ Y) [i:IsIso f] {X': A} (hX': (F ⋙ G).obj X' = X):
  (F ⋙ G).IsHomLift f (comp.liftIso IF IG f hX') := by
@@ -608,6 +619,23 @@ lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X) :
 
   -- sorry
 
+lemma comp.liftObj_comp {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [ IsIso g] {X' : A}
+ (hX' : (F ⋙ G).obj X' = X) (Y' : A)
+  (hY' : comp.liftObj IF IG f hX' = Y'):
+   comp.liftObj IF IG (f ≫ g) hX' =
+   comp.liftObj (X' := comp.liftObj IF IG f hX') IF IG g
+   (by simp only[comp.obj_liftObj]) := by
+   simp[comp.liftObj]
+   simp[liftIso_comp]
+   simp[SplitIsofibration.liftObj_comp]
+   congr!
+   simp[ClovenIsofibration.obj_liftObj]
+
+
+-- lemma comp.liftObj_liftIso {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [ IsIso g] {X' : A}
+--  (hX' : (F ⋙ G).obj X' = X) (Y' : A)
+--   (hY' : comp.liftObj IF IG f hX' = Y'):
+--   IF.liftObj (IG.liftIso f hX') rfl = sorry := sorry
 
 /-- `IsMultiplicative` 1/2 -/
 def comp  :
@@ -622,7 +650,23 @@ def comp  :
    intro X X' hX'
    apply comp.liftIso_id
   liftObj_comp := by
-   sorry
+   intro X Y Z f i1 g i2 X' hX' Y' hY'
+   simp[comp.liftObj,SplitIsofibration.liftIso_comp]
+   have a := (IG.liftIso f hX')
+   have p1 : G.obj (IG.liftObj f hX') = Y := by simp[]
+   have p2 : IG.liftObj g p1 = IG.liftObj (f ≫ g) hX' := by
+    simp[SplitIsofibration.liftObj_comp]
+   have e1 := @SplitIsofibration.liftObj_comp
+        (f:= IG.liftIso f hX') (g:= IG.liftIso g p1 ≫ eqToHom p2) _ _ _ _ F IF _ _ _ _ _ X' rfl
+         (IF.liftObj (IG.liftIso f hX') rfl) rfl
+   rw[e1]
+   rw[ SplitIsofibration.liftObj_comp,liftObj_eqToHom]
+   congr!
+   · subst hY'
+     simp[comp.liftObj]
+   subst hY'
+   simp[comp.liftObj]
+
   liftIso_comp := sorry
   liftIso_IsIso := sorry
 
