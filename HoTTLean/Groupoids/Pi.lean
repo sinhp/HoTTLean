@@ -84,14 +84,6 @@ instance {C : Type*} [Groupoid C] (P : ObjectProperty C) :
 instance Grpd.ι_mono (G : Grpd) (P : ObjectProperty G) : Mono (Grpd.homOf (ObjectProperty.ι P)) :=
   ⟨ fun _ _ e => ObjectProperty.ι_mono _ _ e ⟩
 
--- lemma Grpd.ObjectProperty.fullSubcategory_heq {A A' : Grpd.{v,u}} (hA : A ≍ A')
---     (P : ObjectProperty A) (P' : ObjectProperty A') (hP : ∀ x : A, P x ↔ P' (hA.elim x)) :
---     (⟨ ObjectProperty.FullSubcategory P, inferInstance ⟩ : Grpd) ≍
---     (⟨ ObjectProperty.FullSubcategory P', inferInstance ⟩ : Grpd) := by
---   subst hA
---   have : P = P' := by aesop
---   rw [this]
-
 lemma Grpd.ObjectProperty.FullSubcategory.congr {A A' : Grpd.{v,u}} (hA : A ≍ A')
     (P : ObjectProperty A) (P' : ObjectProperty A') (hP : P ≍ P')
     (a : A) (a' : A') (ha : a ≍ a') (ha : P a) (ha' : P' a') :
@@ -447,82 +439,11 @@ def strongTrans : (A ⋙ Grpd.forgetToCat).toPseudoFunctor'.StrongTrans
     naturality_id := sorry
     naturality_comp := sorry
 
+@[simps!]
 def mapStrongTrans : ∫ A ⥤ ∫ sigma A B :=
   Functor.Grothendieck.toPseudoFunctor'Iso.hom _ ⋙
   Pseudofunctor.Grothendieck.map (strongTrans B s hs) ⋙
   Functor.Grothendieck.toPseudoFunctor'Iso.inv _
-
-lemma _root_.CategoryTheory.Functor.Grothendieck.toPseudofunctor'Iso_inv_map {Γ : Type*}
-    [Category Γ] (F G : Γ ⥤ Cat) (α : F ⟶ G) :
-    Functor.Grothendieck.toPseudoFunctor'Iso.inv F ⋙ Functor.Grothendieck.map α =
-    Pseudofunctor.Grothendieck.map α.toStrongTrans' ⋙
-    Functor.Grothendieck.toPseudoFunctor'Iso.inv G :=
-  sorry
-
-section
-
-variable {𝒮 : Type u₁} {𝒮' : Type u₂} [Category.{v₁} 𝒮] [Category.{v₂} 𝒮']
-    (F : Pseudofunctor (LocallyDiscrete 𝒮) Cat.{v₂, u₂})
-    (G : Pseudofunctor (LocallyDiscrete 𝒮') (LocallyDiscrete 𝒮))
-
-open Pseudofunctor.Grothendieck
-
-def _root_.CategoryTheory.Pseudofunctor.Grothendieck.pre :
-    ∫ G.comp F ⥤ ∫ F := sorry
-
-end
-
-lemma _root_.CategoryTheory.Functor.Grothendieck.toPseudofunctor'Iso_inv_pre {Δ : Type u₁}
-    {Γ : Type u₂} [Category.{v₁} Δ] [Category.{v₂} Γ] (F : Γ ⥤ Cat) (σ : Δ ⥤ Γ) :
-    Functor.Grothendieck.toPseudoFunctor'Iso.inv (σ ⋙ F) ⋙ Functor.Grothendieck.pre F σ =
-    Pseudofunctor.Grothendieck.map (sorry) ⋙
-    Pseudofunctor.Grothendieck.pre F.toPseudoFunctor' σ.toPseudoFunctor ⋙
-    Functor.Grothendieck.toPseudoFunctor'Iso.inv F :=
-  sorry
-
--- lemma _root_.CategoryTheory.Functor.Groupoidal.toPseudoFunctor'Iso_inv_map {Γ : Type*}
---     [Groupoid Γ] (F G : Γ ⥤ Grpd) (α : F ⟶ G) :
---     Functor.Grothendieck.toPseudoFunctor'Iso.inv (F ⋙ Grpd.forgetToCat) ⋙
---     Functor.Grothendieck.map (Functor.whiskerRight α Grpd.forgetToCat) =
---     Pseudofunctor.Grothendieck.map (Functor.whiskerRight α Grpd.forgetToCat).toStrongTrans' ⋙
---     Functor.Grothendieck.toPseudoFunctor'Iso.inv (G ⋙ Grpd.forgetToCat) :=
---   Functor.Grothendieck.toPseudoFunctor'Iso_inv_map ..
-
-lemma mapStrongTrans_comp :
-    mapStrongTrans (pre A σ ⋙ B) (σ ⋙ s) (by simp [Functor.assoc, hs, pi_naturality]) ⋙
-    map (eqToHom (sigma_naturality ..).symm) ⋙ pre (sigma A B) σ =
-    pre A σ ⋙ mapStrongTrans B s hs :=
-  calc mapStrongTrans (pre A σ ⋙ B) (σ ⋙ s) (by simp [Functor.assoc, hs, pi_naturality]) ⋙
-    map (eqToHom (sigma_naturality ..).symm) ⋙ pre (sigma A B) σ
-  _ = Functor.Grothendieck.toPseudoFunctor'Iso.hom ((σ ⋙ A) ⋙ Grpd.forgetToCat) ⋙
-      Pseudofunctor.Grothendieck.map (strongTrans (pre A σ ⋙ B) (σ ⋙ s)
-      (by simp [Functor.assoc, hs, pi_naturality])) ⋙
-      (Pseudofunctor.Grothendieck.map (NatTrans.toStrongTrans' _ _
-      (eqToHom (by rw [← Functor.assoc, sigma_naturality]))) ⋙
-      Functor.Grothendieck.toPseudoFunctor'Iso.inv (σ ⋙ sigma A B ⋙ Grpd.forgetToCat)) ⋙
-      pre (sigma A B) σ := by
-    rw [mapStrongTrans, ← Functor.assoc, ← Functor.Grothendieck.toPseudofunctor'Iso_inv_map]
-    simp [Functor.Groupoidal, Functor.Groupoidal.map, Functor.assoc]
-  _ = Functor.Grothendieck.toPseudoFunctor'Iso.hom ((σ ⋙ A) ⋙ Grpd.forgetToCat) ⋙
-      Pseudofunctor.Grothendieck.map (strongTrans (pre A σ ⋙ B) (σ ⋙ s)
-      (by simp [Functor.assoc, hs, pi_naturality])) ⋙
-      Pseudofunctor.Grothendieck.map (NatTrans.toStrongTrans' _ _
-      (eqToHom (by rw [← Functor.assoc, sigma_naturality]))) ⋙
-      Functor.Grothendieck.toPseudoFunctor'Iso.inv (σ ⋙ sigma A B ⋙ Grpd.forgetToCat) ⋙
-      pre (sigma A B) σ := by
-    simp [Functor.assoc]
-  -- _ = Functor.Grothendieck.toPseudoFunctor'Iso.hom ((σ ⋙ A) ⋙ Grpd.forgetToCat) ⋙
-  --     Pseudofunctor.Grothendieck.map (Oplax.StrongTrans.comp (strongTrans (pre A σ ⋙ B) (σ ⋙ s) sorry) sorry) ⋙
-  --     Pseudofunctor.Grothendieck.pre (sigma A B ⋙
-  --       Grpd.forgetToCat).toPseudoFunctor' σ.toPseudoFunctor ⋙
-  --     Functor.Grothendieck.toPseudoFunctor'Iso.inv (sigma A B ⋙ Grpd.forgetToCat) := by
-  --   dsimp [pre]
-  --   rw [Functor.Grothendieck.toPseudofunctor'Iso_inv_pre]
-  --   simp [Functor.assoc]
-  --   rw [Pseudofunctor.Grothendieck.map_comp_eq]
-  --   sorry
-  _ = pre A σ ⋙ mapStrongTrans B s hs := by
-    sorry
 
 /--  Let `Γ` be a category.
 For any pair of functors `A : Γ ⥤ Grpd` and `B : ∫(A) ⥤ Grpd`,
@@ -530,28 +451,30 @@ and any "term of pi", meaning a functor `f : Γ ⥤ PGrpd`
 satisfying `f ⋙ forgetToGrpd = pi A B : Γ ⥤ Grpd`,
 there is a "term of `B`" `inversion : Γ ⥤ PGrpd` such that `inversion ⋙ forgetToGrpd = B`.
 -/
-def inversion : ∫(A) ⥤ PGrpd := mapStrongTrans B s hs ⋙ sigma.assoc B ⋙ toPGrpd B
+@[simps!]
+def inversion : ∫(A) ⥤ PGrpd := mapStrongTrans B s hs ⋙ (sigma.assoc B).inv ⋙ toPGrpd B
 
 lemma mapStrongTrans_comp_fstAux' : mapStrongTrans B s hs ⋙ sigma.fstAux' B = 𝟭 _ := by
   apply Functor.Groupoidal.FunctorTo.hext
-  · rw [Functor.assoc, sigma.fstAux', map_forget, mapStrongTrans, Functor.assoc,
+  · rw [Functor.assoc, sigma.fstAux', Functor.assoc, sigma.assoc_inv_comp_forget_comp_forget,
+      mapStrongTrans, Functor.assoc,
       Functor.assoc, Functor.Groupoidal.forget,
       Functor.Grothendieck.toPseudoFunctor'Iso.inv_comp_forget,
       Pseudofunctor.Grothendieck.map_comp_forget, Functor.id_comp,
       Functor.Grothendieck.toPseudoFunctor'Iso.hom_comp_forget,
       Functor.Groupoidal.forget]
   · intro x
-    simp only [sigma.fstAux', Functor.comp_obj, map_obj_fiber, sigma_obj, sigma.fstAux_app,
-      Functor.Groupoidal.forget_obj, Functor.id_obj, heq_eq_eq]
+    simp only [sigma.fstAux', Functor.comp_obj, Functor.Groupoidal.forget_obj,
+      Functor.id_obj, heq_eq_eq]
+    apply (sigma.assoc_inv_obj_base_fiber B ((mapStrongTrans B s hs).obj x)).trans
+    simp only [mapStrongTrans_obj_base, mapStrongTrans_obj_fiber]
     exact Functor.congr_obj (PGrpd.objFiber' hs x.base).property x.fiber
   · sorry
 
-lemma inversion_comp_forgetToGrpd : inversion B s hs ⋙ PGrpd.forgetToGrpd = B :=
-  calc mapStrongTrans B s hs ⋙ sigma.assoc B ⋙ toPGrpd B ⋙ PGrpd.forgetToGrpd
-  _ = mapStrongTrans B s hs ⋙ (sigma.assoc B ⋙ forget) ⋙ B := by
-    simp [toPGrpd_forgetToGrpd, Functor.assoc]
-  _ = mapStrongTrans B s hs ⋙ sigma.fstAux' B ⋙ B := by rw [sigma.assoc_forget]
-  _ = B := by simp [← Functor.assoc, mapStrongTrans_comp_fstAux']
+lemma inversion_comp_forgetToGrpd : inversion B s hs ⋙ PGrpd.forgetToGrpd = B := by
+  simp only [inversion, Functor.assoc, toPGrpd_forgetToGrpd]
+  conv => left; right; rw [← Functor.assoc, ← sigma.fstAux']
+  simp [← Functor.assoc, mapStrongTrans_comp_fstAux']
 
 -- JH: make some API for this? Mixture of Pseudofunctor.Grothendieck
 -- and Functor.Grothendieck and Functor.Groupoidal is messy.
@@ -563,16 +486,12 @@ lemma ι_comp_inversion {x} : ι A x ⋙ inversion B s hs =
   · intro a
     rfl -- This is probably bad practice
   · intro a b h
+    simp
+    have h := sigma.assoc_inv_map_fiber B ((mapStrongTrans B s hs).map ((ι A x).map h))
+    rw [← heq_eq_eq, heq_eqToHom_comp_iff] at h
+    apply h.trans
+    simp
     sorry
-
-lemma inversion_comp  : pi.inversion (pre A σ ⋙ B) (σ ⋙ s) (by simp [Functor.assoc, hs, pi_naturality]) =
-    pre A σ ⋙ pi.inversion B s hs := by
-  dsimp [inversion]
-  rw [← pre_toPGrpd]
-  conv => left; right; rw [← Functor.assoc, sigma.assoc_pre]
-  simp only [← Functor.assoc]
-  congr 2
-  rw [Functor.assoc, mapStrongTrans_comp]
 
 end
 
@@ -1004,19 +923,6 @@ def unLam {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.Ty) (f : Γ ⟶ U.
     rw [← toCoreAsSmallEquiv_apply_comp_right, f_tp]
     simp [Pi])
 
-lemma unLam_comp {Γ Δ : Ctx.{max u (v+1)}} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} {σA : Δ ⟶ U.Ty}
-    (eq : σ ≫ A = σA) {B : U.ext A ⟶ U.Ty} (f : Γ ⟶ U.Tm)
-    (f_tp : f ≫ U.tp = UPi.Pi B) : UPi.unLam (U.substWk σ A σA eq ≫ B) (σ ≫ f)
-    (by rw [Category.assoc, f_tp, Pi_comp]) = U.substWk σ A σA eq ≫ UPi.unLam B f f_tp := by
-  dsimp [unLam]
-  rw [← toCoreAsSmallEquiv_symm_apply_comp_left]
-  congr 1
-  subst eq
-  conv => right; rw! [U.substWk_eq, Functor.assoc]
-  simp [map_id_eq, U.substWk_eq]
-  rw [← pi.inversion_comp]
-  rfl
-
 lemma unLam_tp {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.Ty) (f : Γ ⟶ U.Tm)
     (f_tp : f ≫ U.tp = UPi.Pi B) : UPi.unLam B f f_tp ≫ U.tp = B := by
   dsimp [unLam, U.tp]
@@ -1048,7 +954,6 @@ def UPi : Model.UnstructuredUniverse.PolymorphicPi U.{v} U.{v} U.{v} where
   lam_comp _ _ _ _ _ _ _ := UPi.lam_comp ..
   lam_tp := UPi.lam_tp
   unLam := UPi.unLam
-  unLam_comp := UPi.unLam_comp
   unLam_tp := UPi.unLam_tp
   unLam_lam := UPi.unLam_lam
   lam_unLam := UPi.lam_unLam
