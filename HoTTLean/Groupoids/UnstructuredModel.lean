@@ -98,7 +98,7 @@ namespace U
 
 theorem substWk_eq (A : Γ ⟶ U.Ty.{v}) (σA : Δ ⟶ U.Ty.{v}) (eq) :
     U.substWk σ A σA eq =
-    map (eqToHom (by subst eq; rfl)) ⋙ pre (toCoreAsSmallEquiv A) σ := by
+    Grpd.homOf (map (eqToHom (by subst eq; rfl))) ≫ pre (toCoreAsSmallEquiv A) σ := by
   apply (U.disp_pullback A).hom_ext
   · rw [substWk_var]
     simp [var, Grpd.comp_eq_comp]

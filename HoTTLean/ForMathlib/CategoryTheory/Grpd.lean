@@ -232,7 +232,16 @@ namespace Grpd
 
 attribute [simp] comp_eq_comp id_eq_id in
 @[simps]
-def Grpd.mkIso {Δ Γ : Grpd} (F : Δ ≅≅ Γ) : Δ ≅ Γ where
+def mkIso {Δ Γ : Grpd} (F : Δ ≅≅ Γ) : Δ ≅ Γ where
+  hom := F.hom
+  inv := F.inv
+  hom_inv_id := by simp
+  inv_hom_id := by simp
+
+attribute [simp] comp_eq_comp id_eq_id in
+@[simps]
+def mkIso' {Δ Γ : Type u} [Groupoid.{v} Δ] [Groupoid.{v} Γ] (F : Δ ≅≅ Γ) :
+    Grpd.of Δ ≅ Grpd.of Γ where
   hom := F.hom
   inv := F.inv
   hom_inv_id := by simp

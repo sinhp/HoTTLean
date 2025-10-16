@@ -68,83 +68,83 @@ open Functor.Groupoidal
 
 namespace Grpd
 
-def SplitClovenIsofibration : MorphismProperty Grpd :=
-  fun _ _ F => Nonempty F.SplitClovenIsofibration
+def SplitIsofibration : MorphismProperty Grpd :=
+  fun _ _ F => Nonempty F.SplitIsofibration
 
-namespace SplitClovenIsofibration
+namespace SplitIsofibration
 
-variable {B A : Grpd} {F : B ⟶ A} (hF : SplitClovenIsofibration F)
+variable {B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F)
 
-def splitClovenIsofibration : F.SplitClovenIsofibration := Classical.choice hF
+def splitClovenIsofibration : F.SplitIsofibration := Classical.choice hF
 
 /-- The Grothendieck construction on the classifier is isomorphic to `E`,
 now as objects in `Grpd`. -/
 def grothendieckClassifierIso : Grpd.of (∫ hF.splitClovenIsofibration.classifier) ≅ B :=
-  Grpd.mkIso (Functor.SplitClovenIsofibration.grothendieckClassifierIso ..)
+  Grpd.mkIso (Functor.SplitIsofibration.grothendieckClassifierIso ..)
 
 lemma grothendieckClassifierIso_inv_comp_forget :
     hF.grothendieckClassifierIso.inv ⋙ homOf Functor.Groupoidal.forget = F :=
   sorry
 
-end SplitClovenIsofibration
+end SplitIsofibration
 
-instance : SplitClovenIsofibration.IsStableUnderBaseChange.{u,u} where
+instance : SplitIsofibration.IsStableUnderBaseChange.{u,u} where
     of_isPullback pb hG :=
-  ⟨ Functor.SplitClovenIsofibration.ofIsPullback _ _ _ _
+  ⟨ Functor.SplitIsofibration.ofIsPullback _ _ _ _
     (Grpd.functorIsPullback pb) hG.splitClovenIsofibration ⟩
 
-instance : SplitClovenIsofibration.IsMultiplicative where
-  id_mem _ := ⟨ Functor.SplitClovenIsofibration.id ⟩
-  comp_mem _ _ hF hG := ⟨ Functor.SplitClovenIsofibration.comp
+instance : SplitIsofibration.IsMultiplicative where
+  id_mem _ := ⟨ Functor.SplitIsofibration.id ⟩
+  comp_mem _ _ hF hG := ⟨ Functor.SplitIsofibration.comp
     hF.splitClovenIsofibration hG.splitClovenIsofibration ⟩
 
-instance : SplitClovenIsofibration.RespectsIso :=
+instance : SplitIsofibration.RespectsIso :=
   MorphismProperty.respectsIso_of_isStableUnderComposition (fun X Y F hF =>
-  ⟨ Functor.SplitClovenIsofibration.iso {
+  ⟨ Functor.SplitIsofibration.iso {
     hom := F
     inv := have : IsIso F := hF; CategoryTheory.inv F
     hom_inv_id := by simp [← Grpd.comp_eq_comp]
     inv_hom_id := by simp [← Grpd.comp_eq_comp] }⟩)
 
-instance : SplitClovenIsofibration.HasObjects where
+instance : SplitIsofibration.HasObjects where
   obj_mem F G := sorry
 
 section
 
-open Functor.SplitClovenIsofibration
+open Functor.SplitIsofibration
 
-def strictify {C B A : Grpd} {F : B ⟶ A} (hF : SplitClovenIsofibration F) (G : C ⟶ B) :
+def strictify {C B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F) (G : C ⟶ B) :
     C ⟶ Grpd.of (∫ classifier (hF.splitClovenIsofibration)) :=
   G ≫ hF.grothendieckClassifierIso.inv
 
-def splitClovenIsofibration_strictify {C B A : Grpd} {F : B ⟶ A} (hF : SplitClovenIsofibration F)
-  {G : C ⟶ B} (hG : SplitClovenIsofibration G) : (strictify hF G).SplitClovenIsofibration := sorry
+def splitClovenIsofibration_strictify {C B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F)
+  {G : C ⟶ B} (hG : SplitIsofibration G) : (strictify hF G).SplitIsofibration := sorry
 
 /-- The object part (a groupoid) of the pushforward along `F`, of `G`,
 defined as the Grothendieck construction applied to (unstructured) Pi-type construction
 in the HoTTLean groupoid model. -/
-def pushforwardLeft {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G) : Grpd :=
+def pushforwardLeft {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G) : Grpd :=
   Grpd.of <| ∫ (GroupoidModel.FunctorOperation.pi (hF.splitClovenIsofibration.classifier)
     (classifier (splitClovenIsofibration_strictify hF hG)))
 
 /-- The morphism part (a functor) of the pushforward along `F`, of `G`.
 This is defined as the forgetful functor from the Grothendieck construction. -/
-def pushforwardHom {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G) : pushforwardLeft hF hG ⟶ A :=
+def pushforwardHom {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G) : pushforwardLeft hF hG ⟶ A :=
   Grpd.homOf Functor.Groupoidal.forget
 
 /-- The pushforward along `F`, of `G`, as an object in the over category. -/
-abbrev pushforward {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G) : Over A :=
+abbrev pushforward {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G) : Over A :=
   Over.mk (pushforwardHom hF hG)
 
-lemma pushforward.hom {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G) :
+lemma pushforward.hom {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G) :
     (pushforward hF hG).hom = pushforwardHom .. := rfl
 
 open Limits in
-lemma pullback_isPullback {B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) (σ : Over A) :
+lemma pullback_isPullback {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : Over A) :
     IsPullback (pullback.snd σ.hom F ≫ hF.grothendieckClassifierIso.inv) (pullback.fst σ.hom F)
     (homOf Functor.Groupoidal.forget) (homOf σ.hom) :=
   IsPullback.of_iso (IsPullback.of_hasPullback σ.hom F).flip (Iso.refl _)
@@ -152,7 +152,7 @@ lemma pullback_isPullback {B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) (
       simpa using hF.grothendieckClassifierIso_inv_comp_forget.symm )
     (by simp)
 
-lemma pre_classifier_isPullback {B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) (σ : Over A) :
+lemma pre_classifier_isPullback {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : Over A) :
     IsPullback (homOf (pre hF.splitClovenIsofibration.classifier σ.hom))
     (homOf Functor.Groupoidal.forget)
     (homOf Functor.Groupoidal.forget) (homOf σ.hom) := by
@@ -175,7 +175,7 @@ lemma pre_classifier_isPullback {B A} {F : B ⟶ A} (hF : SplitClovenIsofibratio
                   σ
 The two versions of the pullback are isomorphic.
 -/
-def pullbackIsoGrothendieck {B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) (σ : Over A) :
+def pullbackIsoGrothendieck {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : Over A) :
     Grpd.of (∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier) ≅ Limits.pullback σ.hom F :=
   (pre_classifier_isPullback hF σ).isoIsPullback _ _ (pullback_isPullback hF σ)
 
@@ -183,8 +183,8 @@ open GroupoidModel.FunctorOperation.pi in
 /-- `∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier` is the pullback of `F` along `σ`,
 `∫ (splitClovenIsofibration_strictify hF hG).classifier` is isomorphic to `G`.
 So up to isomorphism this is the hom set bijection we want. -/
-def pushforwardHomEquivAux1 {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G) (σ : Over A) :
+def pushforwardHomEquivAux1 {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G) (σ : Over A) :
     (σ ⟶ pushforward hF hG) ≃
     {f : ∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier ⥤
       ∫ (splitClovenIsofibration_strictify hF hG).classifier //
@@ -199,8 +199,8 @@ def pushforwardHomEquivAux1 {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration 
     ext
     simp [equivFun_equivInv]
 
-def pushforwardHomEquivAux2 {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G) (σ : Over A) :
+def pushforwardHomEquivAux2 {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G) (σ : Over A) :
     { f : ∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier ⥤
       ∫ (splitClovenIsofibration_strictify hF hG).classifier //
       f ⋙ Functor.Groupoidal.forget = pre hF.splitClovenIsofibration.classifier σ.hom } ≃
@@ -214,8 +214,8 @@ def pushforwardHomEquivAux2 {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration 
 
 open GroupoidModel.FunctorOperation.pi in
 /-- The universal property of the pushforward, expressed as a (natural) bijection of hom sets. -/
-def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G) (σ : Over A) :
+def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G) (σ : Over A) :
     (σ ⟶ pushforward hF hG) ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) :=
   calc (σ ⟶ pushforward hF hG)
   _ ≃ {f : ∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier ⥤
@@ -226,25 +226,25 @@ def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {
 
 
 /-- Naturality in the universal property of the pushforward. -/
-lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G)
+lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G)
     {X X' : Over A} (f : X ⟶ X') (g : X' ⟶ pushforward hF hG) :
     (pushforwardHomEquiv hF hG X) (f ≫ g) =
     (Over.pullback F).map f ≫ (pushforwardHomEquiv hF hG X') g := by
   sorry
 
 
-def pushforward_isPushforward  {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F) {G : C ⟶ B}
-    (hG : SplitClovenIsofibration G) : IsPushforward F (Over.mk G) (pushforward hF hG) where
+def pushforward_isPushforward  {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G) : IsPushforward F (Over.mk G) (pushforward hF hG) where
   homEquiv := pushforwardHomEquiv ..
   homEquiv_comp f g := pushforwardHomEquiv_comp hF hG f g
 
-instance : SplitClovenIsofibration.HasPushforwards SplitClovenIsofibration :=
+instance : SplitIsofibration.HasPushforwards SplitIsofibration :=
   fun F _ G => {
     has_representation := ⟨pushforward F.2 G.2, ⟨pushforward_isPushforward F.2 G.2⟩⟩ }
 
-def isoPushforwardOfIsPushforward  {B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F)
- (G: Over B) (hG : SplitClovenIsofibration G.hom) (G': Over A)
+def isoPushforwardOfIsPushforward  {B A} {F : B ⟶ A} (hF : SplitIsofibration F)
+ (G: Over B) (hG : SplitIsofibration G.hom) (G': Over A)
  (h: IsPushforward F G G') : G' ≅ pushforward hF hG :=
   CategoryTheory.Functor.RepresentableBy.uniqueUpToIso
   (F := (Over.pullback F).op ⋙ yoneda.obj G)
@@ -257,14 +257,14 @@ def isoPushforwardOfIsPushforward  {B A} {F : B ⟶ A} (hF : SplitClovenIsofibra
 -- This should follow from `Groupoidal.forget` being an splitClovenIsofibration.
 -- (If we manage to directly define the pushforward
 -- as a grothendieck construction)
-theorem splitClovenIsofibration_pushforward {C B A} {F : B ⟶ A} (hF : SplitClovenIsofibration F)
-    {G : C ⟶ B} (hG : SplitClovenIsofibration G) :
-    SplitClovenIsofibration (pushforwardHom hF hG) :=
+theorem splitClovenIsofibration_pushforward {C B A} {F : B ⟶ A} (hF : SplitIsofibration F)
+    {G : C ⟶ B} (hG : SplitIsofibration G) :
+    SplitIsofibration (pushforwardHom hF hG) :=
   sorry
 
 -- FIXME. For some reason needed in the proof
--- `SplitClovenIsofibration.IsStableUnderPushforward SplitClovenIsofibration`
-instance SplitClovenIsofibration.RespectsIso : SplitClovenIsofibration.RespectsIso := inferInstance
+-- `SplitIsofibration.IsStableUnderPushforward SplitIsofibration`
+instance SplitIsofibration.RespectsIso : SplitIsofibration.RespectsIso := inferInstance
 
 /-  TODO: following instance can be proven like so
   1. any pushforward is isomorphic to a chosen pushforward
@@ -273,22 +273,22 @@ instance SplitClovenIsofibration.RespectsIso : SplitClovenIsofibration.RespectsI
      `(F.op ⋙ yoneda.obj X).IsRepresentable` and
      `(F.op ⋙ yoneda.obj Y).IsRepresentable` implies
      `X ≅ Y`.
-  2. SplitClovenIsofibrations are stable under isomorphism (this is in mathlib, for any `rlp`)
+  2. SplitIsofibrations are stable under isomorphism (this is in mathlib, for any `rlp`)
     `MorphismProperty.rlp_isMultiplicative`
     `MorphismProperty.respectsIso_of_isStableUnderComposition`
   3. The chosen pushforward is an splitClovenIsofibration `splitClovenIsofibration_pushforward` -/
 
-instance : SplitClovenIsofibration.IsStableUnderPushforward SplitClovenIsofibration where
+instance : SplitIsofibration.IsStableUnderPushforward SplitIsofibration where
   of_isPushforward F G P := by
     intro h
     have p:  (Over.mk P) ≅ Grpd.pushforward (F.snd) (G.snd) :=
       isoPushforwardOfIsPushforward F.snd (Over.mk G.fst) G.snd (Over.mk P) h
-    have i1 : SplitClovenIsofibration (pushforwardHom (F.snd) (G.snd)) := by
+    have i1 : SplitIsofibration (pushforwardHom (F.snd) (G.snd)) := by
      apply splitClovenIsofibration_pushforward
     have e : P = (p.hom).left ≫ (pushforwardHom (F.snd) (G.snd)) := by
      have ee := Over.w p.hom
      simp at ee
      simp[ee]
     simp only[e]
-    apply (SplitClovenIsofibration.RespectsIso).precomp
+    apply (SplitIsofibration.RespectsIso).precomp
     assumption

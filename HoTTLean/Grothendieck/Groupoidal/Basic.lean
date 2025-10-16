@@ -580,9 +580,7 @@ variable (A : E ⥤ C) (fibObj : (x : E) → (A ⋙ F).obj x)
     (map_comp : {x y z : E} → (f : x ⟶ y) → (g : y ⟶ z) → fibMap (f ≫ g)
       = eqToHom (functorTo_map_comp_aux A fibObj f g)
       ≫ (F.map (A.map g)).map (fibMap f) ≫ fibMap g)
-
-@[simps!]
-def functorIsoFrom (fib_comp : ∀ c, fib c ⋙ A = ι F c ⋙ forget)
+    (fib_comp : ∀ c, fib c ⋙ A = ι F c ⋙ forget)
     (fibObj_fib_obj : ∀ c x, fibObj ((fib c).obj x) ≍ x)
     (fibMap_fib_map : ∀ c {x y} (f : x ⟶ y), fibMap ((fib c).map f) ≍ f)
     (fib_obj_fibObj : ∀ x, (fib (A.obj x)).obj (fibObj x) = x)
@@ -590,11 +588,20 @@ def functorIsoFrom (fib_comp : ∀ c, fib c ⋙ A = ι F c ⋙ forget)
       (fib (A.obj y)).map (fibMap f) ≍ f)
     (obj_fib_obj : ∀ c x, A.obj ((fib c).obj x) = c)
     (map_hom_app : ∀ {c c'} (f : c ⟶ c') x, A.map ((hom f).app x) ≍ f)
-    (fibMap_hom_app : ∀ {c c'} (f : c ⟶ c') x, fibMap ((hom f).app x) ≍ 𝟙 ((F.map f).obj x)) :
-    ∫ F ≅≅ E :=
+    (fibMap_hom_app : ∀ {c c'} (f : c ⟶ c') x, fibMap ((hom f).app x) ≍ 𝟙 ((F.map f).obj x))
+
+@[simps!]
+def functorIsoFrom : ∫ F ≅≅ E :=
   Grothendieck.functorIsoFrom fib hom hom_id hom_comp A fibObj fibMap map_id map_comp
     fib_comp fibObj_fib_obj fibMap_fib_map fib_obj_fibObj hom_map_app_fibObj
     obj_fib_obj map_hom_app fibMap_hom_app
+
+@[simp]
+lemma functorIsoFrom_inv_comp_forget :
+    (functorIsoFrom fib hom hom_id hom_comp A fibObj fibMap map_id map_comp fib_comp fibObj_fib_obj
+    fibMap_fib_map fib_obj_fibObj hom_map_app_fibObj obj_fib_obj map_hom_app fibMap_hom_app).inv ⋙
+    forget = A :=
+  Grothendieck.functorIsoFrom_inv_comp_forget ..
 
 end
 end

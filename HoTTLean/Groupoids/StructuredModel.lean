@@ -1,4 +1,4 @@
-import HoTTLean.Groupoids.SplitClovenIsofibration
+import HoTTLean.Groupoids.SplitIsofibration
 
 /-!
 Here we construct universes for the groupoid natural model.
@@ -18,7 +18,7 @@ open U
   The π-clan we use is the set of groupoid isofibrations.
 -/
 @[simps!]
-def StructuredU : StructuredUniverse Grpd.SplitClovenIsofibration where
+def StructuredU : StructuredUniverse Grpd.SplitIsofibration where
   __ := U
   morphismProperty := sorry
 
@@ -26,7 +26,7 @@ namespace U
 
 open MonoidalCategory
 
-def liftSeqObjs (i : Nat) (h : i < 4) : StructuredUniverse Grpd.SplitClovenIsofibration.{5} :=
+def liftSeqObjs (i : Nat) (h : i < 4) : StructuredUniverse Grpd.SplitIsofibration.{5} :=
   match i with
   | 0 => StructuredU.{0,4}
   | 1 => StructuredU.{1,4}
@@ -55,7 +55,7 @@ def liftSeqHomSucc' (i : Nat) (h : i < 3) :
   The groupoid natural model with three nested representable universes
   within the ambient natural model.
 -/
-def liftSeq : UHomSeq Grpd.SplitClovenIsofibration.{5} where
+def liftSeq : UHomSeq Grpd.SplitIsofibration.{5} where
   length := 3
   objs := liftSeqObjs
   homSucc' := liftSeqHomSucc'

@@ -108,7 +108,7 @@ lemma ClovenIsofibration.eqToHom_comp_liftIso {X Y : D} (f : X ⟶ Y) [IsIso f] 
 
 end
 
-structure SplitClovenIsofibration {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D]
+structure SplitIsofibration {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D]
     (F : C ⥤ D) extends ClovenIsofibration F where
   liftObj_id {X : D} {X' : C} (hX' : F.obj X' = X) : liftObj (𝟙 X) hX' = X'
   liftIso_id {X : D} {X' : C} (hX' : F.obj X' = X) : liftIso (𝟙 X) hX' =
@@ -127,26 +127,26 @@ structure SplitClovenIsofibration {C : Type u} {D : Type u₁} [Category.{v} C] 
 --   I.liftObj f hX' =
 
 
-namespace SplitClovenIsofibration
+namespace SplitIsofibration
 
 open ClovenIsofibration
 
 @[simp]
 lemma liftObj_eqToHom {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D]
-    (F : C ⥤ D) (I : SplitClovenIsofibration F) {X Y : D} (h : X = Y) {X' : C}
+    (F : C ⥤ D) (I : SplitIsofibration F) {X Y : D} (h : X = Y) {X' : C}
     (hX' : F.obj X' = X) : I.liftObj (eqToHom h) hX' = X' := by
   subst h
   simp [liftObj_id]
 
 @[simp]
 lemma liftIso_eqToHom {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D] (F : C ⥤ D)
-    (I : SplitClovenIsofibration F) {X Y : D} (h : X = Y) {X' : C} (hX' : F.obj X' = X) :
+    (I : SplitIsofibration F) {X Y : D} (h : X = Y) {X' : C} (hX' : F.obj X' = X) :
     I.liftIso (eqToHom h) hX' = eqToHom (by simp) := by
   subst h
   simp [liftIso_id]
 
 variable {Γ : Type u} {E : Type u} [Groupoid.{v} Γ] [Groupoid.{v} E] {F : E ⥤ Γ}
-  (I : SplitClovenIsofibration F)
+  (I : SplitIsofibration F)
 
 
 
@@ -517,7 +517,7 @@ def grothendieckClassifierIso : ∫ I.classifier ≅≅ E :=
 --   inv_hom_id := sorry
 
 def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
-    SplitClovenIsofibration F.hom where
+    SplitIsofibration F.hom where
   liftObj {b0 b1} f hf x hF := F.inv.obj b1
   liftIso {b0 b1} f hf x hF := eqToHom (by simp [← hF, ← Functor.comp_obj]) ≫ F.inv.map f
   isHomLift f hf x hF := IsHomLift.of_fac' _ _ _ hF (by simp [← Functor.comp_obj])
@@ -532,13 +532,13 @@ def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
   liftIso_comp := by simp
   liftIso_IsIso := sorry
 
-def id {A : Type u} [Category.{v} A] : SplitClovenIsofibration (𝟭 A) :=
+def id {A : Type u} [Category.{v} A] : SplitIsofibration (𝟭 A) :=
   iso (Functor.Iso.refl _)
 
 section
 
 variables {A B C : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} C] {F : A ⥤ B}
-    (IF : SplitClovenIsofibration F) {G : B ⥤ C} (IG : SplitClovenIsofibration G)
+    (IF : SplitIsofibration F) {G : B ⥤ C} (IG : SplitIsofibration G)
 
 
 def comp.liftObj {X Y: C} (f: X ⟶ Y) [i:IsIso f] {X': A} (hX': (F ⋙ G).obj X' = X) : A
@@ -597,10 +597,10 @@ lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X) :
   simp [← heq_eq_eq]
   apply HEq.trans (eqToHom_heq_id_dom _ _ _) (eqToHom_heq_id_dom _ _ _).symm
 
-  -- have e : (IG.liftIso (𝟙 X) hX') = eqToHom (by simp[SplitClovenIsofibration.liftObj_id]) := by
-  --   apply SplitClovenIsofibration.liftIso_id
+  -- have e : (IG.liftIso (𝟙 X) hX') = eqToHom (by simp[SplitIsofibration.liftObj_id]) := by
+  --   apply SplitIsofibration.liftIso_id
 
-  --   --let e:= SplitClovenIsofibration.liftIso_id (X' := F.obj X')
+  --   --let e:= SplitIsofibration.liftIso_id (X' := F.obj X')
   --   --rw! (castMode := .all)[liftIso_eqToHom]
   -- rw! (castMode := .all)[e]
   -- rw[liftIso_eqToHom]
@@ -611,7 +611,7 @@ lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X) :
 
 /-- `IsMultiplicative` 1/2 -/
 def comp  :
-    SplitClovenIsofibration (F ⋙ G) where
+    SplitIsofibration (F ⋙ G) where
   liftObj := comp.liftObj IF IG
   liftIso := comp.liftIso IF IG
   isHomLift := comp.isHomLift IF IG
@@ -629,8 +629,8 @@ def comp  :
 /-- `IsStableUnderBaseChange` -/
 def ofIsPullback {A B A' B' : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} A']
     [Category.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
-    (isPullback : Functor.IsPullback top F' F bot) (IF : SplitClovenIsofibration F) :
-    SplitClovenIsofibration F' where
+    (isPullback : Functor.IsPullback top F' F bot) (IF : SplitIsofibration F) :
+    SplitIsofibration F' where
   liftObj := sorry
   liftIso := sorry
   isHomLift := sorry
@@ -642,8 +642,8 @@ def ofIsPullback {A B A' B' : Type u} [Category.{v} A] [Category.{v} B] [Categor
 
 -- def toTerminal {A : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} A']
 --     [Category.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
---     (isPullback : Functor.IsPullback top F' F bot) (IF : SplitClovenIsofibration F) :
---     SplitClovenIsofibration F' where
+--     (isPullback : Functor.IsPullback top F' F bot) (IF : SplitIsofibration F) :
+--     SplitIsofibration F' where
 --   liftObj := sorry
 --   liftIso := sorry
 --   isHomLift := sorry

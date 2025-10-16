@@ -125,6 +125,7 @@ open CategoryTheory Opposite Functor.Groupoidal
 attribute [local simp] eqToHom_map Grpd.id_eq_id Grpd.comp_eq_comp Functor.id_comp Functor.comp_id
 
 namespace FunctorOperation
+
 section
 
 open CategoryTheory.Functor
@@ -530,28 +531,30 @@ and any "term of pi", meaning a functor `f : Γ ⥤ PGrpd`
 satisfying `f ⋙ forgetToGrpd = pi A B : Γ ⥤ Grpd`,
 there is a "term of `B`" `inversion : Γ ⥤ PGrpd` such that `inversion ⋙ forgetToGrpd = B`.
 -/
-def inversion : ∫(A) ⥤ PGrpd := mapStrongTrans B s hs ⋙ sigma.assoc B ⋙ toPGrpd B
+def inversion : ∫(A) ⥤ PGrpd := mapStrongTrans B s hs ⋙ (sigma.assoc B).inv ⋙ toPGrpd B
 
 lemma mapStrongTrans_comp_fstAux' : mapStrongTrans B s hs ⋙ sigma.fstAux' B = 𝟭 _ := by
-  apply Functor.Groupoidal.FunctorTo.hext
-  · rw [Functor.assoc, sigma.fstAux', map_forget, mapStrongTrans, Functor.assoc,
-      Functor.assoc, Functor.Groupoidal.forget,
-      Functor.Grothendieck.toPseudoFunctor'Iso.inv_comp_forget,
-      Pseudofunctor.Grothendieck.map_comp_forget, Functor.id_comp,
-      Functor.Grothendieck.toPseudoFunctor'Iso.hom_comp_forget,
-      Functor.Groupoidal.forget]
-  · intro x
-    simp only [sigma.fstAux', Functor.comp_obj, map_obj_fiber, sigma_obj, sigma.fstAux_app,
-      Functor.Groupoidal.forget_obj, Functor.id_obj, heq_eq_eq]
-    exact Functor.congr_obj (PGrpd.objFiber' hs x.base).property x.fiber
-  · sorry
+  sorry
+  -- apply Functor.Groupoidal.FunctorTo.hext
+  -- · rw [Functor.assoc, sigma.fstAux', map_forget, mapStrongTrans, Functor.assoc,
+  --     Functor.assoc, Functor.Groupoidal.forget,
+  --     Functor.Grothendieck.toPseudoFunctor'Iso.inv_comp_forget,
+  --     Pseudofunctor.Grothendieck.map_comp_forget, Functor.id_comp,
+  --     Functor.Grothendieck.toPseudoFunctor'Iso.hom_comp_forget,
+  --     Functor.Groupoidal.forget]
+  -- · intro x
+  --   simp only [sigma.fstAux', Functor.comp_obj, map_obj_fiber, sigma_obj, sigma.fstAux_app,
+  --     Functor.Groupoidal.forget_obj, Functor.id_obj, heq_eq_eq]
+  --   exact Functor.congr_obj (PGrpd.objFiber' hs x.base).property x.fiber
+  -- · sorry
 
 lemma inversion_comp_forgetToGrpd : inversion B s hs ⋙ PGrpd.forgetToGrpd = B :=
-  calc mapStrongTrans B s hs ⋙ sigma.assoc B ⋙ toPGrpd B ⋙ PGrpd.forgetToGrpd
-  _ = mapStrongTrans B s hs ⋙ (sigma.assoc B ⋙ forget) ⋙ B := by
-    simp [toPGrpd_forgetToGrpd, Functor.assoc]
-  _ = mapStrongTrans B s hs ⋙ sigma.fstAux' B ⋙ B := by rw [sigma.assoc_forget]
-  _ = B := by simp [← Functor.assoc, mapStrongTrans_comp_fstAux']
+  sorry
+  -- calc mapStrongTrans B s hs ⋙ sigma.assoc B ⋙ toPGrpd B ⋙ PGrpd.forgetToGrpd
+  -- _ = mapStrongTrans B s hs ⋙ (sigma.assoc B ⋙ forget) ⋙ B := by
+  --   simp [toPGrpd_forgetToGrpd, Functor.assoc]
+  -- _ = mapStrongTrans B s hs ⋙ sigma.fstAux' B ⋙ B := by rw [sigma.assoc_forget]
+  -- _ = B := by simp [← Functor.assoc, mapStrongTrans_comp_fstAux']
 
 -- JH: make some API for this? Mixture of Pseudofunctor.Grothendieck
 -- and Functor.Grothendieck and Functor.Groupoidal is messy.
