@@ -620,8 +620,7 @@ lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X) :
   -- sorry
 
 lemma comp.liftObj_comp {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [ IsIso g] {X' : A}
- (hX' : (F ⋙ G).obj X' = X) (Y' : A)
-  (hY' : comp.liftObj IF IG f hX' = Y'):
+ (hX' : (F ⋙ G).obj X' = X):
    comp.liftObj IF IG (f ≫ g) hX' =
    comp.liftObj (X' := comp.liftObj IF IG f hX') IF IG g
    (by simp only[comp.obj_liftObj]) := by
@@ -651,21 +650,8 @@ def comp  :
    apply comp.liftIso_id
   liftObj_comp := by
    intro X Y Z f i1 g i2 X' hX' Y' hY'
-   simp[comp.liftObj,SplitIsofibration.liftIso_comp]
-   have a := (IG.liftIso f hX')
-   have p1 : G.obj (IG.liftObj f hX') = Y := by simp[]
-   have p2 : IG.liftObj g p1 = IG.liftObj (f ≫ g) hX' := by
-    simp[SplitIsofibration.liftObj_comp]
-   have e1 := @SplitIsofibration.liftObj_comp
-        (f:= IG.liftIso f hX') (g:= IG.liftIso g p1 ≫ eqToHom p2) _ _ _ _ F IF _ _ _ _ _ X' rfl
-         (IF.liftObj (IG.liftIso f hX') rfl) rfl
-   rw[e1]
-   rw[ SplitIsofibration.liftObj_comp,liftObj_eqToHom]
-   congr!
-   · subst hY'
-     simp[comp.liftObj]
-   subst hY'
-   simp[comp.liftObj]
+   simp[comp.liftObj_comp]
+   congr
 
   liftIso_comp := sorry
   liftIso_IsIso := sorry
