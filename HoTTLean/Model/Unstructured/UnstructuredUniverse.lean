@@ -213,38 +213,38 @@ theorem sec_apply_comp_var {Γ : Ctx} (A : Γ ⟶ M.Ty)
   apply substCons_apply_comp_var _ _ _ _ s_tp
 
 structure PolymorphicSigma (U0 U1 U2 : UnstructuredUniverse Ctx) where
-    (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
-    (Sig_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
-      Sig (U0.substWk σ A σA eq ≫ B) = σ ≫ Sig B)
-    (pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (a : Γ ⟶ U0.Tm)
-      (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm), b ≫ U1.tp = U0.sec A a a_tp ≫ B →
-      (Γ ⟶ U2.Tm))
-    (pair_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) (B : U0.ext A ⟶ U1.Ty)
-      (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
-      (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B),
-      pair (U0.substWk σ A σA eq ≫ B) (σ ≫ a) (by cat_disch) (σ ≫ b)
-        (by simp [b_tp, comp_sec_assoc, eq]) =
-        σ ≫ pair B a a_tp b b_tp)
-    (pair_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
-      (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
-      (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B),
-        pair B a a_tp b b_tp ≫ U2.tp = Sig B)
-    (fst : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm),
-      s ≫ U2.tp = Sig B → (Γ ⟶ U0.Tm))
-    (fst_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
-      (s_tp : s ≫ U2.tp = Sig B), fst B s s_tp ≫ U0.tp = A)
-    (snd : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm),
-      s ≫ U2.tp = Sig B → (Γ ⟶ U1.Tm))
-    (snd_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
-      (s_tp : s ≫ U2.tp = Sig B), snd B s s_tp ≫ U1.tp = U0.sec A (fst B s s_tp) (fst_tp ..) ≫ B)
-    (fst_pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
-      (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
-      (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B), fst B (pair B a a_tp b b_tp) (pair_tp ..) = a)
-    (snd_pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
-      (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
-      (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B), snd B (pair B a a_tp b b_tp) (pair_tp ..) = b)
-    (eta : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
-      (s_tp : s ≫ U2.tp = Sig B), pair B (fst B s s_tp) (fst_tp ..) (snd B s s_tp) (snd_tp ..) = s)
+  (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
+  (Sig_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
+    Sig (U0.substWk σ A σA eq ≫ B) = σ ≫ Sig B)
+  (pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (a : Γ ⟶ U0.Tm)
+    (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm), b ≫ U1.tp = U0.sec A a a_tp ≫ B →
+    (Γ ⟶ U2.Tm))
+  (pair_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) (B : U0.ext A ⟶ U1.Ty)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
+    (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B),
+    pair (U0.substWk σ A σA eq ≫ B) (σ ≫ a) (by cat_disch) (σ ≫ b)
+      (by simp [b_tp, comp_sec_assoc, eq]) =
+      σ ≫ pair B a a_tp b b_tp)
+  (pair_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
+    (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B),
+      pair B a a_tp b b_tp ≫ U2.tp = Sig B)
+  (fst : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm),
+    s ≫ U2.tp = Sig B → (Γ ⟶ U0.Tm))
+  (fst_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
+    (s_tp : s ≫ U2.tp = Sig B), fst B s s_tp ≫ U0.tp = A)
+  (snd : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm),
+    s ≫ U2.tp = Sig B → (Γ ⟶ U1.Tm))
+  (snd_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
+    (s_tp : s ≫ U2.tp = Sig B), snd B s s_tp ≫ U1.tp = U0.sec A (fst B s s_tp) (fst_tp ..) ≫ B)
+  (fst_pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
+    (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B), fst B (pair B a a_tp b b_tp) (pair_tp ..) = a)
+  (snd_pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
+    (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B), snd B (pair B a a_tp b b_tp) (pair_tp ..) = b)
+  (eta : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
+    (s_tp : s ≫ U2.tp = Sig B), pair B (fst B s s_tp) (fst_tp ..) (snd B s s_tp) (snd_tp ..) = s)
 
 namespace PolymorphicSigma
 
@@ -324,26 +324,26 @@ lemma snd_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ex
 end PolymorphicSigma
 
 structure PolymorphicPi (U0 U1 U2 : UnstructuredUniverse Ctx) where
-    (Pi : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
-    (Pi_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
-      Pi (U0.substWk σ A σA eq ≫ B) = σ ≫ Pi B)
-    (lam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
-      (b : U0.ext A ⟶ U1.Tm), b ≫ U1.tp = B → (Γ ⟶ U2.Tm))
-    (lam_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) (B : U0.ext A ⟶ U1.Ty)
-      (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B),
-      lam (U0.substWk σ A σA eq ≫ B) (U0.substWk σ A σA eq ≫ b) (by cat_disch) =
-        σ ≫ lam B b b_tp)
-    (lam_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
-      (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B),
-        lam B b b_tp ≫ U2.tp = Pi B)
-    (unLam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm),
-      f ≫ U2.tp = Pi B → (U0.ext A ⟶ U1.Tm))
-    (unLam_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm)
-      (f_tp : f ≫ U2.tp = Pi B), unLam B f f_tp ≫ U1.tp = B)
-    (unLam_lam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
-      (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B), unLam B (lam B b b_tp) (lam_tp ..) = b)
-    (lam_unLam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm)
-      (f_tp : f ≫ U2.tp = Pi B), lam B (unLam B f f_tp) (unLam_tp ..) = f)
+  (Pi : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
+  (Pi_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
+    Pi (U0.substWk σ A σA eq ≫ B) = σ ≫ Pi B)
+  (lam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (b : U0.ext A ⟶ U1.Tm), b ≫ U1.tp = B → (Γ ⟶ U2.Tm))
+  (lam_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) (B : U0.ext A ⟶ U1.Ty)
+    (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B),
+    lam (U0.substWk σ A σA eq ≫ B) (U0.substWk σ A σA eq ≫ b) (by cat_disch) =
+      σ ≫ lam B b b_tp)
+  (lam_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B),
+      lam B b b_tp ≫ U2.tp = Pi B)
+  (unLam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm),
+    f ≫ U2.tp = Pi B → (U0.ext A ⟶ U1.Tm))
+  (unLam_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm)
+    (f_tp : f ≫ U2.tp = Pi B), unLam B f f_tp ≫ U1.tp = B)
+  (unLam_lam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B), unLam B (lam B b b_tp) (lam_tp ..) = b)
+  (lam_unLam : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (f : Γ ⟶ U2.Tm)
+    (f_tp : f ≫ U2.tp = Pi B), lam B (unLam B f f_tp) (unLam_tp ..) = f)
 
 namespace PolymorphicPi
 
@@ -357,6 +357,80 @@ lemma unLam_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.
   rw! [P.lam_comp σ eq B, P.lam_unLam]
 
 end PolymorphicPi
+
+structure PolymorphicIdIntro (U0 U1 : UnstructuredUniverse Ctx) where
+  (Id : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a0 a1 : Γ ⟶ U0.Tm), (a0 ≫ U0.tp = A) → a1 ≫ U0.tp = A →
+    (Γ ⟶ U1.Ty))
+  (Id_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a0 a1 : Γ ⟶ U0.Tm)
+    (a0_tp : a0 ≫ U0.tp = A) (a1_tp : a1 ≫ U0.tp = A),
+    Id (A := σ ≫ A) (σ ≫ a0) (σ ≫ a1) (by cat_disch) (by cat_disch) = σ ≫ Id a0 a1 a0_tp a1_tp)
+  (refl : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm), a ≫ U0.tp = A → (Γ ⟶ U1.Tm))
+  (refl_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm)
+    (a_tp : a ≫ U0.tp = A), refl (σ ≫ a) (by cat_disch) = σ ≫ refl a a_tp)
+  (refl_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A),
+    refl a a_tp ≫ U1.tp = Id a a a_tp a_tp)
+
+section
+
+variable {U0 U1 : UnstructuredUniverse Ctx} (i : PolymorphicIdIntro U0 U1)
+
+namespace PolymorphicIdIntro
+
+variable {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+
+@[simp]
+lemma refl_tp' : i.refl a a_tp ≫ U1.tp = i.Id a a a_tp a_tp := refl_tp ..
+
+/-- Given `Γ ⊢ a : A` this is the identity type weakened to the context
+`Γ.(x : A) ⊢ Id(a,x) : U1.Ty` -/
+@[simp]
+abbrev weakenId : U0.ext A ⟶ U1.Ty :=
+  i.Id (A := U0.disp A ≫ A) (U0.disp A ≫ a) (U0.var A) (by cat_disch) (by cat_disch)
+
+/-- Given `Γ ⊢ a : A` this is the context `Γ.(x : A).(h:Id(a,x))` -/
+@[simp]
+abbrev motiveCtx : Ctx :=
+  U1.ext (i.weakenId a a_tp)
+
+/-- Given `Γ ⊢ a : A`, `reflSubst` is the substitution `(a,refl) : Γ ⟶ Γ.(x:A).(h:Id(a,x))`
+appearing in identity elimination `J`  so that we can write `Γ ⊢ r : C(a,refl)` -/
+abbrev reflSubst : Γ ⟶ i.motiveCtx a a_tp :=
+  U1.substCons (U0.sec A a a_tp) (i.weakenId a a_tp) (i.refl a a_tp) (by simp [← Id_comp, a_tp])
+
+/-- Given a substitution `σ : Δ ⟶ Γ` and `Γ ⊢ a : A`,
+this is the substitution `Δ.(x: σ ≫ A).(h:Id(σ ≫ a,x)) ⟶ Γ.(x:A).(h:Id(a,x))`-/
+abbrev motiveSubst : i.motiveCtx (σ ≫ a) (by cat_disch) ⟶ i.motiveCtx a a_tp :=
+  substWk _ (substWk _ σ _ _ (by simp [a_tp])) _ _ (by
+    simp [← Id_comp, substWk_disp_assoc, a_tp])
+
+@[reassoc (attr := simp)]
+lemma reflSubst_comp_motiveSubst : i.reflSubst (σ ≫ a) (by cat_disch) ≫ i.motiveSubst σ a a_tp =
+    σ ≫ i.reflSubst a a_tp := by
+  subst a_tp
+  repeat any_goals apply (disp_pullback ..).hom_ext
+  any_goals simp [← refl_comp, substWk_disp]
+
+end PolymorphicIdIntro
+
+structure PolymorphicIdElim (U2 : UnstructuredUniverse Ctx) where
+  (j : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+    (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm),
+    (c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C) → (i.motiveCtx a a_tp ⟶ U2.Tm))
+  (comp_j : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm)
+    (a_tp : a ≫ U0.tp = A) (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
+    (c_tp : c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C),
+    j (σ ≫ a) (by cat_disch) (i.motiveSubst σ a a_tp ≫ C) (σ ≫ c) (by cat_disch) =
+    i.motiveSubst σ a a_tp ≫ j a a_tp C c c_tp)
+  (j_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+    (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
+    (c_tp : c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C),
+    j a a_tp C c c_tp ≫ U2.tp = C)
+  (reflSubst_j : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+    (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
+    (c_tp : c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C),
+    i.reflSubst a a_tp ≫ j a a_tp C c c_tp = c)
+
+end
 
 end UnstructuredUniverse
 

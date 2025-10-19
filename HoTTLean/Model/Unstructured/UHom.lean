@@ -8,7 +8,7 @@ universe v u
 
 noncomputable section
 
-open CategoryTheory Limits Opposite MonoidalCategory
+open CategoryTheory Opposite MonoidalCategory
 
 namespace Model
 
@@ -75,11 +75,11 @@ These don't form a category since `UHom.id M` is essentially `Type : Type` in `M
 Note this doesn't need to extend `Hom` as none of its fields are used;
 it's just convenient to pack up the data. -/
 structure UHom (M N : UnstructuredUniverse Ctx) extends Hom M N where
-  U : ChosenTerminal.terminal ⟶ N.Ty
+  U : terminal ⟶ N.Ty
   asTm : M.Ty ⟶ N.Tm
   U_pb : IsPullback
             /- m.Ty -/           asTm /- N.Tm -/
-    (ChosenTerminal.isTerminal.from M.Ty)         N.tp
+    (isTerminal.from M.Ty)         N.tp
              /- ⊤ -/               U  /- N.Ty -/
 
 def UHom.ofTyIsoExt
@@ -91,7 +91,7 @@ def UHom.ofTyIsoExt
   asTm := i.hom ≫ N.var U
   U_pb := by
     convert IsPullback.of_iso_isPullback (N.disp_pullback _) i
-    apply ChosenTerminal.isTerminal.hom_ext
+    apply isTerminal.hom_ext
 
 def UHom.comp {M N O : UnstructuredUniverse Ctx} (α : UHom M N) (β : UHom N O) : UHom M O where
   __ := Hom.comp α.toHom β.toHom
@@ -104,7 +104,7 @@ def UHom.comp_assoc {M N O P : UnstructuredUniverse Ctx} (α : UHom M N) (β : U
   simp [comp, Hom.comp]
 
 def UHom.wkU {M N : UnstructuredUniverse Ctx} (Γ : Ctx) (α : UHom M N) : (Γ) ⟶ N.Ty :=
-  ChosenTerminal.isTerminal.from Γ ≫ α.U
+  isTerminal.from Γ ≫ α.U
 
 @[reassoc (attr := simp)]
 theorem UHom.comp_wkU {M N : UnstructuredUniverse Ctx} {Δ Γ : Ctx} (α : UHom M N) (f : (Δ) ⟶ (Γ)) :
@@ -123,7 +123,7 @@ def UHom.ofTarskiU (M : UnstructuredUniverse Ctx) (U : (𝟭_ Ctx) ⟶ M.Ty) (El
       (Iso.refl _)
       (Iso.refl _)
       (Iso.refl _)
-      (by simp) (ChosenTerminal.isTerminal.hom_ext ..)
+      (by simp) (isTerminal.hom_ext ..)
       (by simp) (by simp)
 
 /-! ## Universe embeddings -/
@@ -259,7 +259,7 @@ It is the unique map into the pullback
 def el (s : UHomSeq Ctx) {Γ : Ctx} {i : Nat} (ilen : i < s.length)
     (a : (Γ) ⟶ s[i+1].Tm) (a_tp : a ≫ s[i+1].tp = (s.homSucc i).wkU Γ) :
     (Γ) ⟶ s[i].Ty :=
-  (s.homSucc i).U_pb.lift a (ChosenTerminal.isTerminal.from (Γ)) (by rw [a_tp, UHom.wkU])
+  (s.homSucc i).U_pb.lift a (isTerminal.from (Γ)) (by rw [a_tp, UHom.wkU])
 
 @[reassoc]
 theorem comp_el (s : UHomSeq Ctx) {Δ Γ : Ctx} {i : Nat} (ilen : i < s.length)
