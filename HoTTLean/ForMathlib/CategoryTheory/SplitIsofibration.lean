@@ -581,24 +581,6 @@ def comp.isHomLift {X Y: C} (f: X ⟶ Y) [i:IsIso f] {X': A} (hX': (F ⋙ G).obj
 lemma comp.liftObj_id {X: C} {X': A} (hX': (F ⋙ G).obj X' = X):
  comp.liftObj IF IG (𝟙 X) hX' = X' := by
  simp[comp.liftObj,liftIso_id]
---  rw![liftIso_id]
---  --have i: IsIso (eqToHom sorry ≫ 𝟙 _) := sorry
---  have h1 : eqToHom (Eq.symm (IG.liftObj_id hX')) = eqToHom (Eq.symm (IG.liftObj_id hX')) ≫ 𝟙 _ := sorry
---  rw![h1]
---  rw [liftObj_comp]
---  have e0 : IG.liftObj (𝟙 X) hX' = F.obj X' := sorry
---  rw![e0]
---  ·
---    sorry
---  · sorry
---  --convert_to @liftObj _ _ _ _ _ _ _ IF _ _ (𝟙 (F.obj X')) _ = _
---  · sorry
---  --apply liftObj_id
-
--- --  have h : IF.liftObj (eqToHom (Eq.symm (IG.liftObj_id hX'))) rfl = X':= sorry
--- --  have h: IF.liftObj (eqToHom (Eq.symm (IG.liftObj_id hX')) ≫ 𝟙 (F.obj X')) (by sorry) = X' := sorry
--- --  simp[eqToHom]
--- --  sorry
 
 
 lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X) :
@@ -608,28 +590,56 @@ lemma comp.liftIso_id {X : C} {X' : A} (hX' : (F ⋙ G).obj X' = X) :
   simp [← heq_eq_eq]
   apply HEq.trans (eqToHom_heq_id_dom _ _ _) (eqToHom_heq_id_dom _ _ _).symm
 
-  -- have e : (IG.liftIso (𝟙 X) hX') = eqToHom (by simp[SplitIsofibration.liftObj_id]) := by
-  --   apply SplitIsofibration.liftIso_id
-
-  --   --let e:= SplitIsofibration.liftIso_id (X' := F.obj X')
-  --   --rw! (castMode := .all)[liftIso_eqToHom]
-  -- rw! (castMode := .all)[e]
-  -- rw[liftIso_eqToHom]
-  -- rw!(castMode := .all)[liftObj_eqToHom]
-
-  -- sorry
 
 lemma comp.liftObj_comp {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [ IsIso g] {X' : A}
  (hX' : (F ⋙ G).obj X' = X):
    comp.liftObj IF IG (f ≫ g) hX' =
    comp.liftObj (X' := comp.liftObj IF IG f hX') IF IG g
    (by simp only[comp.obj_liftObj]) := by
-   simp[comp.liftObj]
-   simp[liftIso_comp]
-   simp[SplitIsofibration.liftObj_comp]
+   simp only [liftObj, liftIso_comp, eqToHom_refl, Category.id_comp, SplitIsofibration.liftObj_comp,
+     liftObj_eqToHom]
    congr!
    simp[ClovenIsofibration.obj_liftObj]
 
+/-(by simp[liftObj,SplitIsofibration.liftIso_comp,SplitIsofibration.liftObj_comp];
+               congr!; )-/
+
+lemma comp.liftIso_comp_aux {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [ IsIso g] {X' : A}
+ (hX' : (F ⋙ G).obj X' = X) (Y' : A)
+  (hY' : comp.liftObj IF IG f hX' = Y'): G.obj (F.obj Y') = Y := by subst hY'; simp[comp.liftObj]
+
+
+lemma comp.liftIso_comp_aux1 {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [IsIso g] {X' : A}
+ (hX' : (F ⋙ G).obj X' = X) (Y' : A)
+  (hY' : comp.liftObj IF IG f hX' = Y'):
+  liftObj IF IG g (X' := Y') (comp.liftIso_comp_aux IF IG f g hX' Y' hY') =
+  liftObj IF IG (f ≫ g) hX' :=
+  sorry
+
+lemma comp.liftIso_comp {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [ IsIso g] {X' : A}
+ (hX' : (F ⋙ G).obj X' = X) (Y' : A)
+  (hY' : comp.liftObj IF IG f hX' = Y'):
+   comp.liftIso IF IG (f ≫ g) hX' = comp.liftIso IF IG f hX' ≫ eqToHom hY' ≫
+   comp.liftIso IF IG g (by subst hY';simp[liftObj]) ≫
+   eqToHom
+   (by
+    symm; subst hY'; simp[comp.liftObj_comp]) :=
+               by
+   simp[comp.liftIso,comp.liftObj]
+   simp at hX'
+   have e:= @SplitIsofibration.liftIso_comp
+    (f:= f) (g:= g) _ _ _ _ G IG X Y Z _ _ (F.obj X') hX' (IG.liftObj f hX') rfl
+   rw![e]
+   simp[eqToHom_refl]
+   rw![Category.id_comp]
+   simp[SplitIsofibration.liftIso_comp]
+   congr 1
+   simp[← heq_eq_eq]
+   congr!
+   · subst hY'
+     simp[liftObj] --do not know why it works, but it did
+   subst hY'
+   simp[liftObj]
 
 -- lemma comp.liftObj_liftIso {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [ IsIso g] {X' : A}
 --  (hX' : (F ⋙ G).obj X' = X) (Y' : A)
@@ -650,11 +660,17 @@ def comp  :
    apply comp.liftIso_id
   liftObj_comp := by
    intro X Y Z f i1 g i2 X' hX' Y' hY'
-   simp[comp.liftObj_comp]
+   simp only [comp.liftObj_comp]
    congr
+  liftIso_comp := by
+   intro X Y Z f i1 g i2 X' hX' Y' hY'
+   simp only [comp.liftIso_comp]
+   congr!
+  liftIso_IsIso := by
+   intro X Y f i1 X' hX'
+   simp[comp.liftIso]
+   apply liftIso_IsIso
 
-  liftIso_comp := sorry
-  liftIso_IsIso := sorry
 
 /-- `IsStableUnderBaseChange` -/
 def ofIsPullback {A B A' B' : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} A']
