@@ -20,10 +20,11 @@ structure Cylinder (Ctx : Type u) [Category Ctx] where
   (π : I ⟶ 𝟭 Ctx)
   (δ0_π : δ0 ≫ π = 𝟙 _)
   (δ1_π : δ1 ≫ π = 𝟙 _)
-  (symm : I ⋙ I ≅ I ⋙ I)
-  (δ0_symm : whiskerLeft I δ0 ≫ symm.hom = whiskerRight δ0 I)
-  (δ1_symm : whiskerLeft I δ1 ≫ symm.hom = whiskerRight δ1 I)
-  (symm_π_π : symm.hom ≫ whiskerLeft I π ≫ π = whiskerLeft I π ≫ π)
+  (symm : I ⋙ I ⟶ I ⋙ I)
+  (symm_symm : symm ≫ symm = 𝟙 _)
+  (whiskerLeft_I_δ0_symm : whiskerLeft I δ0 ≫ symm = whiskerRight δ0 I)
+  (whiskerLeft_I_δ1_symm : whiskerLeft I δ1 ≫ symm = whiskerRight δ1 I)
+  (symm_π_π : symm ≫ whiskerLeft I π ≫ π = whiskerLeft I π ≫ π)
 
 variable {Ctx : Type u} [Category Ctx] (cyl : Cylinder Ctx)
 
@@ -51,22 +52,48 @@ lemma δ0_naturality {Γ Δ} (σ : Δ ⟶ Γ) : cyl.δ0.app Δ ≫ cyl.I.map σ 
 lemma δ1_naturality {Γ Δ} (σ : Δ ⟶ Γ) : cyl.δ1.app Δ ≫ cyl.I.map σ = σ ≫ cyl.δ1.app Γ := by
   simp [← NatTrans.naturality]
 
+@[reassoc (attr := simp)]
+lemma symm_symm' : cyl.symm ≫ cyl.symm = 𝟙 _ := symm_symm ..
+
+-- @[reassoc]
+-- lemma symm_app_symm'_app (X) : cyl.symm.app _ ≫ cyl.symm.app X = 𝟙 _ :=
+--   NatTrans.congr_app (symm_symm ..) X
+
 -- open Functor in
 -- @[reassoc]
 -- lemma symm_π_π' : cyl.symm.hom ≫ whiskerLeft cyl.I cyl.π ≫ cyl.π =
 --     whiskerLeft cyl.I cyl.π ≫ cyl.π :=
 --   symm_π_π ..
 
-@[reassoc (attr := simp)]
-lemma δ0_symm_app (X) : cyl.δ0.app (cyl.I.obj X) ≫ cyl.symm.hom.app X = cyl.I.map (cyl.δ0.app X) :=
-  NatTrans.congr_app (cyl.δ0_symm) X
+open Functor in
+lemma whiskerRight_δ0_I_symm : whiskerRight cyl.δ0 cyl.I ≫ cyl.symm =
+    whiskerLeft cyl.I cyl.δ0 := by
+  simp [← whiskerLeft_I_δ0_symm]
+
+open Functor in
+lemma whiskerRight_δ1_I_symm : whiskerRight cyl.δ1 cyl.I ≫ cyl.symm =
+    whiskerLeft cyl.I cyl.δ1 := by
+  simp [← whiskerLeft_I_δ1_symm]
 
 @[reassoc (attr := simp)]
-lemma δ1_symm_app (X) : cyl.δ1.app (cyl.I.obj X) ≫ cyl.symm.hom.app X = cyl.I.map (cyl.δ1.app X) :=
-  NatTrans.congr_app (cyl.δ1_symm) X
+lemma δ0_app_I_obj_comp_symm_app (X) : cyl.δ0.app (cyl.I.obj X) ≫ cyl.symm.app X =
+    cyl.I.map (cyl.δ0.app X) :=
+  NatTrans.congr_app (cyl.whiskerLeft_I_δ0_symm) X
+
+@[reassoc (attr := simp)]
+lemma δ1_app_I_obj_comp_symm_app (X) : cyl.δ1.app (cyl.I.obj X) ≫ cyl.symm.app X = cyl.I.map (cyl.δ1.app X) :=
+  NatTrans.congr_app (cyl.whiskerLeft_I_δ1_symm) X
+
+@[reassoc (attr := simp)]
+lemma I_map_δ0_app_comp_symm_app (X) : cyl.I.map (cyl.δ0.app X) ≫ cyl.symm.app X = cyl.δ0.app _ :=
+  NatTrans.congr_app (cyl.whiskerRight_δ0_I_symm) X
+
+@[reassoc (attr := simp)]
+lemma I_map_δ1_app_comp_symm_app (X) : cyl.I.map (cyl.δ1.app X) ≫ cyl.symm.app X = cyl.δ1.app _ :=
+  NatTrans.congr_app (cyl.whiskerRight_δ1_I_symm) X
 
 @[reassoc]
-lemma symm_π_π'_app (X) : cyl.symm.hom.app X ≫ cyl.π.app (cyl.I.obj X) ≫ cyl.π.app X =
+lemma symm_π_π'_app (X) : cyl.symm.app X ≫ cyl.π.app (cyl.I.obj X) ≫ cyl.π.app X =
     cyl.π.app (cyl.I.obj X) ≫ cyl.π.app X :=
   NatTrans.congr_app (cyl.symm_π_π) X
 
@@ -227,39 +254,23 @@ abbrev path' {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a0 a1 : Γ ⟶ U0.Tm) 
   P0.path (A := σ ≫ A) (σ ≫ a0) (σ ≫ a1) (by simp [a0_tp]) (by simp [a1_tp]) p
   (by simp [p_tp, ← Id_comp])
 
--- @[reassoc (attr := simp)]
--- lemma unPath'_tp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a0 a1 : Γ ⟶ U0.Tm)
---     (a0_tp : a0 ≫ U0.tp = A) (a1_tp : a1 ≫ U0.tp = A)
---     (p : cyl.I.obj Δ ⟶ U0.Tm) (p_tp : p ≫ U0.tp = cyl.π.app Δ ≫ σ ≫ A)
---     (δ0_p : cyl.δ0.app Δ ≫ p = σ ≫ a0) (δ1_p : cyl.δ1.app Δ ≫ p = σ ≫ a1) :
---     P0.unPath' σ a0 a1 p p_tp δ0_p δ1_p ≫ U0.tp =
---     σ ≫ P0.Id (A := A) a0 a1 a0_tp a1_tp := by
---   simp [unPath', ← Id_comp]
-
--- lemma unPath'_comp {Γ Δ0 Δ1} (τ : Δ1 ⟶ Δ0) (σ : Δ0 ⟶ Γ)
---     {A : Γ ⟶ U0.Ty} (a0 a1 : Γ ⟶ U0.Tm) (p : cyl.I.obj Δ0 ⟶ U0.Tm)
---     (p_tp : p ≫ U0.tp = cyl.π.app Δ0 ≫ σ ≫ A) (δ0_p : cyl.δ0.app Δ0 ≫ p = σ ≫ a0)
---     (δ1_p : cyl.δ1.app Δ0 ≫ p = σ ≫ a1) :
---     P0.unPath' (τ ≫ σ) a0 a1 sorry sorry sorry sorry =
---     τ ≫ P0.unPath' σ a0 a1 p p_tp δ0_p δ1_p := sorry
-
 variable (hrwcz0 : Hurewicz cyl U0.tp)
 
-def substLift {Γ Δ} {A : Γ ⟶ U0.Ty} (a : Δ ⟶ U0.ext A) (p : cyl.I.obj Δ ⟶ Γ)
-    (comm_sq : a ≫ disp .. = cyl.δ0.app Δ ≫ p) : cyl.I.obj Δ ⟶ U0.ext A :=
-  substCons U0 p A (hrwcz0.lift (a ≫ var ..) (p ≫ A)
-  (by (slice_rhs 1 2 => rw [← comm_sq]); simp)) (by simp)
+-- def substLift {Γ Δ} {A : Γ ⟶ U0.Ty} (a : Δ ⟶ U0.ext A) (p : cyl.I.obj Δ ⟶ Γ)
+--     (comm_sq : a ≫ disp .. = cyl.δ0.app Δ ≫ p) : cyl.I.obj Δ ⟶ U0.ext A :=
+--   substCons U0 p A (hrwcz0.lift (a ≫ var ..) (p ≫ A)
+--   (by (slice_rhs 1 2 => rw [← comm_sq]); simp)) (by simp)
 
-@[reassoc (attr := simp)]
-lemma substLift_comp_disp {Γ Δ} {A : Γ ⟶ U0.Ty} (a : Δ ⟶ U0.ext A) (p : cyl.I.obj Δ ⟶ Γ)
-    (comm_sq : a ≫ disp .. = cyl.δ0.app Δ ≫ p) : substLift hrwcz0 a p comm_sq ≫ disp .. = p := by
-  simp [substLift]
+-- @[reassoc (attr := simp)]
+-- lemma substLift_comp_disp {Γ Δ} {A : Γ ⟶ U0.Ty} (a : Δ ⟶ U0.ext A) (p : cyl.I.obj Δ ⟶ Γ)
+--     (comm_sq : a ≫ disp .. = cyl.δ0.app Δ ≫ p) : substLift hrwcz0 a p comm_sq ≫ disp .. = p := by
+--   simp [substLift]
 
-@[reassoc (attr := simp)]
-lemma δ0_comp_substLift {Γ Δ} {A : Γ ⟶ U0.Ty} (a : Δ ⟶ U0.ext A) (p : cyl.I.obj Δ ⟶ Γ)
-    (comm_sq : a ≫ disp .. = cyl.δ0.app Δ ≫ p) :
-    cyl.δ0.app Δ ≫ substLift hrwcz0 a p comm_sq = a := by
-  apply (disp_pullback ..).hom_ext <;> simp [comm_sq, substLift]
+-- @[reassoc (attr := simp)]
+-- lemma δ0_comp_substLift {Γ Δ} {A : Γ ⟶ U0.Ty} (a : Δ ⟶ U0.ext A) (p : cyl.I.obj Δ ⟶ Γ)
+--     (comm_sq : a ≫ disp .. = cyl.δ0.app Δ ≫ p) :
+--     cyl.δ0.app Δ ≫ substLift hrwcz0 a p comm_sq = a := by
+--   apply (disp_pullback ..).hom_ext <;> simp [comm_sq, substLift]
 
 @[simps]
 def polymorphicIdIntro : PolymorphicIdIntro U0 U0 where
@@ -278,13 +289,51 @@ variable {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a
 /-- Fixing `Γ ⊢ a : A`, `ev` / `substConsEv` can be viewed as the cubical substitution
 `(i : I);(x : A).(p : Id(a,x)) ⊢ p' i : A`,
 satisfying equations `p' 0 = a` and `p' 1 = x`,
-proven in `δ0_ev` and `δ1_ev`.
+proven in `δ0_substConsEv` and `δ1_substConsEv`.
 It can be thought of as the "evaluation" of the path `p` at a point in the interval.
-It is defined by taking `path` of the map `var : Γ.(x:A).Id(a,x) ⟶ Tm` -/
+It is defined by taking `path` of the map `var : Γ.(x:A).Id(a,x) ⟶ Tm`
+
+```
+               var
+Γ.(x:A).Id(a,x) ---> Tm
+    |                |
+    |                |
+  disp               tp
+    |                |
+    V                V
+   Γ.A  --------->  Ty
+        Id(a,x)
+
+                   ev
+I;(Γ.(x:A).Id(a,x) ---> Tm
+    |                   |
+    |                   |
+    π                   tp
+    |                   |
+    V                   V
+Γ.(x:A).Id(a,x)  ---->  Ty
+              ↑↑A
+```
+-/
+@[simp]
 abbrev ev : cyl.I.obj (U0.ext (P0.polymorphicIdIntro.weakenId a a_tp)) ⟶ U0.Tm :=
   P0.path' (A := disp .. ≫ A) (disp ..) (disp .. ≫ a) (var ..)
   (by cat_disch) (by simp) (var ..) (by simp)
 
+/-
+                    ev
+       ⌐----------------------------¬
+       |      substCons             V
+I;Γ.(x:A).Id(a,x) ····> Γ.A -------> Tm
+    |                   |             |
+    |                   |             |
+    π                  disp          tp
+    |                   |             |
+    V                   V             V
+Γ.(x:A).Id(a,x)  ---->  Γ ---------> Ty
+                ↑↑          A
+
+-/
 @[inherit_doc ev]
 def substConsEv : cyl.I.obj (U0.ext (P0.polymorphicIdIntro.weakenId a a_tp)) ⟶ U0.ext A :=
   U0.substCons (cyl.π.app _ ≫ disp .. ≫ disp ..) A
@@ -298,7 +347,7 @@ lemma substConsEv_disp : P0.substConsEv a a_tp ≫ disp .. = cyl.π.app _ ≫ U0
 lemma substConsEv_var : P0.substConsEv a a_tp ≫ var .. = P0.path (A := disp .. ≫ disp .. ≫ A)
     (U0.disp .. ≫ U0.disp A ≫ a) (U0.disp .. ≫ U0.var A)
     (by cat_disch) (by simp) (U0.var ..) (by simp [← Id_comp]) := by
-  simp [substConsEv, ev]
+  simp [substConsEv]
 
 @[reassoc (attr := simp)]
 lemma δ0_substConsEv : cyl.δ0.app _ ≫ P0.substConsEv a a_tp = disp .. ≫ disp .. ≫ U0.sec A a a_tp := by
@@ -311,6 +360,13 @@ lemma δ1_substConsEv : cyl.δ1.app _ ≫ P0.substConsEv a a_tp = U0.disp .. := 
   apply (disp_pullback ..).hom_ext
   · simp [substConsEv]
   · simp [substConsEv]
+
+@[reassoc]
+lemma substConsEv_comp_substWk : P0.substConsEv (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) ≫
+    U0.substWk σ A =
+    cyl.I.map (U0.substWk (U0.substWk σ A) (weakenId _ a a_tp) _ ((weakenId_comp ..).symm)) ≫
+    P0.substConsEv a a_tp := by
+  simp [substConsEv, ← path_comp, substWk]
 
 -- lemma substConsEv_comp_Id : P0.substConsEv a a_tp ≫
 --     P0.Id (A := disp .. ≫ A) (U0.disp A ≫ a) (U0.var A) (by cat_disch) (by simp) =
@@ -335,6 +391,7 @@ lemma δ1_substConsEv : cyl.δ1.app _ ≫ P0.substConsEv a a_tp = U0.disp .. := 
 /-- The path lift needed in `connection`.
 Fix `Γ ⊢ a : A`, we think of `connection` as a
 path `(j : I);(x : A)(p : Id(a,x)) ⊢ χ j : Id(a,x)` such that `χ 0 = refl a`.
+(This equation is proven in `δ0_connectionLift`.)
 It is defined as the lift of the path `p i` (provided by the variable `p`)
 in `Γ.A` up the fibration `Γ.A.Id → Γ.A`,
 starting at the point `refl a` in the fiber over `a`.
@@ -347,6 +404,22 @@ def connectionLift : cyl.I.obj (P0.polymorphicIdIntro.motiveCtx a a_tp) ⟶ U0.T
     rw! (transparency := .default) [P0.δ0_substConsEv_assoc a a_tp,
       P0.δ0_substConsEv_assoc a a_tp, P0.δ0_substConsEv_assoc a a_tp]
     simp)
+
+@[reassoc (attr := simp)]
+lemma δ0_connectionLift : cyl.δ0.app _ ≫ P0.connectionLift hrwcz0 a a_tp =
+    disp .. ≫ disp .. ≫ P0.polymorphicIdIntro.refl a a_tp := by
+  simp [connectionLift]
+
+lemma connectionLift_comp [hrwcz0.IsUniform] :
+    P0.connectionLift hrwcz0 (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) =
+    cyl.I.map (P0.polymorphicIdIntro.motiveSubst σ a a_tp) ≫
+    P0.connectionLift hrwcz0 a a_tp := by
+  simp only [motiveCtx, polymorphicIdIntro_Id, connectionLift, polymorphicIdIntro_refl,
+    Functor.id_obj, ← unPath_comp, NatTrans.naturality_assoc, Functor.id_map, weakenId, motiveSubst,
+    ← Hurewicz.lift_comp, substWk_disp_assoc]
+  congr 1
+  erw [← P0.substConsEv_comp_substWk_assoc]
+  simp [← Id_comp]
 
 /-- Fix `Γ ⊢ a : A`, we think of `connection` as a cubical (as opposed to globular)
 homotopy `(i j : I);(x : A)(p : Id(a,x)) ⊢ χ i j : A`
@@ -361,104 +434,241 @@ a ====== p 0
 ‖         |
 ‖    χ    | p j
 ‖         V
-a ====== p 1
+a -----> p 1
 ```
-
-We define `connection` by path lifting,
-but we need to switch the indices using `cyl.symm` since
-1. we need to do path lifting in the `j` direction (i.e. starting at `χ i 0 = refl a i`)
-2. we substConsEventually want a homotopy in the `i` direction (i.e. from `χ 0 j` to `χ 1 j`)
+Note that we know the top path is `χ i 0 = refl a i`
+but we do not know how the bottom path `χ i 1` computes.
 -/
 def connection : cyl.I.obj (cyl.I.obj (P0.polymorphicIdIntro.motiveCtx a a_tp)) ⟶ U0.Tm :=
-  P0.path' (A := disp .. ≫ A) (substConsEv ..)
-    (disp .. ≫ a) (var ..)
-    (by simp [a_tp])
-    (by simp)
-    (P0.connectionLift hrwcz0 a a_tp)
-    (by simp [connectionLift])
+  P0.path' (A := disp .. ≫ A) (substConsEv ..) (disp .. ≫ a) (var ..) (by simp [a_tp])
+    (by simp) (P0.connectionLift hrwcz0 a a_tp) (by simp [connectionLift])
 
+@[simp]
 lemma connection_tp : P0.connection hrwcz0 a a_tp ≫ U0.tp =
     cyl.π.app (cyl.I.obj (P0.polymorphicIdIntro.motiveCtx a a_tp)) ≫
     cyl.π.app (P0.polymorphicIdIntro.motiveCtx a a_tp) ≫
     U0.disp (P0.polymorphicIdIntro.weakenId a a_tp) ≫ U0.disp A ≫ A := by
   simp [connection]
 
--- @[reassoc]
--- lemma δ0_connection : cyl.δ0.app _ ≫ P0.connection hrwcz0 a a_tp =
---     P0.path (A := disp .. ≫ disp .. ≫ A) (disp .. ≫ U0.disp A ≫ a)
---     (disp .. ≫ U0.disp A ≫ a) (by aesop_cat) (by aesop_cat)
---     (cyl.δ0.app _ ≫ P0.connectionLift hrwcz0 a a_tp) (by simp [connectionLift, ← Id_comp]) := by
---   simp [connection, δ0_symm_app_assoc, ← path_comp]
-
--- TODO tidy
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma δ0_connection : cyl.δ0.app _ ≫ P0.connection hrwcz0 a a_tp =
     cyl.π.app _ ≫ disp .. ≫ U0.disp A ≫ a := by
-  simp only [motiveCtx, polymorphicIdIntro_Id, Functor.id_obj, connection, Functor.comp_obj, path',
-    substConsEv_disp_assoc, substConsEv_var, connectionLift, polymorphicIdIntro_refl, weakenId,
-    δ0_symm_app_assoc, ← path_comp, δ0_π'_app_assoc, δ0_path', Hurewicz.δ0_comp_lift']
+  simp [connection]
 
--- TODO tidy
-@[reassoc]
-lemma δ1_connection : cyl.δ1.app _ ≫ P0.connection hrwcz0 a a_tp = P0.ev a a_tp := by
+@[reassoc (attr := simp)]
+lemma δ1_connection : cyl.δ1.app _ ≫ P0.connection hrwcz0 a a_tp =
+    P0.ev a a_tp := by
+  simp [connection, path', δ1_path', ev]
+
+@[simp]
+lemma I_δ0_connection : cyl.I.map (cyl.δ0.app _) ≫ P0.connection hrwcz0 a a_tp =
+    cyl.π.app _ ≫ disp .. ≫ U0.disp A ≫ a := by
+  fapply P0.path_ext (disp .. ≫ U0.disp A ≫ A) (disp .. ≫ U0.disp A ≫ a) (disp .. ≫ U0.disp A ≫ a)
+    <;> simp [a_tp, connection, ← path_comp]
+  erw [δ0_connectionLift] -- FIXME
+  simp [← unPath_comp]
+
+lemma connection_comp [hrwcz0.IsUniform] :
+    P0.connection hrwcz0 (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) =
+    cyl.I.map (cyl.I.map (P0.polymorphicIdIntro.motiveSubst σ a a_tp)) ≫
+    P0.connection hrwcz0 (a) a_tp := by
   simp only [connection]
-  simp only [path']
-  simp only [δ1_path']
-  simp [ev]
+  rw! [connectionLift_comp _ _ _ _ a_tp]
+  simp [← path_comp, motiveSubst]
 
--- TODO tidy
-/-- Fixing `Γ ⊢ a : A`, `substConsConnection` is thought of as a substitution
+-- @[simp]
+-- lemma I_δ1_connection : cyl.I.map (cyl.δ1.app _) ≫ P0.connection hrwcz0 a a_tp =
+--     cyl.π.app _ ≫ sorry := by
+--   fapply P0.path_ext (disp .. ≫ U0.disp A ≫ A) (disp .. ≫ U0.disp A ≫ a) (disp .. ≫ U0.disp A ≫ a)
+--     <;> simp [a_tp, connection, ← path_comp]
+--   sorry
+--   sorry
+--   sorry
+--   sorry
+--   sorry
+
+/--
+`symmConnection` is the symmetric homotopy `j i ⊢ χ i j`, visualised as
+```
+j→   i↓
+
+a ======  a
+‖         |
+‖    χ    | χ i 1
+‖         V
+p 0 ----> p 1
+    p j
+```
+Note that we know the left path is `χ i 0 = refl a i`
+but we do not know how the right path `χ i 1` computes.
+We need to switch the indices using `cyl.symm` since
+1. we need to do path lifting in the `j` direction (i.e. starting at `χ i 0 = refl a i`)
+2. we ultimately want a homotopy in the `i` direction (i.e. from `χ 0 j` to `χ 1 j`)
+-/
+def symmConnection := cyl.symm.app _ ≫ P0.connection hrwcz0 a a_tp
+
+@[simp]
+lemma symmConnection_tp : P0.symmConnection hrwcz0 a a_tp ≫ U0.tp =
+    cyl.π.app (cyl.I.obj (P0.polymorphicIdIntro.motiveCtx a a_tp)) ≫
+    cyl.π.app (P0.polymorphicIdIntro.motiveCtx a a_tp) ≫
+    U0.disp (P0.polymorphicIdIntro.weakenId a a_tp) ≫ U0.disp A ≫ A := by
+  simp [symmConnection, symm_π_π'_app_assoc]
+
+@[simp]
+lemma δ0_symmConnection : cyl.δ0.app _ ≫ P0.symmConnection hrwcz0 a a_tp =
+    cyl.π.app _ ≫ disp .. ≫ U0.disp A ≫ a := by
+  simp only [motiveCtx, polymorphicIdIntro_Id, Functor.id_obj, symmConnection, Functor.comp_obj,
+    δ0_app_I_obj_comp_symm_app_assoc]
+  erw [I_δ0_connection] -- FIXME
+  simp
+
+-- @[simp]
+-- lemma δ1_symmConnection : cyl.δ1.app _ ≫ P0.symmConnection hrwcz0 a a_tp =
+--     cyl.π.app _ ≫ sorry := by
+--   simp only [motiveCtx, polymorphicIdIntro_Id, Functor.id_obj, symmConnection, Functor.comp_obj,
+--     δ1_app_I_obj_comp_symm_app_assoc]
+--   -- erw [I_δ1_connection] -- FIXME
+--   -- simp
+--   sorry
+
+@[simp]
+lemma I_δ0_symmConnection : cyl.I.map (cyl.δ0.app _) ≫ P0.symmConnection hrwcz0 a a_tp =
+    cyl.π.app _ ≫ disp .. ≫ U0.disp A ≫ a := by
+  simp only [motiveCtx, Functor.id_obj, symmConnection, Functor.comp_obj,
+    I_map_δ0_app_comp_symm_app_assoc]
+  erw [δ0_connection] -- FIXME
+
+@[simp]
+lemma I_δ1_symmConnection : cyl.I.map (cyl.δ1.app _) ≫ P0.symmConnection hrwcz0 a a_tp =
+    P0.ev a a_tp := by
+  simp only [motiveCtx, polymorphicIdIntro_Id, Functor.id_obj, symmConnection, Functor.comp_obj,
+    I_map_δ1_app_comp_symm_app_assoc]
+  erw [δ1_connection] -- FIXME
+
+lemma symmConnection_comp [hrwcz0.IsUniform] :
+    P0.symmConnection hrwcz0 (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) =
+    cyl.I.map (cyl.I.map (P0.polymorphicIdIntro.motiveSubst σ a a_tp)) ≫
+    P0.symmConnection hrwcz0 a a_tp := by
+  have := cyl.symm.naturality_assoc
+  simp at this
+  simp [symmConnection, connection_comp _ _ _ _ a_tp, ← this]
+
+def unPathSymmConnection : cyl.I.obj (U0.ext (P0.polymorphicIdIntro.weakenId a a_tp)) ⟶ U0.Tm :=
+ P0.unPath (Γ := cyl.I.obj (P0.polymorphicIdIntro.motiveCtx a a_tp))
+  (A := cyl.π.app _ ≫ disp .. ≫ disp .. ≫ A) (P0.symmConnection hrwcz0 a a_tp)
+  (by simp)
+
+@[simp]
+lemma unPathSymmConnection_tp : P0.unPathSymmConnection hrwcz0 a a_tp ≫ U0.tp =
+    P0.Id (A := cyl.π.app _ ≫ disp .. ≫ disp .. ≫ A)
+    (cyl.π.app _ ≫ disp .. ≫ disp .. ≫ a) (cyl.δ1.app _ ≫ P0.symmConnection hrwcz0 a a_tp)
+    (by simp [a_tp]) (by simp) := by
+  simp [unPathSymmConnection]
+  rw! (transparency := .default) [δ0_symmConnection]
+  congr 1
+
+-- @[simp]
+-- lemma δ0_symmConnection : cyl.δ0.app _ ≫ P0.symmConnection hrwcz0 a a_tp =
+--     cyl.π.app _ ≫ disp .. ≫ U0.disp A ≫ a := by
+--   simp only [motiveCtx, polymorphicIdIntro_Id, Functor.id_obj, symmConnection, Functor.comp_obj,
+--     δ0_app_I_obj_comp_symm_app_assoc]
+--   erw [I_δ0_connection] -- FIXME
+--   simp
+
+-- @[simp]
+-- lemma I_δ0_symmConnection : cyl.I.map (cyl.δ0.app _) ≫ P0.symmConnection hrwcz0 a a_tp =
+--     cyl.π.app _ ≫ disp .. ≫ U0.disp A ≫ a := by
+--   simp only [motiveCtx, Functor.id_obj, symmConnection, Functor.comp_obj,
+--     I_map_δ0_app_comp_symm_app_assoc]
+--   erw [δ0_connection] -- FIXME
+
+@[simp]
+lemma δ1_unPathSymmConnection : cyl.δ1.app _ ≫ P0.unPathSymmConnection hrwcz0 a a_tp =
+    U0.var _ := by
+  simp only [polymorphicIdIntro_Id, Functor.id_obj, unPathSymmConnection, motiveCtx, ← unPath_comp,
+    δ1_π'_app_assoc]
+  rw! (transparency := .default) [I_δ1_symmConnection]
+  simp
+
+/-- Fixing `Γ ⊢ a : A`, `substConnection` is thought of as a substitution
 `(i : I); (x : A) (p : Id(a,x)) ⊢ (α i : A, β i : Id (a, α i))`
 such that at the start and end-points we have
 `(α 0, β 0) = (a, refl a)` and `(α 1, β 1) = (x, p)`.
-These equations are `δ0_substConsConnection` and `δ1_substConsConnection`, proven below.
+These equations are `δ0_substConnection` and `δ1_substConnection`, proven below.
 -/
-def substConsConnection : cyl.I.obj (U0.ext ((polymorphicIdIntro P0).weakenId a a_tp)) ⟶
+def substConnection : cyl.I.obj (U0.ext ((polymorphicIdIntro P0).weakenId a a_tp)) ⟶
     P0.polymorphicIdIntro.motiveCtx a a_tp :=
-  U0.substCons (P0.substConsEv a a_tp) (P0.polymorphicIdIntro.weakenId a a_tp)
-  (P0.unPath' (Δ := cyl.I.obj (P0.polymorphicIdIntro.motiveCtx a a_tp)) (Γ := U0.ext A)
-    (P0.substConsEv a a_tp) (A := disp .. ≫ A) (P0.connection hrwcz0 a a_tp)
-    (by simp only [Functor.id_obj, motiveCtx, polymorphicIdIntro_Id,
-      substConsEv_disp_assoc, connection_tp]))
-  (by
-    simp
-    simp [← Id_comp]
-    congr 1
-    · erw [δ0_connection]
-      simp
-    · simp [connection, ev, ← path_comp, connectionLift]
-    )
+  let χi1 : cyl.I.obj (U0.ext (P0.polymorphicIdIntro.weakenId a a_tp)) ⟶ U0.Tm :=
+    (cyl.δ1.app _ ≫ P0.symmConnection hrwcz0 a a_tp)
+  -- the path `i ⊢ χ i 1 : A` is the endpoint of the homotopy `symmConnection`
+  -- that we cannot compute
+  let toΓ : cyl.I.obj (U0.ext ((polymorphicIdIntro P0).weakenId a a_tp)) ⟶ Γ :=
+    cyl.π.app _ ≫ disp .. ≫ disp ..
+  let toExtA : cyl.I.obj (U0.ext ((polymorphicIdIntro P0).weakenId a a_tp)) ⟶ U0.ext A :=
+    U0.substCons toΓ A χi1 (by aesop_cat)
+  let χ : cyl.I.obj (U0.ext (P0.polymorphicIdIntro.weakenId a a_tp)) ⟶ U0.Tm :=
+    P0.unPath (Γ := cyl.I.obj (P0.polymorphicIdIntro.motiveCtx a a_tp))
+    (A := cyl.π.app _ ≫ disp .. ≫ disp .. ≫ A) (P0.symmConnection hrwcz0 a a_tp) (by simp)
+  U0.substCons toExtA (P0.polymorphicIdIntro.weakenId a a_tp) χ (by
+    simp [χ, toExtA, χi1, ← Id_comp, toΓ]
+    rw! (transparency := .default) [δ0_symmConnection]
+    congr 1)
+
+@[simp]
+lemma substConnection_var : P0.substConnection hrwcz0 a a_tp ≫ var .. =
+    P0.unPath (A := cyl.π.app _ ≫ disp .. ≫ disp .. ≫ A) (P0.symmConnection hrwcz0 a a_tp)
+    (by simp) := by
+  simp [substConnection]
 
 @[reassoc (attr := simp)]
-lemma δ0_substConsConnection : cyl.δ0.app _ ≫ P0.substConsConnection hrwcz0 a a_tp =
+lemma δ0_substConnection : cyl.δ0.app _ ≫ P0.substConnection hrwcz0 a a_tp =
     disp .. ≫ disp .. ≫ reflSubst _ a a_tp := by
+  simp only [polymorphicIdIntro_Id, Functor.id_obj, motiveCtx, substConnection, comp_substCons,
+    δ0_π'_app_assoc, ← cyl.δ1_naturality_assoc, polymorphicIdIntro_refl]
   apply (disp_pullback ..).hom_ext
-  · simp [substConsConnection]
-    simp [← unPath_comp]
-    congr 1
-    simp only [connection, path', ← path_comp]
-    sorry
-  · simp [substConsConnection]
-    sorry
+  · simp only [← unPath_comp, δ0_π'_app_assoc, substCons_var, NatTrans.naturality_assoc,
+      Functor.id_obj, Functor.id_map]
+    rw! (transparency := .default) [I_δ0_symmConnection]
+    simp
+  · apply (disp_pullback ..).hom_ext
+    · simp only [substCons_disp, substCons_var, Category.assoc, sec_var]
+      rw! (transparency := .default) [I_δ0_symmConnection]
+      simp
+    · simp
 
 @[reassoc (attr := simp)]
-lemma δ1_substConsConnection : cyl.δ1.app _ ≫ P0.substConsConnection hrwcz0 a a_tp = 𝟙 _ := by
+lemma δ1_substConnection : cyl.δ1.app _ ≫ P0.substConnection hrwcz0 a a_tp = 𝟙 _ := by
+  simp [substConnection]
   apply (disp_pullback ..).hom_ext
-  · simp [substConsConnection]
-    sorry
-  · simp [substConsConnection]
-    sorry
+  · simp only [← unPath_comp, δ1_π'_app_assoc, substCons_var, Category.id_comp]
+    rw! (transparency := .default) [I_δ1_symmConnection]
+    simp
+  · apply (disp_pullback ..).hom_ext
+    · simp only [symmConnection, motiveCtx, polymorphicIdIntro_Id, Functor.comp_obj,
+        δ1_app_I_obj_comp_symm_app_assoc, cyl.δ1_naturality_assoc, substCons_disp, substCons_var,
+        Category.id_comp]
+      rw! (transparency := .default) [δ1_connection]
+      simp
+    · simp
 
 @[reassoc]
-lemma substConsConnection_comp_motiveSubst :
-    P0.substConsConnection hrwcz0 (σ ≫ a) (by simp [a_tp]) ≫ motiveSubst _ σ a a_tp =
-    cyl.I.map (motiveSubst _ σ a a_tp) ≫ P0.substConsConnection hrwcz0 a a_tp :=
-  sorry
+lemma substConnection_comp_motiveSubst :
+    P0.substConnection hrwcz0 (σ ≫ a) (by simp [a_tp]) ≫ motiveSubst _ σ a a_tp rfl =
+    cyl.I.map (motiveSubst _ σ a a_tp) ≫ P0.substConnection hrwcz0 a a_tp := by
+  simp [motiveSubst]
+  apply (disp_pullback ..).hom_ext
+  · simp
+    erw [substConnection_var]
+    simp [substConnection, ← unPath_comp]
+    sorry
+  · apply (disp_pullback ..).hom_ext
+    · sorry
+    · sorry
 
-/-- `substConsConnection` is *normal*. -/
+/-- `substConnection` is *normal*. -/
 @[reassoc]
-lemma reflSubst_comp_substConsConnection : cyl.I.map (reflSubst _ a a_tp) ≫
-    P0.substConsConnection hrwcz0 a a_tp = cyl.π.app _ ≫ reflSubst _ a a_tp := sorry
+lemma reflSubst_comp_substConnection : cyl.I.map (reflSubst _ a a_tp) ≫
+    P0.substConnection hrwcz0 a a_tp = cyl.π.app _ ≫ reflSubst _ a a_tp := sorry
 
 end connection
 
@@ -467,29 +677,29 @@ variable (U1 : UnstructuredUniverse Ctx) (hrwcz1 : Hurewicz cyl U1.tp) [Hurewicz
 
 def polymorphicIdElim : PolymorphicIdElim (polymorphicIdIntro P0) U1 where
   j a a_tp C c c_tp := cyl.δ1.app _ ≫ hrwcz1.lift (disp .. ≫ disp .. ≫ c)
-    (substConsConnection P0 hrwcz0 a a_tp ≫ C) (by rw [δ0_substConsConnection_assoc]; simp [c_tp]) -- FIXME simp failed
+    (substConnection P0 hrwcz0 a a_tp ≫ C) (by rw [δ0_substConnection_assoc]; simp [c_tp]) -- FIXME simp failed
   comp_j σ A a a_tp C c c_tp := by
     slice_rhs 1 2 => rw [← δ1_naturality]
     slice_rhs 2 3 => rw [← hrwcz1.lift_comp]
     congr 2
     · simp [motiveSubst, substWk_disp_assoc]
-    · rw [substConsConnection_comp_motiveSubst_assoc]
+    · rw [substConnection_comp_motiveSubst_assoc]
   j_tp a a_tp C c c_tp := by
     simp only [motiveCtx, polymorphicIdIntro_Id, Category.assoc, Hurewicz.lift_comp_self']
-    erw [δ1_substConsConnection_assoc] -- FIXME simp, rw failed
+    erw [δ1_substConnection_assoc] -- FIXME simp, rw failed
   reflSubst_j {Γ A} a a_tp C c c_tp := calc _
     _ = cyl.δ1.app Γ ≫ cyl.I.map (reflSubst _ a a_tp) ≫
-        hrwcz1.lift (U0.disp (weakenId _ a a_tp) ≫ U0.disp A ≫ c) (P0.substConsConnection hrwcz0 a a_tp ≫ C) _ := by
+        hrwcz1.lift (U0.disp (weakenId _ a a_tp) ≫ U0.disp A ≫ c) (P0.substConnection hrwcz0 a a_tp ≫ C) _ := by
       rw [← δ1_naturality_assoc]
     _ = cyl.δ1.app Γ ≫
     hrwcz1.lift
       (reflSubst _ a a_tp ≫ disp .. ≫ disp .. ≫ c)
-      (cyl.I.map (reflSubst _ a a_tp) ≫ P0.substConsConnection hrwcz0 a a_tp ≫ C) _ := by
+      (cyl.I.map (reflSubst _ a a_tp) ≫ P0.substConnection hrwcz0 a a_tp ≫ C) _ := by
       rw [← Hurewicz.lift_comp]
     _ = cyl.δ1.app Γ ≫ cyl.π.app Γ ≫ P0.polymorphicIdIntro.reflSubst a a_tp ≫
         U0.disp (P0.polymorphicIdIntro.weakenId a a_tp) ≫ U0.disp A ≫ c := by
       rw [Hurewicz.isNormal hrwcz1 _ _ _ (P0.polymorphicIdIntro.reflSubst a a_tp ≫ C)]
-      rw [reflSubst_comp_substConsConnection_assoc]
+      rw [reflSubst_comp_substConnection_assoc]
     _ = c := by simp [reflSubst]
 
 end Path

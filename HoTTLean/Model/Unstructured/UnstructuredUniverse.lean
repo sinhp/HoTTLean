@@ -165,7 +165,7 @@ def substWk {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty)
     (A' := σ ≫ A) (eq : σ ≫ A = A' := by rfl) : M.ext A' ⟶ M.ext A :=
   M.substCons (M.disp _ ≫ σ) A (M.var _) (by simp [eq])
 
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem substWk_disp {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (A' eq) :
     M.substWk σ A A' eq ≫ M.disp A = M.disp A' ≫ σ := by
   simp [substWk]
@@ -174,6 +174,10 @@ theorem substWk_disp {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (A' eq) :
 theorem substWk_var {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (A' eq) :
     M.substWk σ A A' eq ≫ M.var A = M.var A' := by
   simp [substWk]
+
+lemma var_comp {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) : M.var (σ ≫ A) =
+    M.substWk σ A ≫ M.var A := by
+  simp
 
 /-- `sec` is the section of `disp A` corresponding to `a`.
 
@@ -387,6 +391,10 @@ lemma refl_tp' : i.refl a a_tp ≫ U1.tp = i.Id a a a_tp a_tp := refl_tp ..
 abbrev weakenId : U0.ext A ⟶ U1.Ty :=
   i.Id (A := U0.disp A ≫ A) (U0.disp A ≫ a) (U0.var A) (by cat_disch) (by cat_disch)
 
+lemma weakenId_comp : i.weakenId (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) =
+    U0.substWk σ A ≫ i.weakenId a a_tp := by
+  simp [← Id_comp]
+
 /-- Given `Γ ⊢ a : A` this is the context `Γ.(x : A).(h:Id(a,x))` -/
 @[simp]
 abbrev motiveCtx : Ctx :=
@@ -395,18 +403,20 @@ abbrev motiveCtx : Ctx :=
 /-- Given `Γ ⊢ a : A`, `reflSubst` is the substitution `(a,refl) : Γ ⟶ Γ.(x:A).(h:Id(a,x))`
 appearing in identity elimination `J`  so that we can write `Γ ⊢ r : C(a,refl)` -/
 abbrev reflSubst : Γ ⟶ i.motiveCtx a a_tp :=
-  U1.substCons (U0.sec A a a_tp) (i.weakenId a a_tp) (i.refl a a_tp) (by simp [← Id_comp, a_tp])
+  U1.substCons (U0.sec A a a_tp) (i.weakenId a a_tp) (i.refl a a_tp) (by simp [← Id_comp])
 
 /-- Given a substitution `σ : Δ ⟶ Γ` and `Γ ⊢ a : A`,
 this is the substitution `Δ.(x: σ ≫ A).(h:Id(σ ≫ a,x)) ⟶ Γ.(x:A).(h:Id(a,x))`-/
-abbrev motiveSubst : i.motiveCtx (σ ≫ a) (by cat_disch) ⟶ i.motiveCtx a a_tp :=
-  substWk _ (substWk _ σ _ _ (by simp [a_tp])) _ _ (by
-    simp [← Id_comp, substWk_disp_assoc, a_tp])
+abbrev motiveSubst {σA} (eq : σA = σ ≫ A := by rfl) :
+    i.motiveCtx (A := σA) (σ ≫ a) (by cat_disch) ⟶ i.motiveCtx a a_tp :=
+  substWk _ (substWk _ σ _ _ (by simp [eq])) _ _ (by
+    simp [← Id_comp, substWk_disp_assoc, eq])
 
 @[reassoc (attr := simp)]
-lemma reflSubst_comp_motiveSubst : i.reflSubst (σ ≫ a) (by cat_disch) ≫ i.motiveSubst σ a a_tp =
+lemma reflSubst_comp_motiveSubst {σA} (eq : σA = σ ≫ A := by rfl) :
+    i.reflSubst (σ ≫ a) (by cat_disch) ≫ i.motiveSubst σ a a_tp eq =
     σ ≫ i.reflSubst a a_tp := by
-  subst a_tp
+  subst a_tp eq
   repeat any_goals apply (disp_pullback ..).hom_ext
   any_goals simp [← refl_comp, substWk_disp]
 
@@ -419,7 +429,7 @@ structure PolymorphicIdElim (U2 : UnstructuredUniverse Ctx) where
   (comp_j : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm)
     (a_tp : a ≫ U0.tp = A) (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
     (c_tp : c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C),
-    j (σ ≫ a) (by cat_disch) (i.motiveSubst σ a a_tp ≫ C) (σ ≫ c) (by cat_disch) =
+    j (σ ≫ a) (by cat_disch) (i.motiveSubst σ a a_tp rfl ≫ C) (σ ≫ c) (by cat_disch) =
     i.motiveSubst σ a a_tp ≫ j a a_tp C c c_tp)
   (j_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
     (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
