@@ -532,6 +532,7 @@ lemma ofYoneda_isPullback {C : Type u} [Category.{v} C] {TL TR BL BR : C}
       simpa [c] using h
     · specialize h (some .right)
       exact h
+      
 variable {C : Type u₁} [SmallCategory C] {F G : Cᵒᵖ ⥤ Type u₁}
   (app : ∀ {X : C}, (yoneda.obj X ⟶ F) → (yoneda.obj X ⟶ G))
   (naturality : ∀ {X Y : C} (f : X ⟶ Y) (α : yoneda.obj Y ⟶ F),
