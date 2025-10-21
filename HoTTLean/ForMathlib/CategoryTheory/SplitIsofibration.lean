@@ -2,7 +2,7 @@ import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
 import Mathlib.CategoryTheory.FiberedCategory.HomLift
 import Mathlib.CategoryTheory.FiberedCategory.Fiber
 import HoTTLean.Grothendieck.Groupoidal.IsPullback
-
+import HoTTLean.Grothendieck.Groupoidal.Basic
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 
 noncomputable section
@@ -169,21 +169,6 @@ def classifier.map.map  {X Y} (f: X ⟶ Y) {a b : F.Fiber X} (m : a ⟶ b) :
     simp
   Fiber.homMk F _ i
 
--- def classifier.map.map  {X Y} (f: X ⟶ Y) {a b : F.Fiber X} (m : a ⟶ b) :
---     map.obj I f a ⟶ map.obj I f b :=
---   let i1 : a.1 ⟶ I.liftObj f a.2 := I.liftIso f a.2
---   let i2 := I.liftIso f b.2
---   let i := Groupoid.inv i1 ≫ m.1 ≫ i2
---   have e :𝟙 Y = eqToHom (by simp[obj_liftObj]) ≫
---      F.map (CategoryTheory.inv i1 ≫ m.1 ≫ i2) ≫ eqToHom (by simp[obj_liftObj])
---      := by
---       simp[i1, i2, classifier.fac', Functor.map_inv,map_liftIso']
---   have : F.IsHomLift (𝟙 Y) i := by
---     simp only[i, e]
---     apply IsHomLift.of_fac _ _ _ (ClovenIsofibration.obj_liftObj ..)
---       (ClovenIsofibration.obj_liftObj ..)
---     simp
---   Fiber.homMk F _ i
 
 lemma classifier.map.map_id {X Y} (f : X ⟶ Y) (a: F.Fiber X):
   map.map I f (𝟙 a) = 𝟙 (map.obj I f a) := by
@@ -260,14 +245,6 @@ lemma grothendieckClassifierIso.hom.map_aux
  : (I.classifier.map f).obj a = ⟨I.liftObj (X' := a.1) f a.2, obj_liftObj ..⟩ := by
   simp[classifier,classifier.map.obj]
 
-
--- lemma grothendieckClassifierIso.hom.hom.map_aux
---  {X Y: Γ} (f: X ⟶ Y) (a: I.classifier.obj X) (b: I.classifier.obj Y)
---  (h: (I.classifier.map f).obj a ⟶ b )
---  : (I.classifier.map f).obj a = sorry := by
-
---   simp[classifier,classifier.map.obj]
---   sorry
 
 
 /-
@@ -456,6 +433,208 @@ def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
   liftIso_IsIso := by
    intro X Y f i X' hX'
    apply IsIso.comp_isIso
+
+
+section
+
+variable {C : Type u₁} [Groupoid.{v₁,u₁} C] {F : C ⥤ Grpd.{v₂,u₂}}
+
+def forget.liftObj {X Y: C} (f : X ⟶ Y)
+     {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) : F.Groupoidal
+  := Groupoidal.transport (C := C) (c := Y) X' (eqToHom (by subst hX'; simp) ≫ f)
+
+def forget.liftIso {X Y: C} (f : X ⟶ Y)
+    {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
+    X' ⟶ forget.liftObj f hX'
+  := Groupoidal.toTransport X' (eqToHom (by subst hX'; simp) ≫ f)
+
+
+def forget.isHomLift {X Y: C} (f : X ⟶ Y)
+     {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
+  Groupoidal.forget.IsHomLift f (forget.liftIso f hX') := by
+  apply IsHomLift.of_fac' (ha := hX') (hb := by simp[liftObj])
+  simp[liftIso]
+
+def toTransport_IsIso (x : F.Groupoidal) {c : C} (t : x.base ⟶ c)  :
+    IsIso (Groupoidal.toTransport x t) := by infer_instance
+    --  let tinv := (asIso t).inv
+    --  let tinv': (x.transport t).base ⟶ x.base := (asIso t).inv
+    --  let f1 := Groupoidal.toTransport (x.transport t) tinv'
+    --  exact ⟨f1 ≫ eqToHom
+    --   (by simp[tinv'];
+    --       fapply Groupoidal.ext
+    --       · simp
+    --       · simp
+    --         simp[← Functor.comp_obj,← Grpd.comp_eq_comp]
+
+    --         --sorry --previous proof below
+    --         -- simp only [eqToHom_refl, map_id, Grpd.id_eq_id, Groupoidal.transport_fiber,
+    --         -- id_obj]
+    --         -- simp only[← Functor.comp_obj]
+    --         -- --simp[← Grothendieck.map_comp_eq]
+    --         -- simp only [← Functor.map_comp,← Grpd.comp_eq_comp]
+    --         -- simp
+    --         ) ,
+    --  sorry⟩
+
+def forget.liftIso_IsIso {X Y: C} (f : X ⟶ Y)
+    [IsIso f] {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
+    IsIso (forget.liftIso f hX')
+  := by
+   simp[liftIso]
+   apply toTransport_IsIso
+
+
+/-
+lemma transport_id {X' : F.Groupoidal}:
+  X'.transport (𝟙 X'.base) = X' := by
+  fapply Groupoidal.ext
+  · simp[Groupoidal.transport,Grothendieck.transport,Groupoidal.base]
+  simp[Groupoidal.fiber,Grpd.forgetToCat,Functor.map_id]
+  simp[Groupoidal.transport,Grothendieck.transport,Grpd.forgetToCat]
+  have e: (F.map (𝟙 X'.base)) = Functor.id _ := by simp
+  simp[e]
+
+
+lemma transport_eqToHom {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X):
+ X'.transport (eqToHom hX') = X' := by
+  subst hX'
+  simp[transport_id]
+  -- fapply Groupoidal.ext
+  -- ·  simp[transport_id]
+  --   -- simp[Groupoidal.base]
+  -- simp[Groupoidal.fiber,Grpd.forgetToCat,Functor.map_id]
+  -- have e: (F.map (𝟙 X'.base)) = Functor.id _ := by simp
+  --simp[e]
+
+  should be in groupoidal file
+-/
+
+def forget.liftObj_id {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
+    forget.liftObj (𝟙 X) hX' = X' := by
+  simp[liftObj]
+  simp[Groupoidal.transport_eqToHom]
+  --simp[Groupoidal.transport,Grothendieck.transport]
+
+/-
+lemma toTransport_eqToHom {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X):
+    Groupoidal.toTransport X' (eqToHom hX') = eqToHom (by subst hX'; sorry) := by
+  apply Groupoidal.toTransport_eqToHom
+-/
+
+  -- subst hX'
+  -- simp[Groupoidal.toTransport,Grothendieck.toTransport]
+  -- fapply Groupoidal.Hom.ext
+  -- · simp[Groupoidal.Hom.base,Groupoidal.base]
+  --   rw![Grothendieck.Hom.base]
+  --   sorry
+  -- sorry
+
+def forget.liftIso_id {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
+    forget.liftIso (𝟙 X) hX' = eqToHom (by simp[forget.liftObj_id]) := by
+  simp[liftIso]
+  rw! (castMode :=.all)[Category.comp_id]
+  simp[Groupoidal.toTransport_eqToHom]
+  simp[← heq_eq_eq]
+  congr!
+
+
+  --conv => rhs ; rw[← toTransport_eqToHom]
+
+  --rw[← toTransport_eqToHom]
+
+
+  /-simp only [eqToHom_refl, map_id, Grpd.id_eq_id, Groupoidal.transport_fiber,
+    --         -- id_obj]
+    --         -- simp only[← Functor.comp_obj]
+    --         -- --simp[← Grothendieck.map_comp_eq]
+    --         -- simp only [← Functor.map_comp,← Grpd.comp_eq_comp]
+    --         -- simp
+    --         ) ,-/
+
+lemma forget.liftObj_comp {X Y Z: C} (f : X ⟶ Y) (g : Y ⟶ Z)
+      {X' : F.Groupoidal} (hX' : X'.base = X)
+      (Y' : F.Groupoidal) (hY' : forget.liftObj f hX' = Y')
+      (h':  Y'.base = Y := by simp[]):
+      forget.liftObj (f ≫ g) hX' = forget.liftObj g h' := by
+  simp only [liftObj,Groupoidal.transport_comp]
+  simp only [Groupoidal.transport, Grothendieck.transport, comp_obj, comp_map]
+  fapply Grothendieck.ext
+  · simp
+  simp only [Grpd.forgetToCat, Cat.of_α, id_eq, comp_obj, eqToHom_refl, comp_map, map_id,
+    Grpd.id_eq_id, id_obj]
+  congr!
+  simp only [← comp_obj,← Grpd.comp_eq_comp,← Functor.map_comp]
+  rw! [eqToHom_map]
+  subst hY'
+  simp[liftObj,Groupoidal.transport]
+
+lemma forget.liftIso_comp {X Y Z: C} (f : X ⟶ Y) (g : Y ⟶ Z)
+      {X' : F.Groupoidal} (hX' : X'.base = X)
+      (Y' : F.Groupoidal) (hY' : forget.liftObj f hX' = Y')
+      (h':  Y'.base = Y := by simp[])
+      (e : liftObj g h' = liftObj (f ≫ g) hX' := by apply forget.liftObj_comp):
+      forget.liftIso (f ≫ g) hX' = forget.liftIso f hX' ≫ eqToHom hY' ≫
+      forget.liftIso g h' ≫ eqToHom e := by
+  simp only [liftIso]
+  subst hX' hY'
+  simp
+  simp[Groupoidal.toTransport_comp]
+  simp[Groupoidal.toTransport_id]
+  congr 2
+  simp[← heq_eq_eq,← Category.assoc,liftObj]
+  congr 1
+  rw[Groupoidal.transport_congr ((X'.transport (𝟙 X'.base))) X' (by rw[Groupoidal.transport_id])
+   f f (by simp)]
+
+  rw[Groupoidal.transport_congr (X'.transport (𝟙 X'.base ≫ f)) (X'.transport f) _
+   ((𝟙 (X'.transport (𝟙 X'.base ≫ f)).base)) (eqToHom (by simp))]
+  · simp[Groupoidal.transport_id]
+  · simp
+  · simp
+
+
+  -- simp[Category.assoc]
+  -- simp[Groupoidal.toTransport_eqToHom]
+
+  -- simp
+  -- rw!(castMode :=.all)[Groupoidal.transport_id]
+  -- rw!(castMode :=.all)[Groupoidal.transport_eqToHom]
+  -- rw!(castMode :=.all)[← Category.assoc]
+  -- simp[Groupoidal.toTransport_comp]
+  -- congr 1
+  -- congr 1
+  -- --simp[Category.assoc]
+  -- simp[← heq_eq_eq]
+  -- simp[← Category.assoc]
+  -- rw!(castMode :=.all)[Groupoidal.transport_eqToHom]
+
+  --simp[heq_comp_eqToHom_iff] this one is autosimp
+  --conv in (eqToHom sorry ≫ f ≫ g) => simp[← CategoryStruct.assoc]
+
+
+
+def forget :
+    SplitIsofibration (Groupoidal.forget (F := F)) where
+      liftObj f := forget.liftObj f
+      liftIso f := forget.liftIso f
+      isHomLift f := forget.isHomLift f
+      liftIso_IsIso f := forget.liftIso_IsIso f
+      liftObj_id f := forget.liftObj_id f
+      liftIso_id f := forget.liftIso_id f
+      liftObj_comp {X Y Z} f _ g _ := by
+       intro X' hX' Y' hY'
+       apply forget.liftObj_comp
+       assumption
+      liftIso_comp := by
+       intro X Y Z f i1 g i2 X' hX' Y' hY'
+       apply forget.liftIso_comp
+
+
+
+end
+
+
 
 def id {A : Type u} [Category.{v} A] : SplitIsofibration (𝟭 A) :=
   iso (Functor.Iso.refl _)
