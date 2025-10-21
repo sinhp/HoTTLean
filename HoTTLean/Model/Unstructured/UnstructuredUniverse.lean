@@ -5,7 +5,7 @@ import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 import HoTTLean.ForMathlib.CategoryTheory.WeakPullback
 import Mathlib.Tactic.DepRewrite
 
-universe u v
+universe v u
 
 noncomputable section
 
