@@ -1,4 +1,3 @@
--- import HoTTLean.Model.Natural.Interpretation
 import HoTTLean.Groupoids.Sigma
 import HoTTLean.Groupoids.Pi
 import HoTTLean.Groupoids.Id
