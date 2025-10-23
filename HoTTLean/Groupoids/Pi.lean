@@ -964,9 +964,58 @@ end
 
 end
 
-end pi
+variable {Γ : Type u} {Δ : Type u} [Groupoid.{v} Γ] [Groupoid.{v} Δ] {σ : Δ ⥤ Γ}
+  {A : Γ ⥤ Grpd.{u₁,u₁}} (B : ∫ A ⥤ Grpd.{u₁,u₁})
 
-end FunctorOperation
+/-- lifts of `σ : Δ ⥤ Γ` along `forget : ∫ pi A B ⥤ Γ`
+biject (since the Grothendieck construction is a pullback) with
+lifts of `pi (σ ⋙ A) (pre A σ ⋙ B) : Δ ⥤ Grpd` along `forgetToGrpd : PGrpd ⥤ Grpd`
+biject (via `lam` and `inversion`) with
+lifts of `pre A σ ⋙ B : ∫ σ ⋙ A ⥤ Grpd` along `forgetToGrpd : PGrpd ⥤ Grpd`
+biject (since the Grothendieck construction is a pullback) with
+lifts of `pre A σ : ∫ σ ⋙ A ⥤ ∫ A` along `forget : ∫ B ⥤ ∫ A`.
+
+The function `equivFun` is the forward direction in this bijection.
+The function `equivInv` is the inverse direction in this bijection.
+-/
+def equivFun (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) : ∫ σ ⋙ A ⥤ ∫ B :=
+  (isPullback B).lift (inversion (pre A σ ⋙ B) (F ⋙ toPGrpd _) (by
+    rw [Functor.assoc, toPGrpd_forgetToGrpd, ← Functor.assoc, hF, pi_naturality]))
+  (pre A σ) (inversion_comp_forgetToGrpd ..)
+
+lemma equivFun_comp_forget (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
+    equivFun B F hF ⋙ forget = pre A σ := by
+  simp [equivFun, Functor.IsPullback.fac_right]
+
+@[inherit_doc equivFun]
+def equivInv (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) : Δ ⥤ ∫ pi A B :=
+  (isPullback (pi A B)).lift (lam (σ ⋙ A) (G ⋙ toPGrpd _)) σ (by
+    rw [lam_comp_forgetToGrpd, pi_naturality, Functor.assoc,
+      toPGrpd_forgetToGrpd, ← Functor.assoc, hG])
+
+lemma equivInv_comp_forget (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) :
+    equivInv B G hG ⋙ forget = σ := by
+  simp [equivInv, Functor.IsPullback.fac_right]
+
+lemma equivInv_equivFun (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
+    equivInv B (equivFun B F hF) (equivFun_comp_forget B F hF) = F := by
+  simp only [equivFun, equivInv]
+  apply (isPullback _).hom_ext
+  · rw [Functor.IsPullback.fac_left, Functor.IsPullback.fac_left, lam_inversion]
+  · rw! [Functor.IsPullback.fac_right, hF]
+
+lemma equivFun_equivInv (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) :
+    equivFun B (equivInv B G hG) (equivInv_comp_forget B G hG) = G := by
+  simp only [equivFun, equivInv]
+  apply (isPullback B).hom_ext
+  · have : pre A σ ⋙ B = (G ⋙ toPGrpd B) ⋙ PGrpd.forgetToGrpd := by
+      rw [Functor.assoc, toPGrpd_forgetToGrpd, ← Functor.assoc, hG]
+    rw! [Functor.IsPullback.fac_left, Functor.IsPullback.fac_left, this, inversion_lam]
+  · rw [Functor.IsPullback.fac_right, hG]
+
+-- TODO: work out naturality equations for this bijection
+
+end FunctorOperation.pi
 
 section
 variable {Γ : Ctx}
