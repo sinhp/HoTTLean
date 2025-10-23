@@ -92,7 +92,65 @@ lemma symm_π_π'_app (X) : cyl.symm.app X ≫ cyl.π.app (cyl.I.obj X) ≫ cyl.
     cyl.π.app (cyl.I.obj X) ≫ cyl.π.app X :=
   NatTrans.congr_app (cyl.symm_π_π) X
 
-/-- A Hurewicz cleavage (just called `Hurewicz`) on `f` consists of a diagonal filler
+attribute [local instance] BraidedCategory.ofCartesianMonoidalCategory in
+open MonoidalCategory CartesianMonoidalCategory in
+def ofCartesianMonoidalCategoryLeft [CartesianMonoidalCategory Ctx] (Interval : Ctx)
+    (δ0 δ1 : 𝟙_ Ctx ⟶ Interval) : Cylinder Ctx where
+  I := tensorLeft Interval
+  δ0 := (leftUnitorNatIso _).inv ≫ (tensoringLeft _).map δ0
+  δ1 := (leftUnitorNatIso _).inv ≫ (tensoringLeft _).map δ1
+  π := (tensoringLeft _).map (toUnit _) ≫ (leftUnitorNatIso _).hom
+  δ0_π := by simp [← Functor.map_comp_assoc]
+  δ1_π := by simp [← Functor.map_comp_assoc]
+  symm := (tensorLeftTensor _ _).inv ≫ (tensoringLeft _).map (β_ _ _).hom ≫
+    (tensorLeftTensor _ _).hom
+  symm_symm := by simp [← Functor.map_comp_assoc]
+  whiskerLeft_I_δ0_symm := by
+    ext
+    simp only [Functor.comp_obj, curriedTensor_obj_obj, Functor.id_obj, Functor.whiskerLeft_comp,
+      Category.assoc, NatTrans.comp_app, Functor.whiskerLeft_app, leftUnitorNatIso_inv_app,
+      leftUnitor_tensor_inv, curriedTensor_map_app, whiskerRight_tensor, tensorLeftTensor_inv_app,
+      tensorLeftTensor_hom_app, Iso.hom_inv_id_assoc, ← comp_whiskerRight_assoc,
+      BraidedCategory.braiding_naturality_left, leftUnitor_inv_braiding_assoc ]
+    simp
+  whiskerLeft_I_δ1_symm := by
+    ext
+    simp only [Functor.comp_obj, curriedTensor_obj_obj, Functor.id_obj, Functor.whiskerLeft_comp,
+      Category.assoc, NatTrans.comp_app, Functor.whiskerLeft_app, leftUnitorNatIso_inv_app,
+      leftUnitor_tensor_inv, curriedTensor_map_app, whiskerRight_tensor, tensorLeftTensor_inv_app,
+      tensorLeftTensor_hom_app, Iso.hom_inv_id_assoc, ← comp_whiskerRight_assoc,
+      BraidedCategory.braiding_naturality_left, leftUnitor_inv_braiding_assoc, ]
+    simp
+  symm_π_π := by
+    ext
+    simp only [Functor.comp_obj, curriedTensor_obj_obj, Functor.id_obj, Functor.whiskerLeft_comp,
+      Category.assoc, NatTrans.comp_app, tensorLeftTensor_inv_app, curriedTensor_map_app,
+      tensorLeftTensor_hom_app, Functor.whiskerLeft_app, whiskerRight_tensor,
+      leftUnitorNatIso_hom_app, Iso.hom_inv_id_assoc, Iso.cancel_iso_inv_left]
+    have h0 (x) : 𝟙_ Ctx ◁ toUnit Interval ▷ x = 𝟙 _ ⊗ₘ toUnit Interval ⊗ₘ 𝟙 x := by simp
+    have h1 (x) : (𝟙_ Ctx ◁ toUnit Interval) ▷ x = (𝟙 _ ⊗ₘ toUnit Interval) ⊗ₘ 𝟙 x := by simp
+    have h2 : λ_ (𝟙_ Ctx) = ρ_ (𝟙_ Ctx) := by aesop_cat
+    rw [← leftUnitor_naturality_assoc, h0, ← associator_naturality_assoc, ← h1]
+    simp [← comp_whiskerRight_assoc, h2]
+
+attribute [local instance] BraidedCategory.ofCartesianMonoidalCategory in
+open MonoidalCategory CartesianMonoidalCategory in
+def ofCartesianMonoidalCategoryRight [CartesianMonoidalCategory Ctx] (Interval : Ctx)
+    (δ0 δ1 : 𝟙_ Ctx ⟶ Interval) : Cylinder Ctx where
+  I := tensorRight Interval
+  δ0 := (rightUnitorNatIso _).inv ≫ (tensoringRight _).map δ0
+  δ1 := (rightUnitorNatIso _).inv ≫ (tensoringRight _).map δ1
+  π := (tensoringRight _).map (toUnit _) ≫ (rightUnitorNatIso _).hom
+  δ0_π := by simp [← Functor.map_comp_assoc]
+  δ1_π := by simp [← Functor.map_comp_assoc]
+  symm := (tensorRightTensor _ _).inv ≫ (tensoringRight _).map (β_ _ _).hom ≫
+    (tensorRightTensor _ _).hom
+  symm_symm := by simp [← Functor.map_comp_assoc]
+  whiskerLeft_I_δ0_symm := sorry
+  whiskerLeft_I_δ1_symm := sorry
+  symm_π_π := sorry
+
+/-- A Hurewicz cleavage (just called `Hurewicz`) of `f` consists of a diagonal filler
 `lift` for every commutative square of the form
 ```
     y
@@ -700,8 +758,8 @@ lemma reflSubst_comp_substConnection [hrwcz0.IsUniform] [hrwcz0.IsNormal] :
 end connection
 
 def polymorphicIdElim (hrwcz0 : Hurewicz cyl U0.tp) [hrwcz0.IsUniform] [hrwcz0.IsNormal]
-  (U1 : UnstructuredUniverse Ctx) (hrwcz1 : Hurewicz cyl U1.tp) [Hurewicz.IsUniform hrwcz1]
-  [Hurewicz.IsNormal hrwcz1] : PolymorphicIdElim (polymorphicIdIntro P0) U1 where
+    (U1 : UnstructuredUniverse Ctx) (hrwcz1 : Hurewicz cyl U1.tp) [Hurewicz.IsUniform hrwcz1]
+    [Hurewicz.IsNormal hrwcz1] : PolymorphicIdElim (polymorphicIdIntro P0) U1 where
   j a a_tp C c c_tp := cyl.δ1.app _ ≫ hrwcz1.lift (disp .. ≫ disp .. ≫ c)
     (substConnection P0 hrwcz0 a a_tp ≫ C) (by rw [δ0_substConnection_assoc]; simp [c_tp]) -- FIXME simp failed
   comp_j σ A a a_tp C c c_tp := by
@@ -715,7 +773,8 @@ def polymorphicIdElim (hrwcz0 : Hurewicz cyl U0.tp) [hrwcz0.IsUniform] [hrwcz0.I
     erw [δ1_substConnection_assoc] -- FIXME simp, rw failed
   reflSubst_j {Γ A} a a_tp C c c_tp := calc _
     _ = cyl.δ1.app Γ ≫ cyl.I.map (reflSubst _ a a_tp) ≫
-        hrwcz1.lift (U0.disp (weakenId _ a a_tp) ≫ U0.disp A ≫ c) (P0.substConnection hrwcz0 a a_tp ≫ C) _ := by
+        hrwcz1.lift (U0.disp (weakenId _ a a_tp) ≫ U0.disp A ≫ c)
+        (P0.substConnection hrwcz0 a a_tp ≫ C) _ := by
       rw [← δ1_naturality_assoc]
     _ = cyl.δ1.app Γ ≫
     hrwcz1.lift
