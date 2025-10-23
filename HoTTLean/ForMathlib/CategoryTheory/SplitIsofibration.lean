@@ -72,46 +72,47 @@ structure ClovenIsofibration (F : C ⥤ D) where
   liftIso_IsIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) :
    IsIso (liftIso f hX')
 
+namespace ClovenIsofibration
+
 section
+
 variable {F : C ⥤ D} (I : ClovenIsofibration F)
 
 instance {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X) :
   F.IsHomLift f (I.liftIso f hX') := I.isHomLift f hX'
 
-instance liftIso_IsIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X):
+instance {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C} (hX' : F.obj X' = X):
   IsIso (ClovenIsofibration.liftIso I f hX') := ClovenIsofibration.liftIso_IsIso I f hX'
 
 @[simp]
-lemma ClovenIsofibration.obj_liftObj {X Y : D} (f : X ⟶ Y) [IsIso f]
+lemma obj_liftObj {X Y : D} (f : X ⟶ Y) [IsIso f]
     {X' : C} (hX' : F.obj X' = X) : F.obj (I.liftObj f hX') = Y :=
   IsHomLift.codomain_eq F f (I.liftIso f hX')
 
-lemma ClovenIsofibration.map_liftIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
+lemma map_liftIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
     (hX' : F.obj X' = X) :
   eqToHom hX'.symm ≫ F.map (I.liftIso f hX') ≫ eqToHom (obj_liftObj ..) = f := by
   have i : F.IsHomLift f (I.liftIso f hX') := I.isHomLift ..
   symm
   apply IsHomLift.fac
 
-lemma ClovenIsofibration.map_liftIso' {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
+lemma map_liftIso' {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
     (hX' : F.obj X' = X) : F.map (I.liftIso f hX') =
     eqToHom hX' ≫ f ≫ eqToHom (by simp[obj_liftObj]) := by
     simp[← map_liftIso I f hX']
 
 @[simp]
-lemma ClovenIsofibration.liftObj_comp_aux {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
+lemma liftObj_comp_aux {X Y : D} (f : X ⟶ Y) [IsIso f] {X' : C}
     (hX' : F.obj X' = X) (Y' : C) (hY' : I.liftObj f hX' = Y') : F.obj Y' = Y := by
   subst hY'
   apply ClovenIsofibration.obj_liftObj I f
 
-lemma ClovenIsofibration.eqToHom_comp_liftIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' X'' : C}
+lemma eqToHom_comp_liftIso {X Y : D} (f : X ⟶ Y) [IsIso f] {X' X'' : C}
     (hX' : F.obj X' = X) (hX'' : X'' = X') :
     eqToHom hX'' ≫ I.liftIso f hX' =
     I.liftIso f (X' := X'') (by rw [hX'', hX']) ≫ eqToHom (by subst hX''; rfl) := by
   subst hX''
   simp
-
-end
 
 class IsSplit {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D]
     {F : C ⥤ D} (I : ClovenIsofibration F) where
@@ -128,8 +129,6 @@ class IsSplit {C : Type u} {D : Type u₁} [Category.{v} C] [Category.{v₁} D]
     eqToHom (liftObj_comp f g hX' hY').symm
 
 end
-
-namespace ClovenIsofibration
 
 open IsSplit
 

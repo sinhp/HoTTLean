@@ -69,18 +69,20 @@ open Functor.Groupoidal
 namespace Grpd
 
 def SplitIsofibration : MorphismProperty Grpd :=
-  fun _ _ F => Nonempty F.SplitIsofibration
+  fun _ _ F => ∃ I : F.ClovenIsofibration, I.IsSplit
 
 namespace SplitIsofibration
 
 variable {B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F)
 
-def splitClovenIsofibration : F.SplitIsofibration := Classical.choice hF
+def splitIsofibration : F.ClovenIsofibration := hF.choose
+
+instance : (splitIsofibration hF).IsSplit := hF.choose_spec
 
 /-- The Grothendieck construction on the classifier is isomorphic to `E`,
 now as objects in `Grpd`. -/
-def grothendieckClassifierIso : Grpd.of (∫ hF.splitClovenIsofibration.classifier) ≅ B :=
-  Grpd.mkIso (Functor.SplitIsofibration.grothendieckClassifierIso ..)
+def grothendieckClassifierIso : Grpd.of (∫ hF.splitIsofibration.classifier) ≅ B :=
+  Grpd.mkIso (Functor.ClovenIsofibration.grothendieckClassifierIso ..)
 
 lemma grothendieckClassifierIso_inv_comp_forget :
     hF.grothendieckClassifierIso.inv ⋙ homOf Functor.Groupoidal.forget = F :=
@@ -90,43 +92,45 @@ end SplitIsofibration
 
 instance : SplitIsofibration.IsStableUnderBaseChange.{u,u} where
     of_isPullback pb hG :=
-  ⟨ Functor.SplitIsofibration.ofIsPullback _ _ _ _
-    (Grpd.functorIsPullback pb) hG.splitClovenIsofibration ⟩
+  ⟨ Functor.ClovenIsofibration.ofIsPullback _ _ _ _
+    (Grpd.functorIsPullback pb) hG.splitIsofibration, inferInstance ⟩
 
 instance : SplitIsofibration.IsMultiplicative where
-  id_mem _ := ⟨ Functor.SplitIsofibration.id ⟩
-  comp_mem _ _ hF hG := ⟨ Functor.SplitIsofibration.comp
-    hF.splitClovenIsofibration hG.splitClovenIsofibration ⟩
+  id_mem _ := ⟨ Functor.ClovenIsofibration.id _, inferInstance ⟩
+  comp_mem _ _ hF hG := ⟨ Functor.ClovenIsofibration.comp
+    hF.splitIsofibration hG.splitIsofibration, inferInstance ⟩
 
 instance : SplitIsofibration.RespectsIso :=
   MorphismProperty.respectsIso_of_isStableUnderComposition (fun X Y F hF =>
-  ⟨ Functor.SplitIsofibration.iso {
+  ⟨ Functor.ClovenIsofibration.iso {
     hom := F
     inv := have : IsIso F := hF; CategoryTheory.inv F
     hom_inv_id := by simp [← Grpd.comp_eq_comp]
-    inv_hom_id := by simp [← Grpd.comp_eq_comp] }⟩)
+    inv_hom_id := by simp [← Grpd.comp_eq_comp] },
+    inferInstance⟩)
 
 instance : SplitIsofibration.HasObjects where
   obj_mem F G := sorry
 
 section
 
-open Functor.SplitIsofibration
+open Functor.ClovenIsofibration
 
 def strictify {C B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F) (G : C ⟶ B) :
-    C ⟶ Grpd.of (∫ classifier (hF.splitClovenIsofibration)) :=
+    C ⟶ Grpd.of (∫ classifier (hF.splitIsofibration)) :=
   G ≫ hF.grothendieckClassifierIso.inv
 
-def splitClovenIsofibration_strictify {C B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F)
-  {G : C ⟶ B} (hG : SplitIsofibration G) : (strictify hF G).SplitIsofibration := sorry
+def splitIsofibration_strictify {C B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F)
+    {G : C ⟶ B} (hG : SplitIsofibration G) : (strictify hF G).ClovenIsofibration :=
+  sorry
 
 /-- The object part (a groupoid) of the pushforward along `F`, of `G`,
 defined as the Grothendieck construction applied to (unstructured) Pi-type construction
 in the HoTTLean groupoid model. -/
 def pushforwardLeft {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
     (hG : SplitIsofibration G) : Grpd :=
-  Grpd.of <| ∫ (GroupoidModel.FunctorOperation.pi (hF.splitClovenIsofibration.classifier)
-    (classifier (splitClovenIsofibration_strictify hF hG)))
+  Grpd.of <| ∫ (GroupoidModel.FunctorOperation.pi (hF.splitIsofibration.classifier)
+    (classifier (splitIsofibration_strictify hF hG)))
 
 /-- The morphism part (a functor) of the pushforward along `F`, of `G`.
 This is defined as the forgetful functor from the Grothendieck construction. -/
@@ -153,11 +157,11 @@ lemma pullback_isPullback {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : O
     (by simp)
 
 lemma pre_classifier_isPullback {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : Over A) :
-    IsPullback (homOf (pre hF.splitClovenIsofibration.classifier σ.hom))
+    IsPullback (homOf (pre hF.splitIsofibration.classifier σ.hom))
     (homOf Functor.Groupoidal.forget)
     (homOf Functor.Groupoidal.forget) (homOf σ.hom) := by
-  have outer_pb := Functor.Groupoidal.isPullback (σ.hom ⋙ hF.splitClovenIsofibration.classifier)
-  have right_pb := Functor.Groupoidal.isPullback (hF.splitClovenIsofibration.classifier)
+  have outer_pb := Functor.Groupoidal.isPullback (σ.hom ⋙ hF.splitIsofibration.classifier)
+  have right_pb := Functor.Groupoidal.isPullback (hF.splitIsofibration.classifier)
   have left_pb := Functor.IsPullback.Paste.ofRight' outer_pb.comm_sq outer_pb right_pb.comm_sq
     right_pb (pre _ _) (by
     apply right_pb.hom_ext
@@ -176,19 +180,19 @@ lemma pre_classifier_isPullback {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (
 The two versions of the pullback are isomorphic.
 -/
 def pullbackIsoGrothendieck {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : Over A) :
-    Grpd.of (∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier) ≅ Limits.pullback σ.hom F :=
+    Grpd.of (∫ σ.hom ⋙ hF.splitIsofibration.classifier) ≅ Limits.pullback σ.hom F :=
   (pre_classifier_isPullback hF σ).isoIsPullback _ _ (pullback_isPullback hF σ)
 
 open GroupoidModel.FunctorOperation.pi in
-/-- `∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier` is the pullback of `F` along `σ`,
-`∫ (splitClovenIsofibration_strictify hF hG).classifier` is isomorphic to `G`.
+/-- `∫ σ.hom ⋙ hF.splitIsofibration.classifier` is the pullback of `F` along `σ`,
+`∫ (splitIsofibration_strictify hF hG).classifier` is isomorphic to `G`.
 So up to isomorphism this is the hom set bijection we want. -/
 def pushforwardHomEquivAux1 {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
     (hG : SplitIsofibration G) (σ : Over A) :
     (σ ⟶ pushforward hF hG) ≃
-    {f : ∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier ⥤
-      ∫ (splitClovenIsofibration_strictify hF hG).classifier //
-      f ⋙ Functor.Groupoidal.forget = pre hF.splitClovenIsofibration.classifier σ.hom } where
+    {f : ∫ σ.hom ⋙ hF.splitIsofibration.classifier ⥤
+      ∫ (splitIsofibration_strictify hF hG).classifier //
+      f ⋙ Functor.Groupoidal.forget = pre hF.splitIsofibration.classifier σ.hom } where
   toFun f := ⟨equivFun _ f.left f.w, equivFun_comp_forget ..⟩
   invFun f := Over.homMk (equivInv _ f.1 f.2)
     (equivInv_comp_forget ..)
@@ -201,14 +205,14 @@ def pushforwardHomEquivAux1 {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G 
 
 def pushforwardHomEquivAux2 {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
     (hG : SplitIsofibration G) (σ : Over A) :
-    { f : ∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier ⥤
-      ∫ (splitClovenIsofibration_strictify hF hG).classifier //
-      f ⋙ Functor.Groupoidal.forget = pre hF.splitClovenIsofibration.classifier σ.hom } ≃
+    { f : ∫ σ.hom ⋙ hF.splitIsofibration.classifier ⥤
+      ∫ (splitIsofibration_strictify hF hG).classifier //
+      f ⋙ Functor.Groupoidal.forget = pre hF.splitIsofibration.classifier σ.hom } ≃
     ((Over.pullback F).obj σ ⟶ Over.mk G) where
   toFun f := Over.homMk ((pullbackIsoGrothendieck hF σ).inv ≫ Grpd.homOf f.1 ≫
-    ((splitClovenIsofibration_strictify hF hG)).grothendieckClassifierIso.hom) sorry
+    ((splitIsofibration_strictify hF hG)).grothendieckClassifierIso.hom) sorry
   invFun f := ⟨ (pullbackIsoGrothendieck hF σ).hom ⋙ f.left ⋙
-    ((splitClovenIsofibration_strictify hF hG)).grothendieckClassifierIso.inv, sorry⟩
+    ((splitIsofibration_strictify hF hG)).grothendieckClassifierIso.inv, sorry⟩
   left_inv := sorry
   right_inv := sorry
 
@@ -218,9 +222,9 @@ def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C 
     (hG : SplitIsofibration G) (σ : Over A) :
     (σ ⟶ pushforward hF hG) ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) :=
   calc (σ ⟶ pushforward hF hG)
-  _ ≃ {f : ∫ σ.hom ⋙ hF.splitClovenIsofibration.classifier ⥤
-      ∫ (splitClovenIsofibration_strictify hF hG).classifier //
-      (f ⋙ Functor.Groupoidal.forget = pre hF.splitClovenIsofibration.classifier σ.hom)} :=
+  _ ≃ {f : ∫ σ.hom ⋙ hF.splitIsofibration.classifier ⥤
+      ∫ (splitIsofibration_strictify hF hG).classifier //
+      (f ⋙ Functor.Groupoidal.forget = pre hF.splitIsofibration.classifier σ.hom)} :=
     pushforwardHomEquivAux1 ..
   _ ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) := pushforwardHomEquivAux2 ..
 
@@ -254,10 +258,10 @@ def isoPushforwardOfIsPushforward  {B A} {F : B ⟶ A} (hF : SplitIsofibration F
     homEquiv_comp f g := by apply pushforwardHomEquiv_comp ..
   } )
 
--- This should follow from `Groupoidal.forget` being an splitClovenIsofibration.
+-- This should follow from `Groupoidal.forget` being an splitIsofibration.
 -- (If we manage to directly define the pushforward
 -- as a grothendieck construction)
-theorem splitClovenIsofibration_pushforward {C B A} {F : B ⟶ A} (hF : SplitIsofibration F)
+theorem splitIsofibration_pushforward {C B A} {F : B ⟶ A} (hF : SplitIsofibration F)
     {G : C ⟶ B} (hG : SplitIsofibration G) :
     SplitIsofibration (pushforwardHom hF hG) :=
   sorry
@@ -276,7 +280,7 @@ instance SplitIsofibration.RespectsIso : SplitIsofibration.RespectsIso := inferI
   2. SplitIsofibrations are stable under isomorphism (this is in mathlib, for any `rlp`)
     `MorphismProperty.rlp_isMultiplicative`
     `MorphismProperty.respectsIso_of_isStableUnderComposition`
-  3. The chosen pushforward is an splitClovenIsofibration `splitClovenIsofibration_pushforward` -/
+  3. The chosen pushforward is an splitIsofibration `splitIsofibration_pushforward` -/
 
 instance : SplitIsofibration.IsStableUnderPushforward SplitIsofibration where
   of_isPushforward F G P := by
@@ -284,7 +288,7 @@ instance : SplitIsofibration.IsStableUnderPushforward SplitIsofibration where
     have p:  (Over.mk P) ≅ Grpd.pushforward (F.snd) (G.snd) :=
       isoPushforwardOfIsPushforward F.snd (Over.mk G.fst) G.snd (Over.mk P) h
     have i1 : SplitIsofibration (pushforwardHom (F.snd) (G.snd)) := by
-     apply splitClovenIsofibration_pushforward
+     apply splitIsofibration_pushforward
     have e : P = (p.hom).left ≫ (pushforwardHom (F.snd) (G.snd)) := by
      have ee := Over.w p.hom
      simp at ee
