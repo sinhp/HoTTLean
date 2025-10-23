@@ -459,15 +459,14 @@ theorem subst_all :
           (autosubst% this)
     all_goals grind
   case app_lam' =>
-    apply (EqTm.app_lam' ..).trans_tm'
+    apply EqTm.trans_tm' _ (EqTm.app_lam' ..)
     · autosubst; grind [eqSb_snoc, wfSb_snoc]
-    · autosubst
-      rename_i iht _ _ _ _ _
-      apply iht.2 <;> grind [eqSb_snoc]
+    · autosubst; grind [eqSb_snoc, wfSb_snoc]
     all_goals grind
-  case fst_pair' => apply (EqTm.fst_pair' ..).trans_tm' <;> grind
+  case fst_pair' => apply EqTm.trans_tm' _ (EqTm.fst_pair' ..) <;> grind
   case snd_pair' =>
-    apply (EqTm.snd_pair' ..).trans_tm'
+    apply EqTm.trans_tm' _ (EqTm.snd_pair' ..)
+    . grind
     · autosubst; grind [eqSb_snoc, wfSb_snoc]
     all_goals grind
   case idRec_refl' A t _ _ ihA iht ihC _ _ _ σσ' _ =>
@@ -505,7 +504,7 @@ theorem subst_all :
     convert this.conv_eq _ using 3 <;> autosubst
     grind [EqTp.cong_pi', EqSb.symm, Expr.up_eq_snoc]
   case pair_fst_snd' =>
-    apply (EqTm.pair_fst_snd' ..).trans_tm' <;>
+    apply EqTm.trans_tm' _ (EqTm.pair_fst_snd' ..) <;>
       grind [WfTp.sigma', EqTm.cong_pair', EqTm.cong_fst', EqTm.cong_snd']
   case symm_tm' => grind [EqTm.conv_eq, EqSb.symm]
   grind_cases

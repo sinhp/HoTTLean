@@ -10,14 +10,6 @@ universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 namespace CategoryTheory
 namespace Grpd
 
-/-- The identity in the category of groupoids equals the identity functor.-/
-theorem id_eq_id (X : Grpd) : 𝟙 X = 𝟭 X := rfl
-
--- NOTE this is currently called `Grpd.hom_to_functor` in mathlib,
--- but this naming is inconsistent with that of `Cat`
-/-- Composition in the category of groupoids equals functor composition.-/
-theorem comp_eq_comp {X Y Z : Grpd} (F : X ⟶ Y) (G : Y ⟶ Z) : F ≫ G = F ⋙ G := rfl
-
 open Limits
 
 /-- The chosen terminal object in `Grpd`. -/
@@ -217,7 +209,7 @@ namespace Grpd
 
 attribute [simp] comp_eq_comp id_eq_id in
 @[simps]
-def Grpd.mkIso {Δ Γ : Grpd} (F : Δ ≅≅ Γ) : Δ ≅ Γ where
+def mkIso {Δ Γ : Grpd} (F : Δ ≅≅ Γ) : Δ ≅ Γ where
   hom := F.hom
   inv := F.inv
   hom_inv_id := by simp

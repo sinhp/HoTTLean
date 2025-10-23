@@ -275,7 +275,7 @@ def mk' (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.
       apply (disp_pullback ..).hom_ext
       · simp
       · apply (disp_pullback ..).hom_ext
-        · simp [substWk_disp_assoc]
+        · simp
         · simp [substWk_disp]
     slice_rhs 1 2 => rw [this]
     slice_rhs 2 3 => rw [← assoc_comp]
@@ -358,7 +358,8 @@ lemma unLam_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.
     P.unLam (U0.substWk σ A σA eq ≫ B) (σ ≫ f) (by simp [f_tp, P.Pi_comp]) =
     U0.substWk σ A σA eq ≫ P.unLam B f f_tp := by
   rw [← P.unLam_lam (U0.substWk σ A σA eq ≫ B) (U0.substWk σ A σA eq ≫ P.unLam B f f_tp)]
-  rw! [P.lam_comp σ eq B, P.lam_unLam]
+  . rw! [P.lam_comp σ eq B, P.lam_unLam]
+  . rw [Category.assoc, P.unLam_tp]
 
 end PolymorphicPi
 

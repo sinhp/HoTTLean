@@ -184,12 +184,12 @@ theorem inv_all :
         . rw [Expr.up_eq_snoc]
           apply WfSb.snoc _ Awf
           . apply WfTm.bvar _ _
-            . grind [WfCtx.snoc, tp_wk]
+            . grind [tp_wk]
             . rw [show ∀ (A : Expr χ), A.subst (Expr.comp Expr.wk Expr.wk) =
                 (A.subst Expr.wk).subst Expr.wk by intro; autosubst]
               apply Lookup.zero
           . apply WfSb.ofRen
-            . grind [tp_wk, WfCtx.snoc]
+            . grind [tp_wk]
             . assumption
             . apply WfRen.comp (WfRen.wk ..) (WfRen.wk ..)
       . exact tm_wk Γwf Awf fwf
