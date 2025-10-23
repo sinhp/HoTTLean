@@ -492,7 +492,7 @@ lemma isoIsPullback.invCompFst {P P' X Y Z : Type*} [Category P] [Category P']
 lemma isoIsPullback.homCompLeft {P P' X Y Z : Type*} [Category P] [Category P']
     [Category X] [Category Y] [Category Z]
     {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
-    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    {fst' : P' ⥤ X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
     (h' : Functor.IsPullback fst' snd' f g):
     (isoIsPullback h h').hom ⋙ fst' = fst := sorry
 
@@ -505,7 +505,7 @@ lemma isoIsPullback.homCompLeft {P P' X Y Z : Type*} [Category P] [Category P']
 
   lemma isoIsPullback.homCompRight' {P P' X Y Z : Type*} [Category P] [Category P']
     [Category X] [Category Y] [Category Z]
-    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
+    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤ Z} {g : Y ⥤  Z}
     {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
     (h' : Functor.IsPullback fst' snd' f g) {hom } (e: hom =  (isoIsPullback h h').hom):
     hom ⋙ snd' = snd := sorry
