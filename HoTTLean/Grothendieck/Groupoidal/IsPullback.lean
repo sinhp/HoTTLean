@@ -108,7 +108,29 @@ theorem toPGrpd_eq_toPGrpd' : toPGrpd A = toPGrpd' A := by
 def isPullback : Functor.IsPullback (toPGrpd A) forget PGrpd.forgetToGrpd A :=
   cast (by rw [toPGrpd_eq_toPGrpd']) (isPullback' A)
 
+
+
+def compGrothendieck.isPullback {C : Type u} [Groupoid.{v, u} C] {D : Type u₁}
+    [Groupoid.{v₁, u₁} D] (F : C ⥤ Grpd) (G : D ⥤ C) :
+    Functor.IsPullback (pre F G) (forget (F := G ⋙ F)) (forget (F := F)) G :=
+  Functor.IsPullback.Paste.ofRight
+  (no := pre F G) (rth := toPGrpd F) (west := forget (F := G ⋙ F)) (sah := forget (F := F))
+  (east := PGrpd.forgetToGrpd) (uth := F)
+  --pre F G ⋙ forget = forget ⋙ G
+  (by simp[Functor.Groupoidal.pre_comp_forget])
+  --toPGrpd F ⋙ PGrpd.forgetToGrpd = forget ⋙ F
+  (by simp[Functor.Groupoidal.toPGrpd_forgetToGrpd])
+  (by apply Functor.Groupoidal.isPullback)
+  (by
+    have e : pre F G ⋙ toPGrpd F = toPGrpd (G ⋙ F) := by rfl
+    simp[e]
+    apply Functor.Groupoidal.isPullback)
+
+
+
+
 end
+
 
 section
 

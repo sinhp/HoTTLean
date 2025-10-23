@@ -1466,6 +1466,7 @@ def mapWhiskerRightAsSmallFunctor (α : F ⟶ G) :
 
 end AsSmall
 
+
 end Grothendieck
 
 end Functor

@@ -748,20 +748,15 @@ def comp  :
    apply liftIso_IsIso
 
 
-/-- `IsStableUnderBaseChange` -/
-def ofIsPullback {A B A' B' : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} A']
-    [Category.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
-    (isPullback : Functor.IsPullback top F' F bot) (IF : SplitIsofibration F) :
-    SplitIsofibration F' where
-  liftObj := sorry
-  liftIso := sorry
-  isHomLift := sorry
-  liftObj_id := sorry
-  liftIso_id := sorry
-  liftObj_comp := sorry
-  liftIso_comp := sorry
-  liftIso_IsIso := sorry
+instance isoComp_SplitIsofibration {A A' B : Type u}  [Category.{v} A] [Category.{v} A']
+  [Category.{v} B]
+  (i : A' ≅≅ A) (F: A ⥤ B) (IF:  SplitIsofibration F): SplitIsofibration (i.hom ⋙ F) := sorry
 
+instance iso_SplitIsofibration {A A' B : Type u}  [Category.{v} A] [Category.{v} A']
+  [Category.{v} B]
+  (i : A' ≅≅ A) (F: A ⥤ B) (IF:  SplitIsofibration F): SplitIsofibration (i.hom ⋙ F) := sorry
+
+end
 -- def toTerminal {A : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} A']
 --     [Category.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
 --     (isPullback : Functor.IsPullback top F' F bot) (IF : SplitIsofibration F) :
@@ -774,6 +769,67 @@ def ofIsPullback {A B A' B' : Type u} [Category.{v} A] [Category.{v} B] [Categor
 --   liftObj_comp := sorry
 --   liftIsoComp := sorry
 
+section
+/-- `IsStableUnderBaseChange` -/
+
+def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A']
+    [Groupoid.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
+    (isPullback : Functor.IsPullback top F' F bot) (IF : SplitIsofibration F) :
+    SplitIsofibration F' := by
+  --have c:= SplitIsofibration.classifier IF
+  --have p : Functor.Groupoidal IF.classifier ≅≅ A := sorry
+  have Ichar : SplitIsofibration (Groupoidal.forget (F := IF.classifier)) := by
+    apply Functor.SplitIsofibration.forget
+  have Ichar' : SplitIsofibration (Groupoidal.forget (F := bot ⋙ IF.classifier)) := by
+    apply Functor.SplitIsofibration.forget
+  let i0 : Functor.Groupoidal IF.classifier ≅≅ A :=
+      Functor.SplitIsofibration.grothendieckClassifierIso ..
+  have e0 : i0.hom ⋙ F = Groupoidal.forget := by
+   simp[i0]
+
+   sorry
+  -- have p1 : Functor.IsPullback (Libya := A') (Egypt := PGrpd)
+  --           (top ⋙ i0.hom ⋙ Groupoidal.toPGrpd IF.classifier)
+  --           F' PGrpd.forgetToGrpd (bot ⋙ IF.classifier)
+  --  := sorry
+  -- have p2 : Functor.IsPullback
+  --           (Groupoidal.toPGrpd (bot ⋙ IF.classifier))
+  --           Groupoidal.forget PGrpd.forgetToGrpd (bot ⋙ IF.classifier)
+  --  := sorry
+
+  have q2 : Functor.IsPullback (Libya := A') (Egypt := A)
+            top F' F bot
+   := isPullback
+  have gpb : Functor.IsPullback (Groupoidal.pre IF.classifier bot)
+             Groupoidal.forget Groupoidal.forget bot := by
+             apply Groupoidal.compGrothendieck.isPullback
+  let d := IsPullback.IsPullback.botDegenerate e0.symm
+  have paste := Functor.IsPullback.Paste.horiz sorry sorry d gpb
+  simp[Functor.id_comp] at paste
+  have q1 : Functor.IsPullback
+            (Groupoidal.pre IF.classifier bot ⋙ i0.hom)
+            (Groupoidal.forget (F := (bot ⋙ IF.classifier))) F bot
+    := paste
+  let j : A' ≅≅ Functor.Groupoidal (F := bot ⋙ IF.classifier) :=
+     Functor.IsPullback.isoIsPullback q2 q1
+  have e: F' = j.hom ⋙ (Groupoidal.forget (F := bot ⋙ IF.classifier)) := by
+    symm
+    have e1 := IsPullback.isoIsPullback.homCompRight' q2 q1 (hom := j.hom) (by simp[j])
+    exact e1
+  -- let i : A' ≅≅ Functor.Groupoidal (F := bot ⋙ IF.classifier) :=
+  --    Functor.IsPullback.isoIsPullback p1 p2
+  -- have eq: F' = i.hom ⋙ (Groupoidal.forget (F := bot ⋙ IF.classifier)) := by
+  --   symm
+  --   --simp[i]
+  --   have e1 := IsPullback.isoIsPullback.homCompLeft' p1 p2 (hom := i.hom) (by simp[i])
+
+  --   sorry
+  simp[e]
+  apply iso_SplitIsofibration j (Groupoidal.forget (F := bot ⋙ IF.classifier))
+  exact Ichar'
+
+
+end
 #exit
 namespace IsIsofibration
 
