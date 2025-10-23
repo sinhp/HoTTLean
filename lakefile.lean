@@ -25,6 +25,13 @@ So it is built manually. -/
 lean_lib Prelude where
   roots := #[`HoTTLean.Prelude]
 
+/-- A target for the natural model.
+We cannot include this in `HoTTLean.lean`
+because it exports the same names as `Unstructured`. -/
+lean_lib NaturalModel where
+  roots := #[]
+  globs := #[.submodules `HoTTLean.Model.Natural]
+
 @[default_target]
 lean_lib HoTTLean where
   needs := #[Prelude]

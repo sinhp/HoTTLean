@@ -97,6 +97,8 @@ def isPullback' : Functor.IsPullback (toPGrpd' A) forget PGrpd.forgetToGrpd A :=
     (Grothendieck.isPullback _)
     PGrpd.forgetToPCat_forgetToCat
     PGrpd.isPullback
+    _
+    rfl
 
 theorem toPGrpd_eq_toPGrpd' : toPGrpd A = toPGrpd' A := by
   apply PGrpd.isPullback.lift_uniq
@@ -208,6 +210,12 @@ variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
 @[simp] theorem preNatIso_hom_app_fiber (x) :
     ((preNatIso F α).hom.app x).fiber = 𝟙 _ :=
   Grothendieck.preNatIso_hom_app_fiber _ _ _
+
+@[simp]
+theorem map_eqToHom_toPGrpd {Γ : Type*} [Category Γ] (A A' : Γ ⥤ Grpd) (h : A = A'):
+    map (eqToHom h) ⋙ toPGrpd A' = toPGrpd A := by
+  subst h
+  simp [map_id_eq, Functor.id_comp]
 
 end
 

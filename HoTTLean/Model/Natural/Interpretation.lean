@@ -1,5 +1,5 @@
 import HoTTLean.Syntax.Inversion
-import HoTTLean.Model.UHom
+import HoTTLean.Model.Natural.UHom
 
 import HoTTLean.ForMathlib
 

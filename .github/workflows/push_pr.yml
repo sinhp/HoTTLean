@@ -20,5 +20,8 @@ jobs:
       - name: Build project
         run: ~/.elan/bin/lake build
 
+      - name: Build HoTTLean.Model.Natural
+        run: ~/.elan/bin/lake build NaturalModel
+
       - name: Run tests
         run: ~/.elan/bin/lake test
