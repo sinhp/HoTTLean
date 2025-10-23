@@ -7,13 +7,9 @@ along `Grpd.forgetToCat` of `PCat.forgetToCat`.
 
 ## Main statements
 
-* `CategoryTheory.PGrpd.isPullback_forgetToGrpd_forgetToCat` -
+* `CategoryTheory.PGrpd.isPullback` -
   the functor `PGrpd.forgetToGrpd` is the pullback
   along `Grpd.forgetToCat` of `PCat.forgetToCat`.
-
-- TODO Probably the latter half of this file can be shortened
-  significantly by providing a direct proof of pullback
-  using the `IsMegaPullback` definitions
 -/
 
 

@@ -97,6 +97,8 @@ def isPullback' : Functor.IsPullback (toPGrpd' A) forget PGrpd.forgetToGrpd A :=
     (Grothendieck.isPullback _)
     PGrpd.forgetToPCat_forgetToCat
     PGrpd.isPullback
+    _
+    rfl
 
 theorem toPGrpd_eq_toPGrpd' : toPGrpd A = toPGrpd' A := by
   apply PGrpd.isPullback.lift_uniq
@@ -106,7 +108,29 @@ theorem toPGrpd_eq_toPGrpd' : toPGrpd A = toPGrpd' A := by
 def isPullback : Functor.IsPullback (toPGrpd A) forget PGrpd.forgetToGrpd A :=
   cast (by rw [toPGrpd_eq_toPGrpd']) (isPullback' A)
 
+
+
+def compGrothendieck.isPullback {C : Type u} [Groupoid.{v, u} C] {D : Type u₁}
+    [Groupoid.{v₁, u₁} D] (F : C ⥤ Grpd) (G : D ⥤ C) :
+    Functor.IsPullback (pre F G) (forget (F := G ⋙ F)) (forget (F := F)) G :=
+  Functor.IsPullback.Paste.ofRight
+  (no := pre F G) (rth := toPGrpd F) (west := forget (F := G ⋙ F)) (sah := forget (F := F))
+  (east := PGrpd.forgetToGrpd) (uth := F)
+  --pre F G ⋙ forget = forget ⋙ G
+  (by simp[Functor.Groupoidal.pre_comp_forget])
+  --toPGrpd F ⋙ PGrpd.forgetToGrpd = forget ⋙ F
+  (by simp[Functor.Groupoidal.toPGrpd_forgetToGrpd])
+  (by apply Functor.Groupoidal.isPullback)
+  (by
+    have e : pre F G ⋙ toPGrpd F = toPGrpd (G ⋙ F) := by rfl
+    simp[e]
+    apply Functor.Groupoidal.isPullback)
+
+
+
+
 end
+
 
 section
 
@@ -208,6 +232,12 @@ variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
 @[simp] theorem preNatIso_hom_app_fiber (x) :
     ((preNatIso F α).hom.app x).fiber = 𝟙 _ :=
   Grothendieck.preNatIso_hom_app_fiber _ _ _
+
+@[simp]
+theorem map_eqToHom_toPGrpd {Γ : Type*} [Category Γ] (A A' : Γ ⥤ Grpd) (h : A = A'):
+    map (eqToHom h) ⋙ toPGrpd A' = toPGrpd A := by
+  subst h
+  simp [map_id_eq, Functor.id_comp]
 
 end
 

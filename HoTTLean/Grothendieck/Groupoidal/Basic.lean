@@ -1,5 +1,6 @@
 import HoTTLean.ForMathlib
 import HoTTLean.ForMathlib.CategoryTheory.Grpd
+import HoTTLean.ForMathlib.CategoryTheory.Bicategory.Grothendieck
 
 /-!
 ## Main definitions
@@ -219,6 +220,52 @@ def toTransport (x : ∫(F)) {c : C} (t : x.base ⟶ c) : x ⟶ x.transport t :=
     (x.toTransport t).fiber = 𝟙 ((F.map t).obj x.fiber) :=
   Grothendieck.toTransport_fiber _ _
 
+
+
+lemma transport_congr (x x' : ∫ F) (e1 : x = x') {c : C} (t : x.base ⟶ c) (t': x'.base ⟶ c)
+      (e: t = eqToHom (by simp[e1]) ≫ t') :
+  transport x t = transport x' t' := by aesop_cat
+
+lemma transport_id {x : ∫ F} :
+  transport x (𝟙 x.base) = x := by
+  apply Grothendieck.transport_id
+
+lemma transport_eqToHom {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X):
+ X'.transport (eqToHom hX') = X' := by
+  apply Grothendieck.transport_eqToHom
+
+
+lemma transport_eqToHom' {X: C} {X' : F.Groupoidal} (hX': X'.base = X):
+ X'.transport (eqToHom hX') = X' := by
+  apply Grothendieck.transport_eqToHom
+
+
+lemma toTransport_id {X : ∫ F} :
+      toTransport X (𝟙 X.base) = eqToHom transport_id.symm := by
+  apply Grothendieck.toTransport_id
+
+
+lemma toTransport_eqToHom {X: C} {X' : ∫ F} (hX': forget.obj  X' = X):
+  toTransport X' (eqToHom hX') = eqToHom (by subst hX'; simp[transport_id]) := by
+  apply Grothendieck.toTransport_eqToHom
+
+
+--do not even need to compose with eqToHom (x.transport t).base = c, c:= d
+lemma transport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t': c ⟶ d):
+      transport x (t ≫ t') = transport (transport x t) t' := by
+  apply Grothendieck.transport_comp
+
+lemma toTransport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t': c ⟶ d):
+      toTransport x (t ≫ t') =
+      toTransport x t ≫ toTransport (transport x t) t' ≫ eqToHom (transport_comp x t t').symm := by
+  apply Grothendieck.toTransport_comp
+
+-- def transporting (x : ∫(F)) : C ⥤ ∫ F where
+--   obj := sorry
+--   map := sorry
+--   map_id := sorry
+--   map_comp := sorry
+
 def isoMk {X Y : ∫(F)} (f : X ⟶ Y) : X ≅ Y := by
   fapply Grothendieck.isoMk
   · exact (Groupoid.isoEquivHom _ _).2 f.base
@@ -281,12 +328,16 @@ theorem ι_map (c : C) {X Y : F.obj c} (f : X ⟶ Y) :
     ((ι F c).map f).fiber = eqToHom (by simp) ≫ f :=
   rfl
 
-@[simp] theorem ι_comp_forget (c : C) : ι F c ⋙ forget = (const (F.obj c)).obj c :=
+theorem ι_comp_forget (c : C) : ι F c ⋙ forget = (const (F.obj c)).obj c :=
   rfl
 
 variable {F}
 
 section ext
+
+theorem ext {x y : ∫ F} (hbase : x.base = y.base)
+    (hfiber : (F.map (eqToHom hbase)).obj x.fiber = y.fiber) : x = y := by
+  apply Functor.Grothendieck.ext hbase hfiber
 
 theorem hext {x y : ∫ F} (hbase : x.base = y.base) (hfiber : HEq x.fiber y.fiber) : x = y := by
   rcases x with ⟨xbase, xfiber⟩
@@ -351,6 +402,54 @@ theorem FunctorTo.hext (G H : D ⥤ ∫ F)
 
 end ext
 
+section
+variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
+variable {F : C ⥤ Grpd.{v₂, u₂}} (A : D ⥤ C) (fibObj : Π (x : D), (A ⋙ F).obj x)
+    (fibMap : Π {x y : D} (f : x ⟶ y),
+      ((A ⋙ F).map f).obj (fibObj x) ⟶ fibObj y)
+
+theorem functorTo_map_id_aux (x : D) : ((A ⋙ F).map (𝟙 x)).obj (fibObj x) = fibObj x := by
+  simp
+
+theorem functorTo_map_comp_aux {x y z : D} (f : x ⟶ y) (g : y ⟶ z) :
+    ((A ⋙ F).map (f ≫ g)).obj (fibObj x)
+    = (F.map (A.map g)).obj (((A ⋙ F).map f).obj (fibObj x)) := by
+  simp
+
+variable
+    (map_id : Π (x : D), fibMap (CategoryStruct.id x)
+      = eqToHom (functorTo_map_id_aux A fibObj x))
+    (map_comp : Π {x y z : D} (f : x ⟶ y) (g : y ⟶ z), fibMap (f ≫ g)
+      = eqToHom (functorTo_map_comp_aux A fibObj f g)
+      ≫ (F.map (A.map g)).map (fibMap f) ≫ fibMap g)
+
+/-- To define a functor into `Grothendieck F` we can make use of an existing
+  functor into the base. -/
+def functorTo : D ⥤ ∫(F) := Grothendieck.functorTo A fibObj fibMap map_id map_comp
+
+@[simp] theorem functorTo_obj_base (x) :
+    ((functorTo A fibObj fibMap map_id map_comp).obj x).base = A.obj x :=
+  rfl
+
+@[simp] theorem functorTo_obj_fiber (x) :
+    ((functorTo A fibObj fibMap map_id map_comp).obj x).fiber = fibObj x :=
+  rfl
+
+@[simp] theorem functorTo_map_base {x y} (f : x ⟶ y) :
+    ((functorTo A fibObj fibMap map_id map_comp).map f).base = A.map f :=
+  rfl
+
+@[simp] theorem functorTo_map_fiber {x y} (f : x ⟶ y) :
+    ((functorTo A fibObj fibMap map_id map_comp).map f).fiber = fibMap f :=
+  rfl
+
+variable {A} {fibObj} {fibMap} {map_id} {map_comp}
+@[simp] theorem functorTo_forget :
+    functorTo _ _ _ map_id map_comp ⋙ Grothendieck.forget _ = A :=
+  rfl
+
+end
+
 /-- Every morphism `f : X ⟶ Y` in the base category induces a natural transformation from the fiber
 inclusion `ι F X` to the composition `F.map f ⋙ ι F Y`. -/
 def ιNatTrans {X Y : C} (f : X ⟶ Y) : ι F X ⟶ F.map f ⋙ ι F Y :=
@@ -401,6 +500,15 @@ on `F` supplied as the first argument to `Groupoidal.functorFrom`. -/
 def ιCompFunctorFrom (c : C) : ι F c ⋙ (functorFrom fib hom hom_id hom_comp) ≅ fib c :=
   Grothendieck.ιCompFunctorFrom _ _ _ _ _
 
+def ι_comp_functorFrom (c : C) : ι F c ⋙ (functorFrom fib hom hom_id hom_comp) = fib c :=
+  Grothendieck.ι_comp_functorFrom _ _ _ _ _
+
+lemma whiskerRight_ιNatTrans_functorFrom {x y} (f : x ⟶ y) :
+    Functor.whiskerRight (ιNatTrans f) (functorFrom fib hom hom_id hom_comp) =
+    eqToHom (ι_comp_functorFrom ..) ≫ hom f ≫
+    eqToHom (by rw [Functor.assoc, ι_comp_functorFrom]) :=
+  Grothendieck.whiskerRight_ιNatTrans_functorFrom ..
+
 section
 
 variable {D : Type*} [Category D]
@@ -413,101 +521,135 @@ def hom' {c c' : C} (f : c ⟶ c') : fib' fib c ⟶ (F ⋙ Grpd.forgetToCat).map
 
 variable (G : E ⥤ D)
 
-def functorFrom_comp_fib' (c : C) : (F ⋙ Grpd.forgetToCat).obj c ⥤ D :=
-  Grothendieck.functorFrom_comp_fib (fib' fib) G c
+def functorFromCompFib' (c : C) : (F ⋙ Grpd.forgetToCat).obj c ⥤ D :=
+  Grothendieck.functorFromCompFib (fib' fib) G c
 
-def functorFrom_comp_fib (c : C) : F.obj c ⥤ D :=
- functorFrom_comp_fib' fib G c
+def functorFromCompFib (c : C) : F.obj c ⥤ D :=
+ functorFromCompFib' fib G c
 
-def functorFrom_comp_hom' {c c' : C}  (f : c ⟶ c') :
-    functorFrom_comp_fib' fib G c ⟶ (F ⋙ Grpd.forgetToCat).map f ⋙ functorFrom_comp_fib' fib G c' :=
-  Grothendieck.functorFrom_comp_hom (fib' fib) (hom' hom) _ _
+def functorFromCompHom' {c c' : C}  (f : c ⟶ c') :
+    functorFromCompFib' fib G c ⟶ (F ⋙ Grpd.forgetToCat).map f ⋙ functorFromCompFib' fib G c' :=
+  Grothendieck.functorFromCompHom (fib' fib) (hom' hom) _ _
 
-def functorFrom_comp_hom {c c' : C}  (f : c ⟶ c') :
-    functorFrom_comp_fib' fib G c ⟶ F.map f ⋙ functorFrom_comp_fib' fib G c' :=
-  functorFrom_comp_hom' fib hom G f
+def functorFromCompHom {c c' : C}  (f : c ⟶ c') :
+    functorFromCompFib' fib G c ⟶ F.map f ⋙ functorFromCompFib' fib G c' :=
+  functorFromCompHom' fib hom G f
 
 include hom_id in
-lemma functorFrom_comp_hom_id (c : C) : functorFrom_comp_hom fib hom G (𝟙 c)
+lemma functorFromCompHom_id (c : C) : functorFromCompHom fib hom G (𝟙 c)
     = eqToHom (by simp) :=
-  Grothendieck.functorFrom_comp_hom_id _ _ hom_id _ c
+  Grothendieck.functorFromCompHom_id _ _ hom_id _ c
 
 include hom_comp in
-lemma functorFrom_comp_hom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃):
-    functorFrom_comp_hom fib (fun {c c'} ↦ hom) G (f ≫ g)
-    = functorFrom_comp_hom fib (fun {c c'} ↦ hom) G f ≫
-    Functor.whiskerLeft (F.map f) (functorFrom_comp_hom fib hom G g) ≫
+lemma functorFromCompHom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃):
+    functorFromCompHom fib (fun {c c'} ↦ hom) G (f ≫ g)
+    = functorFromCompHom fib (fun {c c'} ↦ hom) G f ≫
+    Functor.whiskerLeft (F.map f) (functorFromCompHom fib hom G g) ≫
     eqToHom (by simp) :=
-  Grothendieck.functorFrom_comp_hom_comp _ _ hom_comp _ _ _ _ _ _
+  Grothendieck.functorFromCompHom_comp _ _ hom_comp _ _ _ _ _ _
 
 
-lemma functorFrom_comp_hom_eq {c c' : C}  (f : c ⟶ c') :
-    functorFrom_comp_hom fib hom G f = whiskerRight (hom f) G :=
+lemma functorFromCompHom_eq {c c' : C}  (f : c ⟶ c') :
+    functorFromCompHom fib hom G f = whiskerRight (hom f) G :=
   rfl
 
 theorem functorFrom_comp' :
     functorFrom (fib' fib) (hom' hom) hom_id hom_comp ⋙ G =
-    functorFrom (functorFrom_comp_fib' fib G) (functorFrom_comp_hom' fib hom G)
- (functorFrom_comp_hom_id _ _ hom_id _) (functorFrom_comp_hom_comp _ _ hom_comp _) :=
+    functorFrom (functorFromCompFib' fib G) (functorFromCompHom' fib hom G)
+ (functorFromCompHom_id _ _ hom_id _) (functorFromCompHom_comp _ _ hom_comp _) :=
   Grothendieck.functorFrom_comp (fib' fib) (hom' hom) hom_id hom_comp G
 
 theorem functorFrom_comp :
     functorFrom fib hom hom_id hom_comp ⋙ G =
-    functorFrom (functorFrom_comp_fib fib G) (functorFrom_comp_hom fib hom G)
-    (Grothendieck.functorFrom_comp_hom_id _ _ hom_id _)
-    (Grothendieck.functorFrom_comp_hom_comp _ _ hom_comp _) :=
+    functorFrom (functorFromCompFib fib G) (functorFromCompHom fib hom G)
+    (Grothendieck.functorFromCompHom_id _ _ hom_id _)
+    (Grothendieck.functorFromCompHom_comp _ _ hom_comp _) :=
   functorFrom_comp' fib hom hom_id hom_comp G
 
 variable (K : ∫(F) ⥤ E)
 
-def asFunctorFrom_fib (c : C) : F.obj c ⥤ E :=
-  Grothendieck.asFunctorFrom_fib K c
+abbrev asFunctorFromFib (c : C) : F.obj c ⥤ E := ι F c ⋙ K
 
-lemma asFunctorFrom_fib' (c : C) : asFunctorFrom_fib K c = ι F c ⋙ K :=
+abbrev asFunctorFromHom {c c' : C} (f: c ⟶ c') :
+    asFunctorFromFib K c ⟶ F.map f ⋙ asFunctorFromFib K c' :=
+  Functor.whiskerRight (ιNatTrans f) K
+
+-- TODO: remove?
+lemma asFunctorFromFib_functorFrom :
+    asFunctorFromFib (functorFrom fib hom hom_id hom_comp) = fib := by
+  unfold asFunctorFromFib
+  ext
+  rw [ι_comp_functorFrom]
+
+lemma asFunctorFromHom' {c c' : C} (f: c ⟶ c') :
+  asFunctorFromHom K f = whiskerRight (ιNatTrans f) K := rfl
+
+lemma asFunctorFromHom_app {c c' : C} (f: c ⟶ c') (p : F.obj c) :
+    (asFunctorFromHom K f).app p = K.map ((ιNatTrans f).app p) :=
   rfl
 
-def asFunctorFrom_hom {c c' : C} (f: c ⟶ c') :
-    asFunctorFrom_fib K c ⟶ F.map f ⋙ asFunctorFrom_fib K c' :=
-  Grothendieck.asFunctorFrom_hom K f
-
-lemma asFunctorFrom_hom' {c c' : C} (f: c ⟶ c') :
-  asFunctorFrom_hom K f = whiskerRight (ιNatTrans f) K := rfl
-
-lemma asFunctorFrom_hom_app {c c' : C} (f: c ⟶ c') (p : F.obj c) :
-    (asFunctorFrom_hom K f).app p = K.map ((ιNatTrans f).app p) :=
-  rfl
-
-lemma asFunctorFrom_hom_id (c : C) : asFunctorFrom_hom K (𝟙 c) =
+lemma asFunctorFromHom_id (c : C) : asFunctorFromHom K (𝟙 c) =
     eqToHom (by simp) :=
-  Grothendieck.asFunctorFrom_hom_id _ _
-  --   by
-  -- ext p
-  -- simp [asFunctorFrom_hom_app, eqToHom_map, ιNatTrans_id_app]
+  Grothendieck.asFunctorFromHom_id _ _
 
-lemma asFunctorFrom_hom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g: c₂ ⟶ c₃) :
-    asFunctorFrom_hom K (f ≫ g) =
-    asFunctorFrom_hom K f ≫ Functor.whiskerLeft (F.map f) (asFunctorFrom_hom K g) ≫ eqToHom
+lemma asFunctorFromHom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g: c₂ ⟶ c₃) :
+    asFunctorFromHom K (f ≫ g) =
+    asFunctorFromHom K f ≫ Functor.whiskerLeft (F.map f) (asFunctorFromHom K g) ≫ eqToHom
     (by simp) :=
-  Grothendieck.asFunctorFrom_hom_comp _ _ _ _ _ _
+  Grothendieck.asFunctorFromHom_comp _ _ _ _ _ _
 
 /-- Groupoidal version of `Grothendieck.asFunctorFrom` -/
-theorem asFunctorFrom : functorFrom (asFunctorFrom_fib K) (asFunctorFrom_hom K)
-    (asFunctorFrom_hom_id K) (asFunctorFrom_hom_comp K) = K :=
+theorem asFunctorFrom : functorFrom (asFunctorFromFib K) (asFunctorFromHom K)
+    (asFunctorFromHom_id K) (asFunctorFromHom_comp K) = K :=
   Grothendieck.asFunctorFrom K
 
 theorem functorFrom_ext {K K' : ∫(F) ⥤ E}
-    (hfib : asFunctorFrom_fib K = asFunctorFrom_fib K')
-    (hhom : ∀ {c c' : C} (f : c ⟶ c'), asFunctorFrom_hom K f ≫ eqToHom (by rw [hfib])
-      = eqToHom (by rw[hfib]) ≫ asFunctorFrom_hom K' f)
+    (hfib : ∀ c, ι F c ⋙ K = ι F c ⋙ K')
+    (hhom : ∀ {c c' : C} (f : c ⟶ c'), Functor.whiskerRight (ιNatTrans f) K ≫
+      eqToHom (by simp [Functor.assoc, hfib])
+      = eqToHom (by rw[hfib]) ≫ Functor.whiskerRight (ιNatTrans f) K')
     : K = K' :=
   Grothendieck.functorFrom_ext hfib hhom
 
 theorem functorFrom_hext {K K' : ∫(F) ⥤ E}
-    (hfib : asFunctorFrom_fib K = asFunctorFrom_fib K')
-    (hhom : ∀ {c c' : C} (f : c ⟶ c'), asFunctorFrom_hom K f ≍ asFunctorFrom_hom K' f)
+    (hfib : ∀ c, ι F c ⋙ K = ι F c ⋙ K')
+    (hhom : ∀ {c c' : C} (f : c ⟶ c'), Functor.whiskerRight (ιNatTrans f) K ≍
+      Functor.whiskerRight (ιNatTrans f) K')
     : K = K' :=
   Grothendieck.functorFrom_hext hfib hhom
 
+section
+variable (A : E ⥤ C) (fibObj : (x : E) → (A ⋙ F).obj x)
+    (fibMap : {x y : E} → (f : x ⟶ y) → ((A ⋙ F).map f).obj (fibObj x) ⟶ fibObj y)
+    (map_id : (x : E) → fibMap (CategoryStruct.id x)
+      = eqToHom (functorTo_map_id_aux A fibObj x))
+    (map_comp : {x y z : E} → (f : x ⟶ y) → (g : y ⟶ z) → fibMap (f ≫ g)
+      = eqToHom (functorTo_map_comp_aux A fibObj f g)
+      ≫ (F.map (A.map g)).map (fibMap f) ≫ fibMap g)
+    (fib_comp : ∀ c, fib c ⋙ A = ι F c ⋙ forget)
+    (fibObj_fib_obj : ∀ c x, fibObj ((fib c).obj x) ≍ x)
+    (fibMap_fib_map : ∀ c {x y} (f : x ⟶ y), fibMap ((fib c).map f) ≍ f)
+    (fib_obj_fibObj : ∀ x, (fib (A.obj x)).obj (fibObj x) = x)
+    (hom_map_app_fibObj : ∀ {x y} (f : x ⟶ y), (hom (A.map f)).app (fibObj x) ≫
+      (fib (A.obj y)).map (fibMap f) ≍ f)
+    (obj_fib_obj : ∀ c x, A.obj ((fib c).obj x) = c)
+    (map_hom_app : ∀ {c c'} (f : c ⟶ c') x, A.map ((hom f).app x) ≍ f)
+    (fibMap_hom_app : ∀ {c c'} (f : c ⟶ c') x, fibMap ((hom f).app x) ≍ 𝟙 ((F.map f).obj x))
+
+@[simps!]
+def functorIsoFrom : ∫ F ≅≅ E :=
+  Grothendieck.functorIsoFrom fib hom hom_id hom_comp A fibObj fibMap map_id map_comp
+    fib_comp fibObj_fib_obj fibMap_fib_map fib_obj_fibObj hom_map_app_fibObj
+    obj_fib_obj map_hom_app fibMap_hom_app
+
+@[simp]
+lemma functorIsoFrom_inv_comp_forget :
+    (functorIsoFrom fib hom hom_id hom_comp A fibObj fibMap map_id map_comp fib_comp fibObj_fib_obj
+    fibMap_fib_map fib_obj_fibObj hom_map_app_fibObj obj_fib_obj map_hom_app fibMap_hom_app).inv ⋙
+    forget = A :=
+  Grothendieck.functorIsoFrom_inv_comp_forget ..
+
+end
 end
 end FunctorFrom
 
@@ -549,6 +691,14 @@ variable {X} {Y : ∫(F)} (f : X ⟶ Y)
   ((Groupoidal.map α).map f).fiber =
     eqToHom (Functor.congr_obj (α.naturality f.base).symm X.fiber)
     ≫ (α.app Y.base).map f.fiber := Grothendieck.map_map_fiber _ _
+
+/-- The fiber inclusion `ι F c` composed with `map α` is isomorphic to `α.app c ⋙ ι F' c`. -/
+@[simps!]
+def ιCompMap {F' : C ⥤ Grpd} (α : F ⟶ F') (c : C) : ι F c ⋙ map α ≅ α.app c ⋙ ι F' c :=
+  Grothendieck.ιCompMap ..
+
+lemma ι_comp_map {F' : C ⥤ Grpd} (α : F ⟶ F') (c : C) : ι F c ⋙ map α = α.app c ⋙ ι F' c :=
+  Grothendieck.ι_comp_map ..
 
 end
 
@@ -750,54 +900,6 @@ theorem ιNatIso_comp {x y z : Γ} (f : x ⟶ y) (g : y ⟶ z) :
     ≪≫ eqToIso (by simp) := by
   ext
   simp [ιNatIso]
-
-end
-
-section
-variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
-variable {F : C ⥤ Grpd.{v₂, u₂}} (A : D ⥤ C) (fibObj : Π (x : D), (A ⋙ F).obj x)
-    (fibMap : Π {x y : D} (f : x ⟶ y),
-      ((A ⋙ F).map f).obj (fibObj x) ⟶ fibObj y)
-
-theorem functorTo_map_id_aux (x : D) : ((A ⋙ F).map (𝟙 x)).obj (fibObj x) = fibObj x := by
-  simp
-
-theorem functorTo_map_comp_aux {x y z : D} (f : x ⟶ y) (g : y ⟶ z) :
-    ((A ⋙ F).map (f ≫ g)).obj (fibObj x)
-    = (F.map (A.map g)).obj (((A ⋙ F).map f).obj (fibObj x)) := by
-  simp
-
-variable
-    (map_id : Π (x : D), fibMap (CategoryStruct.id x)
-      = eqToHom (functorTo_map_id_aux A fibObj x))
-    (map_comp : Π {x y z : D} (f : x ⟶ y) (g : y ⟶ z), fibMap (f ≫ g)
-      = eqToHom (functorTo_map_comp_aux A fibObj f g)
-      ≫ (F.map (A.map g)).map (fibMap f) ≫ fibMap g)
-
-/-- To define a functor into `Grothendieck F` we can make use of an existing
-  functor into the base. -/
-def functorTo : D ⥤ ∫(F) := Grothendieck.functorTo A fibObj fibMap map_id map_comp
-
-@[simp] theorem functorTo_obj_base (x) :
-    ((functorTo A fibObj fibMap map_id map_comp).obj x).base = A.obj x :=
-  rfl
-
-@[simp] theorem functorTo_obj_fiber (x) :
-    ((functorTo A fibObj fibMap map_id map_comp).obj x).fiber = fibObj x :=
-  rfl
-
-@[simp] theorem functorTo_map_base {x y} (f : x ⟶ y) :
-    ((functorTo A fibObj fibMap map_id map_comp).map f).base = A.map f :=
-  rfl
-
-@[simp] theorem functorTo_map_fiber {x y} (f : x ⟶ y) :
-    ((functorTo A fibObj fibMap map_id map_comp).map f).fiber = fibMap f :=
-  rfl
-
-variable {A} {fibObj} {fibMap} {map_id} {map_comp}
-@[simp] theorem functorTo_forget :
-    functorTo _ _ _ map_id map_comp ⋙ Grothendieck.forget _ = A :=
-  rfl
 
 end
 
