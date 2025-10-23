@@ -59,19 +59,6 @@ section
 
 open Functor.ClovenIsofibration
 
--- def strictify {C B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F) (G : C ⟶ B) :
---     C ⟶ Grpd.of (∫ classifier (hF.splitIsofibration)) :=
---   G ≫ hF.grothendieckClassifierIso.inv
-
--- def strictifyClovenIsofibration {C B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F)
---     {G : C ⟶ B} (hG : SplitIsofibration G) : (strictify hF G).ClovenIsofibration :=
---   sorry
-
--- lemma isSplit_strictifyClovenIsofibration {C B A} {F : B ⟶ A} (hF : SplitIsofibration F)
---     {G : C ⟶ B} (hG : SplitIsofibration G) :
---     (strictifyClovenIsofibration hF hG).IsSplit :=
---   sorry
-
 /-- The object part (a groupoid) of the pushforward along `F`, of `G`,
 defined as the Grothendieck construction applied to (unstructured) Pi-type construction
 in the HoTTLean groupoid model. -/
@@ -135,28 +122,6 @@ lemma grothendieckIsoPullback_comp_forget {B A} {F : B ⟶ A} (hF : SplitIsofibr
     Limits.pullback.fst σ.hom F := by
   exact (pre_classifier_isPullback hF σ).isoIsPullback_inv_snd _ _
     (pullback_isPullback hF σ)
-
--- open GroupoidModel.FunctorOperation.pi in
--- /-- `∫ σ.hom ⋙ hF.splitIsofibration.classifier` is the pullback of `F` along `σ`,
--- `∫ (splitIsofibration_strictify hF hG).classifier` is isomorphic to `G`.
--- So up to isomorphism this is the hom set bijection we want. -/
--- def pushforwardHomEquivAux1 {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
---     (hG : SplitIsofibration G) (σ : Over A) :
---     have := isSplit_strictifyClovenIsofibration hF hG
---     (σ ⟶ pushforward hF hG) ≃
---     {f : ∫ σ.hom ⋙ hF.splitIsofibration.classifier ⥤
---       ∫ (strictifyClovenIsofibration hF hG).classifier //
---       f ⋙ Functor.Groupoidal.forget = pre hF.splitIsofibration.classifier σ.hom } where
---   toFun f := ⟨equivFun _ f.left f.w, equivFun_comp_forget ..⟩
---   invFun f := Over.homMk (equivInv _ f.1 f.2)
---     (equivInv_comp_forget ..)
---   left_inv f := by
---     ext
---     simp [equivInv_equivFun]
---   right_inv f := by
---     ext
---     simp [equivFun_equivInv]
-
 
 open GroupoidModel.FunctorOperation.pi Functor in
 /-- The universal property of the pushforward, expressed as a (natural) bijection of hom sets. -/

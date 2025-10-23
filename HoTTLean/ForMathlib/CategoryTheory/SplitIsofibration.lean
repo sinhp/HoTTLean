@@ -677,56 +677,6 @@ in the HoTTLean groupoid model. -/
 abbrev pushforward := ∫ GroupoidModel.FunctorOperation.pi (IF.classifier)
     (pushforward.strictifyClovenIsofibration IF IG).classifier
 
--- /-- The morphism part (a functor) of the pushforward along `F`, of `G`.
--- This is defined as the forgetful functor from the Grothendieck construction. -/
--- abbrev pushforwardHom : pushforwardLeft IF IG ⥤ A :=
---   Functor.Groupoidal.forget
-
--- /-- The pushforward along `F`, of `G`, as an object in the over category. -/
--- abbrev pushforward : Over A :=
---   Over.mk (pushforwardHom hF hG)
-
--- lemma pushforward.hom {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
---     (hG : SplitIsofibration G) :
---     (pushforward hF hG).hom = pushforwardHom .. := rfl
-
--- open Limits in
--- lemma pullback_isPullback {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : Over A) :
---     IsPullback (pullback.snd σ.hom F ≫ hF.grothendieckClassifierIso.inv) (pullback.fst σ.hom F)
---     (homOf Functor.Groupoidal.forget) (homOf σ.hom) :=
---   IsPullback.of_iso (IsPullback.of_hasPullback σ.hom F).flip (Iso.refl _)
---     (hF.grothendieckClassifierIso ..).symm (Iso.refl _) (Iso.refl _) (by simp) (by simp) (by
---       simpa using hF.grothendieckClassifierIso_inv_comp_forget.symm )
---     (by simp)
-
--- lemma pre_classifier_isPullback {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : Over A) :
---     IsPullback (homOf (pre hF.splitIsofibration.classifier σ.hom))
---     (homOf Functor.Groupoidal.forget)
---     (homOf Functor.Groupoidal.forget) (homOf σ.hom) := by
---   have outer_pb := Functor.Groupoidal.isPullback (σ.hom ⋙ hF.splitIsofibration.classifier)
---   have right_pb := Functor.Groupoidal.isPullback (hF.splitIsofibration.classifier)
---   have left_pb := Functor.IsPullback.Paste.ofRight' outer_pb.comm_sq outer_pb right_pb.comm_sq
---     right_pb (pre _ _) (by
---     apply right_pb.hom_ext
---     · simp [Functor.IsPullback.fac_left]
---     · simp [Functor.IsPullback.fac_right, pre_comp_forget])
---   exact Grpd.isPullback left_pb
-
--- /--
--- ∫(σ ⋙ classifier) --> ∫ classifier ≅ B
---       |                   |
---       |                   | forget ≅ F
---       |                   |
---       V                   V
---       Δ   ------------->  A
---                   σ
--- The two versions of the pullback are isomorphic.
--- -/
--- def pullbackIsoGrothendieck {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ : Over A) :
---     Grpd.of (∫ σ.hom ⋙ hF.splitIsofibration.classifier) ≅ Limits.pullback σ.hom F :=
---   (pre_classifier_isPullback hF σ).isoIsPullback _ _ (pullback_isPullback hF σ)
-
-
 /-- `∫ σ.hom ⋙ hF.splitIsofibration.classifier` is the pullback of `F` along `σ`,
 `∫ (splitIsofibration_strictify hF hG).classifier` is isomorphic to `G`.
 So up to isomorphism this is the hom set bijection we want. -/
