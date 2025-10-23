@@ -414,6 +414,24 @@ def grothendieckClassifierIso : ∫ I.classifier ≅≅ E :=
       simp)
 
 
+lemma grothendieckClassifierIso.inv_comp_forget :
+    (grothendieckClassifierIso I).inv ⋙ Groupoidal.forget = F := rfl
+
+
+lemma grothendieckClassifierIso.hom_comp_self :
+    (grothendieckClassifierIso I).hom ⋙ F = Groupoidal.forget := by
+  conv => lhs ; rhs; rw[← inv_comp_forget I (F := F)]
+  simp
+
+
+-- lemma grothendieckClassifierIso.hom' :
+--  (grothendieckClassifierIso I).hom =
+--   Groupoidal.functorIsoFrom (fun x => Fiber.fiberInclusion)
+--   (hom.hom I) sorry sorry:= by
+--  simp[grothendieckClassifierIso,functorIsoFrom,Grothendieck.functorIsoFrom,
+--      ]
+--  sorry
+
 end
 
 def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
@@ -785,17 +803,7 @@ def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoi
   let i0 : Functor.Groupoidal IF.classifier ≅≅ A :=
       Functor.SplitIsofibration.grothendieckClassifierIso ..
   have e0 : i0.hom ⋙ F = Groupoidal.forget := by
-   simp[i0]
-
-   sorry
-  -- have p1 : Functor.IsPullback (Libya := A') (Egypt := PGrpd)
-  --           (top ⋙ i0.hom ⋙ Groupoidal.toPGrpd IF.classifier)
-  --           F' PGrpd.forgetToGrpd (bot ⋙ IF.classifier)
-  --  := sorry
-  -- have p2 : Functor.IsPullback
-  --           (Groupoidal.toPGrpd (bot ⋙ IF.classifier))
-  --           Groupoidal.forget PGrpd.forgetToGrpd (bot ⋙ IF.classifier)
-  --  := sorry
+   simp[i0,grothendieckClassifierIso.hom_comp_self ]
 
   have q2 : Functor.IsPullback (Libya := A') (Egypt := A)
             top F' F bot
@@ -804,7 +812,10 @@ def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoi
              Groupoidal.forget Groupoidal.forget bot := by
              apply Groupoidal.compGrothendieck.isPullback
   let d := IsPullback.IsPullback.botDegenerate e0.symm
-  have paste := Functor.IsPullback.Paste.horiz sorry sorry d gpb
+  have eq1 : Groupoidal.pre IF.classifier bot ⋙ Groupoidal.forget = Groupoidal.forget ⋙ bot := by
+    simp[Groupoidal.pre_comp_forget]
+
+  have paste := Functor.IsPullback.Paste.horiz eq1 (by simp[e0]) d gpb
   simp[Functor.id_comp] at paste
   have q1 : Functor.IsPullback
             (Groupoidal.pre IF.classifier bot ⋙ i0.hom)
@@ -860,6 +871,8 @@ instance : IsIsofibration.IsMultiplicative := by
   infer_instance
 
 instance : IsIsofibration.HasObjects := by
+  dsimp [IsIsofibration]
+  infer_instance
   sorry
 
 section
