@@ -7,7 +7,7 @@ require checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"
 
 meta if get_config? env = some "dev" then
 require «doc-gen4» from git
-  "https://github.com/leanprover/doc-gen4" @ "v4.23.0-rc2"
+  "https://github.com/leanprover/doc-gen4" @ "v4.25.0-rc2"
 
 package hottlean where
   -- Settings applied to both builds and interactive editing
