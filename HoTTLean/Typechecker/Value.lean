@@ -323,14 +323,14 @@ private theorem wf_expr :
   case clos₂_tp Aenv Benv C σ =>
     have B := C.wf_binder
     have A := B.wf_binder
-    apply C.subst (σ.up A |>.up B) |>.conv_ctx
+    apply WfTp.conv_ctx _ <| C.subst (σ.up A |>.up B)
     apply EqCtx.refl Aenv.wf_ctx
       |>.snoc Aenv
       |>.snoc (Benv.conv_binder Aenv.symm_tp)
   case clos₂_val_tp Aenv Benv _ σ C =>
     have B := C.wf_binder
     have A := B.wf_binder
-    apply C.subst (σ.up A |>.up B) |>.conv_ctx
+    apply WfTp.conv_ctx _ <| C.subst (σ.up A |>.up B)
     apply EqCtx.refl Aenv.wf_ctx
       |>.snoc Aenv
       |>.snoc (Benv.conv_binder Aenv.symm_tp)
