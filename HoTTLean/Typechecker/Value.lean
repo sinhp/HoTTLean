@@ -15,7 +15,7 @@ as well as well-formedness judgments `WfVal/WfNeut/WfClos/WfEnv` for those.
 We relate them to the core syntax with `Val.toExpr/Neut.toExpr/Clos.toExpr/sbOfEnv`.
 -/
 
-attribute [local grind]
+attribute [local grind .]
   EqTp.refl_tp EqTp.symm_tp EqTp.trans_tp
   EqTm.refl_tm EqTm.symm_tm EqTm.trans_tm
 
@@ -639,7 +639,7 @@ theorem TpEnvEqCtx.toEnv_wf {vΓ Γ} : TpEnvEqCtx E vΓ Γ → EnvEqSb E Γ vΓ.
 
 /-! ## Monotonicity w.r.t. axioms -/
 
-attribute [local grind] WfCtx.of_axioms_le WfTp.of_axioms_le WfTm.of_axioms_le EqTp.of_axioms_le
+attribute [local grind .] WfCtx.of_axioms_le WfTp.of_axioms_le WfTm.of_axioms_le EqTp.of_axioms_le
   EqTm.of_axioms_le in
 private theorem of_axioms_le_all {E E' : Axioms χ} (le : E ≤ E') :
     (∀ {Γ l vA A}, ValEqTp E Γ l vA A → ValEqTp E' Γ l vA A) ∧

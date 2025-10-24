@@ -355,7 +355,7 @@ theorem Id_bvar : WfCtx E Γ → E ∣ Γ ⊢[l] A → E ∣ Γ ⊢[l] t : A →
 
 attribute [local grind ←] WfCtx.snoc eqSb_up wfSb_up in
 attribute [local grind →] EqSb.wf_left EqSb.wf_right in
-attribute [local grind] -- TODO: fwd or bwd for properties of equality?
+attribute [local grind .] -- TODO: fwd or bwd for properties of equality?
   EqTp.refl_tp EqTp.symm_tp EqTp.trans_tp
   EqTm.refl_tm EqTm.symm_tm' EqTm.trans_tm'
   EqSb.refl in

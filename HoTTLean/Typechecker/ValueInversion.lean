@@ -6,7 +6,7 @@ namespace SynthLean
 
 variable {χ : Type*} {E : Axioms χ}
 
-attribute [local grind]
+attribute [local grind .]
   EqTp.refl_tp EqTp.symm_tp EqTp.trans_tp
   EqTm.refl_tm EqTm.symm_tm EqTm.trans_tm
 
@@ -45,7 +45,7 @@ theorem ValEqTp.inv_Id {Γ C vA vt vu l k} : ValEqTp E Γ l (.Id k vA vt vu) C �
   case Id =>
     introv vA vt vu
     have := WfTp.Id vt.wf_tm vu.wf_tm
-    grind [EqTp.refl_tp]
+    grind
   all_goals grind
 
 theorem ValEqTp.inv_univ {Γ l k t} : ValEqTp E Γ l (.univ k) t → l = k + 1 ∧
