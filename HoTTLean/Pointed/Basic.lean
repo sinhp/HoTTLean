@@ -342,13 +342,6 @@ theorem mapFiber'_comp_aux1 {x y z} (f : x ⟶ y) (g : y ⟶ z) :
   subst h
   simp [objFiber]
 
-theorem mapFiber'_comp {x y z} (f : x ⟶ y)
-    (g : y ⟶ z) : mapFiber' h (f ≫ g)
-    = eqToHom (by rw [mapFiber'_comp_aux1 h f g]; simp [forgetToCat]) ≫
-    (eqToHom (mapFiber'_comp_aux0 h)).map ((α.map g).base.map (α.map f).fiber)
-    ≫ (eqToHom (mapFiber'_comp_aux0 h)).map (α.map g).fiber := by
-  simp [mapFiber', eqToHom_map, mapFiber'EqToHom]
-
 theorem mapFiber'_naturality {Δ : Type*} [Category Δ] (σ : Δ ⥤ Γ) {x y} (f : x ⟶ y) :
     @mapFiber' _ _ (σ ⋙ A) (σ ⋙ α) (by rw [Functor.assoc, h]) _ _ f
     = mapFiber' h (σ.map f) := by
@@ -356,6 +349,23 @@ theorem mapFiber'_naturality {Δ : Type*} [Category Δ] (σ : Δ ⥤ Γ) {x y} (
 
 @[simp] theorem mapFiber'_rfl {x y : Γ} (f : x ⟶ y) : mapFiber' rfl f = mapFiber α f := by
   simp [mapFiber', mapFiber, mapFiber'EqToHom]
+
+theorem mapFiber'_comp'
+    {A : Γ ⥤ Grpd.{v₁,u₁}} {α : Γ ⥤ PGrpd.{v₁,u₁}} (h : α ⋙ PGrpd.forgetToGrpd = A)
+    {x y z} (f : x ⟶ y)
+    (g : y ⟶ z) : mapFiber' h (f ≫ g)
+    = eqToHom (by simp) ≫ (A.map g).map (mapFiber' h f) ≫ mapFiber' h g := by
+  subst h
+  simp [mapFiber]
+
+-- TODO: remove and replace with `mapFiber'_comp'`
+theorem mapFiber'_comp {x y z} (f : x ⟶ y)
+    (g : y ⟶ z) : mapFiber' h (f ≫ g)
+    = eqToHom (by rw [mapFiber'_comp_aux1 h f g]; simp [forgetToCat]) ≫
+    (eqToHom (mapFiber'_comp_aux0 h)).map ((α.map g).base.map (α.map f).fiber)
+    ≫ (eqToHom (mapFiber'_comp_aux0 h)).map (α.map g).fiber := by
+  simp [mapFiber', eqToHom_map, mapFiber'EqToHom]
+
 
 end
 

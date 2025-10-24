@@ -11,6 +11,31 @@ open CategoryTheory
 
 namespace CategoryTheory
 
+open Prod in
+lemma Prod.sectR_snd {C : Type u₁} [Category.{v₁} C] (Z : C)
+    (D : Type u₂) [Category.{v₂} D] : sectR Z D ⋙ snd C D = 𝟭 D :=
+  rfl
+
+theorem Functor.Grothendieck.congr
+    {C : Type u} [Category.{v, u} C] {F : C ⥤ Cat}
+    {X Y : Grothendieck F} {f g : X ⟶ Y} (h : f = g) :
+    f.fiber = eqToHom (by subst h; rfl) ≫ g.fiber := by
+  subst h
+  dsimp
+  simp
+
+theorem PGrpd.congr
+    {X Y : PGrpd} {f g : X ⟶ Y} (h : f = g) :
+    f.fiber = eqToHom (by subst h; rfl) ≫ g.fiber := by
+  subst h
+  dsimp
+  simp
+
+-- def Grpd.Interval.rec {α : Type*} (a b : α) (x : Grpd.Interval) : α :=
+--   match x with
+--   | ⟨⟨.true⟩⟩ => a
+--   | ⟨⟨.false⟩⟩ => b
+
 lemma Discrete.functor_ext' {X C : Type*} [Category C] {F G : X → C} (h : ∀ x : X, F x = G x) :
     Discrete.functor F = Discrete.functor G := by
   have : F = G := by aesop
@@ -91,6 +116,7 @@ lemma IdMap_comp {X Y Z : Γ} (f1 : X ⟶ Y) (f2 : Y ⟶ Z) : IdMap a0_tp a1_tp 
     heq_eqToHom_comp_iff, heq_comp_eqToHom_iff, eqToHom_comp_heq_iff]
   simp [Grpd.eqToHom_hom]
 
+@[simps!]
 def Id : Γ ⥤ Grpd where
   obj := IdObj a0_tp a1_tp
   map := IdMap a0_tp a1_tp
@@ -106,39 +132,12 @@ section
 
 open CategoryTheory.Prod
 
-lemma _root_.CategoryTheory.Prod.sectR_snd {C : Type u₁} [Category.{v₁} C] (Z : C)
-    (D : Type u₂) [Category.{v₂} D] : sectR Z D ⋙ snd C D = 𝟭 D :=
-  rfl
-
-theorem _root_.CategoryTheory.Functor.Grothendieck.congr
-    {C : Type u} [Category.{v, u} C] {F : C ⥤ Cat}
-    {X Y : Grothendieck F} {f g : X ⟶ Y} (h : f = g) :
-    f.fiber = eqToHom (by subst h; rfl) ≫ g.fiber := by
-  subst h
-  dsimp
-  simp
-
-theorem _root_.CategoryTheory.PGrpd.congr
-    {X Y : PGrpd} {f g : X ⟶ Y} (h : f = g) :
-    f.fiber = eqToHom (by subst h; rfl) ≫ g.fiber := by
-  subst h
-  dsimp
-  simp
-
--- open PGrpd in
--- theorem _root_.CategoryTheory.PGrpd.mapFiber'_comp' {A : Γ ⥤ Grpd.{v₁,u₁}} {α : Γ ⥤ PGrpd.{v₁,u₁}}
---     (h : α ⋙ PGrpd.forgetToGrpd = A) {x y z} (f : x ⟶ y) (g : y ⟶ z) : mapFiber' h (f ≫ g)
---     = eqToHom (by rw [mapFiber'_comp_aux1 h f g]; simp [Grpd.forgetToCat]) ≫
---     (eqToHom (mapFiber'_comp_aux0 h)).map ((α.map g).base.map (α.map f).fiber)
---     ≫ (eqToHom (mapFiber'_comp_aux0 h)).map (α.map g).fiber := by
---   simp [mapFiber', eqToHom_map, mapFiber'EqToHom]
-
 variable (p : Grpd.Interval × Γ ⥤ PGrpd)
 
 abbrev ff (x : Γ) : Grpd.Interval × Γ := ⟨⟨⟨.false⟩⟩, x⟩
-abbrev ffm {x y : Γ} (f : x ⟶ y) : ff x ⟶ ff y := ⟨⟨⟨⟩⟩, f⟩
+abbrev ffm {x y : Γ} (f : x ⟶ y) : ff x ⟶ ff y := ⟨𝟙 _, f⟩
 abbrev tt (x : Γ) : Grpd.Interval × Γ := ⟨⟨⟨.true⟩⟩, x⟩
-abbrev ttm {x y : Γ} (f : x ⟶ y) : tt x ⟶ tt y := ⟨⟨⟨⟩⟩, f⟩
+abbrev ttm {x y : Γ} (f : x ⟶ y) : tt x ⟶ tt y := ⟨𝟙 _, f⟩
 abbrev ft (x : Γ) : ff x ⟶ tt x := ⟨⟨⟨⟩⟩, 𝟙 x⟩
 
 abbrev unPath0 : Γ ⥤ PGrpd := sectR ⟨⟨.false⟩⟩ _ ⋙ p
@@ -185,32 +184,16 @@ def unPathFibMap {x y : Γ} (f : x ⟶ y) :
   refine ⟨⟨?_⟩⟩
   dsimp [IdMap]
   have comm : ft x ≫ ttm f = ffm f ≫ ft y := by ext; rfl; simp
-  have h0 := Functor.congr_map p comm
-  have h1 := (PGrpd.mapFiber'_comp p_tp (ft x) (ttm f)).symm
-  have h2 := PGrpd.mapFiber'_comp p_tp (ffm f) (ft y)
-  -- have h3 : (p.map (ttm f)).base = eqToHom (Functor.congr_obj p_tp _) ≫
-  --   A.map f ≫ eqToHom (Functor.congr_obj p_tp _).symm := Functor.congr_hom p_tp (ffm f)
-  rw! [comm, h2] at h1
-  simp only [IsIso.inv_comp_eq]
-  simp only [Functor.comp_obj, Functor.comp_map,
-    Functor.Grothendieck.forget_obj, ← heq_eq_eq] at h1
-  simp only [PGrpd.mapFiber', PGrpd.mapFiber'EqToHom, Category.assoc, PGrpd.objFiber'EqToHom]
-  simp only [heq_eqToHom_comp_iff, eqToHom_comp_heq_iff] at h1
-
-  -- simp only [Functor.map_comp] at h0
-  -- have h2 := Functor.congr_hom p_tp (ttm f)
-  -- simp at h2
-  -- simp [PGrpd.mapFiber', eqToHom_map, PGrpd.mapFiber'EqToHom]
-  -- -- simp [← Functor.comp_map]
-  -- have h1 := PGrpd.congr h0
-  -- simp [Grpd.forgetToCat] at h1
-  -- rw! (castMode := .all) [h2] at h1
-  -- simp at h1
-  -- -- simp [PGrpd.mapFiber', PGrpd.mapFiber'EqToHom, eqToHom_map]
-
-  -- -- simp [Grpd.eqToHom_hom]
-  -- -- simp [← heq_eq_eq]
-  sorry
+  have h1 := (PGrpd.mapFiber'_comp' p_tp (ft x) (ttm f)).symm
+  rw! [comm, PGrpd.mapFiber'_comp' p_tp (ffm f) (ft y)] at h1
+  simp only [Functor.comp_obj, snd_obj, prod_comp, Functor.comp_map, snd_map, Grpd.map_id_map,
+    Category.assoc, eqToHom_trans_assoc, ← heq_eq_eq, heq_eqToHom_comp_iff,
+    eqToHom_comp_heq_iff] at h1
+  simp only [PGrpd.mapFiber'_naturality p_tp (sectR ⟨⟨.false⟩⟩ _), sectR_obj, sectR_map,
+    Functor.map_comp, eqToHom_map, PGrpd.mapFiber'_naturality p_tp (sectR ⟨⟨.true⟩⟩ _),
+    Category.assoc, IsIso.inv_comp_eq]
+  rw! [h1]
+  simp
 
 lemma unPathFibMap_id (x : Γ) : unPathFibMap p_tp (𝟙 x) = eqToHom (by simp [IdMap_id]) := by
   aesop_cat
@@ -254,6 +237,40 @@ lemma unPath_comp_forgetToGrpd : unPath p_tp ⋙ PGrpd.forgetToGrpd =
 
 end
 
+section
+
+variable {p : Γ ⥤ PGrpd}
+  (p_tp : p ⋙ PGrpd.forgetToGrpd = FunctorOperation.Id a0_tp a1_tp)
+
+def pathObj : Grpd.Interval × Γ → PGrpd
+  | ⟨⟨⟨.false⟩⟩, x2⟩ => .mk (A.obj x2) (PGrpd.objFiber' a0_tp x2)
+  | ⟨⟨⟨.true⟩⟩, x2⟩ => .mk (A.obj x2) (PGrpd.objFiber' a1_tp x2)
+
+lemma pathObj_base : (x : Grpd.Interval × Γ) → (pathObj a0_tp a1_tp x).base = A.obj x.2
+  | ⟨⟨⟨.false⟩⟩, _⟩ => rfl
+  | ⟨⟨⟨.true⟩⟩, _⟩ => rfl
+
+def pathMap : {x y : Grpd.Interval × Γ} → (f : x ⟶ y) →
+    pathObj a0_tp a1_tp x ⟶ pathObj a0_tp a1_tp y
+  | ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => .mk (A.map f.2) (PGrpd.mapFiber' a0_tp f.2)
+  | ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f =>
+    .mk (A.map f.2) ((PGrpd.mapFiber' a0_tp f.2) ≫ (PGrpd.objFiber' p_tp y2).1)
+  | ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, y2⟩, f =>
+    .mk (A.map f.2) ((PGrpd.mapFiber' a1_tp f.2) ≫ inv (PGrpd.objFiber' p_tp y2).1)
+    -- refine .mk (A.map f.2) (inv ((A.map f.2).map (PGrpd.objFiber' p_tp x2).1) ≫ (PGrpd.mapFiber' a0_tp f.2))
+    -- have h := (PGrpd.objFiber' p_tp y2).1
+    -- dsimp [pathObj, Grpd.forgetToCat] at *
+    -- sorry
+  | ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, _⟩, f => .mk (A.map f.2) (PGrpd.mapFiber' a1_tp f.2)
+
+def path : Grpd.Interval × Γ ⥤ PGrpd where
+  obj := pathObj a0_tp a1_tp
+  map := pathMap a0_tp a1_tp p_tp
+  map_id := sorry
+  map_comp := sorry
+
+end
+
 end FunctorOperation
 
 namespace GroupoidModel
@@ -266,19 +283,26 @@ namespace UId
 
 variable {Γ Δ : Grpd} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} (a0 a1 : Γ ⟶ U.Tm)
     (a0_tp : a0 ≫ U.tp = A) (a1_tp : a1 ≫ U.tp = A)
-    (p : cylinder.I.obj Γ ⟶ U.Tm) (p_tp : p ≫ U.tp = cylinder.π.app Γ ≫ A)
+
+include a0_tp in
+lemma pt_tp : toCoreAsSmallEquiv a0 ⋙ PGrpd.forgetToGrpd = toCoreAsSmallEquiv A := by
+  rw [← a0_tp, Grpd.comp_eq_comp, U.tp, toCoreAsSmallEquiv_apply_comp_right]
 
 def Id : Γ ⟶ U.{v}.Ty :=
   toCoreAsSmallEquiv.symm (FunctorOperation.Id (A := toCoreAsSmallEquiv A)
     (a0 := toCoreAsSmallEquiv a0) (a1 := toCoreAsSmallEquiv a1)
-    (by rw [← a0_tp, Grpd.comp_eq_comp, U.tp, toCoreAsSmallEquiv_apply_comp_right])
-    (by rw [← a1_tp, Grpd.comp_eq_comp, U.tp, toCoreAsSmallEquiv_apply_comp_right]))
+    (pt_tp a0 a0_tp)
+    (pt_tp a1 a1_tp))
 
 lemma Id_comp :
     UId.Id (A := σ ≫ A) (σ ≫ a0) (σ ≫ a1) (by simp only [Category.assoc, a0_tp, U_Ty])
       (by simp only [Category.assoc, a1_tp, U_Ty]) = σ ≫ UId.Id a0 a1 a0_tp a1_tp := by
   dsimp only [U_Ty, comp_eq_comp, Id]
   rw [← toCoreAsSmallEquiv_symm_apply_comp_left, ← FunctorOperation.Id_comp]
+
+section
+
+variable (p : cylinder.I.obj Γ ⟶ U.Tm) (p_tp : p ≫ U.tp = cylinder.π.app Γ ≫ A)
 
 def unPath : Γ ⟶ U.{v}.Tm := by
   -- have p' := toCoreAsSmallEquiv p
@@ -311,6 +335,20 @@ lemma unPath_tp (δ0_p : cylinder.δ0.app Γ ≫ p = a0) (δ1_p : cylinder.δ1.a
   · rw [← δ1_p, Grpd.comp_eq_comp, toCoreAsSmallEquiv_apply_comp_left]
     rfl
 
+end
+
+section
+
+variable (p : Γ ⟶ U.Tm) (p_tp : p ≫ U.tp = UId.Id a0 a1 a0_tp a1_tp)
+
+def path : cylinder.I.obj Γ ⟶ U.{v}.Tm :=
+  have p' := toCoreAsSmallEquiv p
+  have p'_comp_forgetToGrpd : p' ⋙ PGrpd.forgetToGrpd =
+      FunctorOperation.Id (pt_tp a0 a0_tp) (pt_tp a1 a1_tp) :=
+    sorry
+  toCoreAsSmallEquiv.symm <| FunctorOperation.path
+
+end
 end UId
 
 open UId
@@ -321,7 +359,7 @@ def UPath : GroupoidModel.U.{v}.Path cylinder where
   unPath := unPath
   unPath_comp := unPath_comp
   unPath_tp := unPath_tp
-  path := sorry
+  path {Γ A} a0 a1 a0_tp a1_tp p p_tp := sorry
   path_tp := sorry
   δ0_path := sorry
   δ1_path := sorry
