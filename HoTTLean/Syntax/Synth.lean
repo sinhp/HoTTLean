@@ -111,7 +111,7 @@ noncomputable def synthTp (Γ : Ctx χ) : Expr χ → Expr χ
   | .code A => .univ (synthLvl Γ A)
   | _ => default
 
-attribute [local grind] synthTp EqTp.symm_tp EqTp.trans_tp EqTp.refl_tp in
+attribute [local grind .] synthTp EqTp.symm_tp EqTp.trans_tp EqTp.refl_tp in
 theorem WfTm.tp_eq_synthTp : ∀ {Γ l A t}, E ∣ Γ ⊢[l] t : A → E ∣ Γ ⊢[l] A ≡ synthTp Γ t := by
   mutual_induction WfTm
   all_goals intros; try exact True.intro

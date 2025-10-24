@@ -64,7 +64,7 @@ theorem eqtp_inst : WfCtx E Γ → E ∣ Γ ⊢[l] A →
   apply subst_all.2.1 BB' (eqSb_snoc ..)
   all_goals (try autosubst); grind [WfSb.id, EqSb.refl, EqTp.refl_tp]
 
-attribute [local grind] tp_conv_binder tm_conv_binder WfCtx.snoc in
+attribute [local grind .] tp_conv_binder tm_conv_binder WfCtx.snoc in
 theorem inv_all :
     (∀ {Γ l A}, E ∣ Γ ⊢[l] A →
       WfCtx E Γ) ∧

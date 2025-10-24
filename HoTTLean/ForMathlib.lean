@@ -512,7 +512,7 @@ lemma ofYoneda_isPullback {C : Type u} [Category.{v} C] {TL TR BL BR : C}
     (bot : ∀ {Γ}, (Γ ⟶ BL) ⟶ (Γ ⟶ BR))
     (bot_comp : ∀ {Δ Γ} (σ : Δ ⟶ Γ) (br), bot (σ ≫ br) = σ ≫ bot br)
     (comm_sq : ∀ {Γ} (ab : Γ ⟶ TL), top ab ≫ right = bot (ab ≫ left))
-    (lift : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), Γ ⟶ TL)
+    (lift : ∀ {Γ} (t : Γ ⟶ TR) (p), t ≫ right = bot p → (Γ ⟶ TL))
     (top_lift : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), top (lift t p ht) = t)
     (lift_comp_left : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p), lift t p ht ≫ left = p)
     (lift_uniq : ∀ {Γ} (t : Γ ⟶ TR) (p) (ht : t ≫ right = bot p) (m : Γ ⟶ TL),
@@ -532,7 +532,7 @@ lemma ofYoneda_isPullback {C : Type u} [Category.{v} C] {TL TR BL BR : C}
       simpa [c] using h
     · specialize h (some .right)
       exact h
-      
+
 variable {C : Type u₁} [SmallCategory C] {F G : Cᵒᵖ ⥤ Type u₁}
   (app : ∀ {X : C}, (yoneda.obj X ⟶ F) → (yoneda.obj X ⟶ G))
   (naturality : ∀ {X Y : C} (f : X ⟶ Y) (α : yoneda.obj Y ⟶ F),
