@@ -832,7 +832,7 @@ theorem tp_sound {Γ i A l} (H : Lookup Γ i A l) {sΓ} (hΓ : sΓ ∈ I.ofCtx �
   | zero => exact I.mem_ofType_wk _ hB
   | succ _ _ _ ih =>
     have ⟨_, _, _, _⟩ := ih hΓ'
-    exact ⟨‹_›, _, ⟨_, ‹_›, rfl⟩, I.mem_ofType_wk _ ‹_›⟩
+    exact ⟨‹_›, _, ‹_›, I.mem_ofType_wk _ ‹_›⟩
 
 theorem var_sound {Γ i A l} (H : Lookup Γ i A l) {sΓ} (hΓ : sΓ ∈ I.ofCtx Γ) :
     ∃ llen, ∃ st ∈ sΓ.var llen i, st ≫ s[l].tp ∈ I.ofType sΓ l A llen := by

@@ -482,6 +482,7 @@ theorem comp_mk
       (by simp [e2]; rw [← Functor.map_comp_assoc, comp_sec]; simp; congr!) := by
   apply ext (A := σA) (by simp [← comp_fst, e1, e3]) <;> simp [← comp_fst, ← comp_snd]
   rw [← comp_dependent, dependent_mk]
+  . simp [e1]
 
 theorem eta (ab : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     {A} (eq : fst ab ≫ M.tp = A) :
@@ -1176,7 +1177,8 @@ lemma reflSubst_j : ym(ii.reflSubst a) ≫ j i a C r r_tp = r := by
     · simp
   simp only [← heq_eq_eq, comp_eqToHom_heq_iff]
   rw! [equivFst_lift_eq]
-  simp [this]
+  . simp [this]
+  . simp [IsPullback.of_id_fst]
 
 variable (b : y(Γ) ⟶ M.Tm) (b_tp : b ≫ M.tp = a ≫ M.tp)
   (h : y(Γ) ⟶ M.Tm) (h_tp : h ≫ M.tp = ii.isKernelPair.lift b a (by aesop) ≫ ii.Id)
