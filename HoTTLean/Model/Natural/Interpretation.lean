@@ -830,7 +830,7 @@ theorem tp_sound {Γ i A l} (H : Lookup Γ i A l) {sΓ} (hΓ : sΓ ∈ I.ofCtx �
     obtain ⟨_, hΓ', _, _, hB, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ
     simp [UHomSeq.CObj.tp, UHomSeq.ExtSeq.tp, *] at *)
   | zero => exact I.mem_ofType_wk _ hB
-  | succ _ _ _ ih =>
+  | succ _ _ ih =>
     have ⟨_, _, _, _⟩ := ih hΓ'
     exact ⟨‹_›, _, ‹_›, I.mem_ofType_wk _ ‹_›⟩
 

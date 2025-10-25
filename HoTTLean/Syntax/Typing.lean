@@ -43,7 +43,7 @@ variable {χ : Type*} (E : Axioms χ)
 Together with `⊢ Γ`, this implies `Γ ⊢[l] .bvar i : A`. -/
 inductive Lookup : Ctx χ → Nat → Expr χ → Nat → Prop where
   | zero (Γ A l) : Lookup ((A,l) :: Γ) 0 (A.subst Expr.wk) l
-  | succ {Γ A i l} (B l') : Lookup Γ i A l → Lookup ((B,l') :: Γ) (i+1) (A.subst Expr.wk) l
+  | succ {Γ A i l} (Bk) : Lookup Γ i A l → Lookup (Bk :: Γ) (i+1) (A.subst Expr.wk) l
 
 /-- Judgment syntax not parameterized by an environment.
 Used locally to define typing rules without repeating `E ∣ Γ`. -/
@@ -398,13 +398,10 @@ end PrettyPrinting
 
 Unlike contexts that change via substitutions,
 there is usually one fixed axiom environment that definitions 'live' over. -/
-/- FIXME: Can't make inversion (`E | Γ ⊢[l] 𝒥 ⇏ E.Wf`) true
-by making `Axioms.Wf` mutual with typing
-(that's not strictly positive),
-but we could redefine `E ∣ Γ ⊢[l] 𝒥` to mean `E.Wf ∧ E ∣ Γ ⊢[l] 𝒥`.
-We'd need to rederive all typing rules for the latter,
-and this should be done using custom automation
-(do NOT write a million lemmas by hand). -/
+/- NOTE:
+We can't make inversion for axioms (`E ∣ Γ ⊢[l] 𝒥 ⇏ E.Wf`) true
+by making `Axioms.Wf` mutual with typing:
+this forces `Axioms` to be finitely supported. -/
 abbrev Axioms.Wf (E : Axioms χ) :=
   ∀ ⦃c p⦄, E c = some p → E ∣ [] ⊢[p.val.2] p.val.1
 
