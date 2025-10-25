@@ -273,7 +273,7 @@ theorem lookup_eq : ∀ {Δ Eᵥ σ Γ}, (env : EnvEqSb E Δ Eᵥ σ Γ) →
   all_goals intros; try exact True.intro
   case nil lk => cases lk
   case snoc E A v ih _ _ _ _ lk =>
-    rcases lk with _ | ⟨_, _, lk⟩
+    rcases lk with _ | ⟨_, lk⟩
     . exact autosubst% v
     . exact autosubst% ih lk
 
@@ -496,7 +496,7 @@ private theorem wk_all :
     apply ValEqTm.pair this (iht C) (autosubst% ihu C)
   case conv_nf => grind [ValEqTm.conv_nf, EqTp.subst, EqTm.subst, WfSb.wk]
   case bvar Γ lk _ _ C =>
-    convert NeutEqTm.bvar (Γ.snoc C) (.succ _ _ lk) using 1; grind
+    convert NeutEqTm.bvar (Γ.snoc C) (.succ _ lk) using 1; grind
   case app ihA ihf iha _ _ C =>
     exact autosubst% NeutEqTm.app (ihA C) (ihf C) (iha C)
   case snd ih _ _ C =>
