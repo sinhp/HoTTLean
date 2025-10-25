@@ -572,7 +572,7 @@ partial def forceClos₂Tp (d : Q(Nat)) (vA vB : Q(Val $χ)) (vC : Q(Clos $χ)) 
     replace vA := vA.wk vA.wf_tp |>.wk vB.wf_tp
     replace vB := vB.wk vB.wf_tp
     have ΓAB := vA.wf_tp.wf_ctx
-    have xA := NeutEqTm.bvar ΓAB (Lookup.succ _ _ <| Lookup.zero ..)
+    have xA := NeutEqTm.bvar ΓAB (Lookup.succ _ <| Lookup.zero ..)
     have xB := NeutEqTm.bvar ΓAB (Lookup.zero ..)
     simp only [List.length_cons, Nat.zero_add, Nat.add_one_sub_one, Nat.sub_zero, ← deq] at xA xB
     exact autosubst% $vpost vC (.neut_tm vA xA) (.neut_tm (autosubst% vB) (autosubst% xB))

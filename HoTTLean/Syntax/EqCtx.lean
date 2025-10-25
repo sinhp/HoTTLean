@@ -94,7 +94,7 @@ theorem EqCtx.lookup_eq : EqCtx E Γ Γ' →
     have := eqA.subst (WfSb.wk eqA.wf_left)
     grind
   . rename_i ih
-    rcases lk' with _ | ⟨_, _, lk'⟩
+    rcases lk' with _ | ⟨_, lk'⟩
     have ⟨_, _, h, eq, eqB⟩ := eq.inv_snoc
     cases h
     have := (ih eq lk').2.subst (WfSb.wk eqB.wf_left)

@@ -59,7 +59,7 @@ theorem id (Γ : Ctx χ) : WfRen Γ id Γ := by
 
 theorem wk (Γ : Ctx χ) (A l) : WfRen ((A,l) :: Γ) Nat.succ Γ := by
   unfold WfRen; intro _ _ _ lk
-  exact autosubst% Lookup.succ _ _ lk
+  exact autosubst% Lookup.succ _ lk
 
 theorem comp : WfRen Θ ξ Δ → WfRen Δ ξ' Γ → WfRen Θ (ξ ∘ ξ') Γ := by
   unfold WfRen; intro wf wf' _ _ _ lk
@@ -72,7 +72,7 @@ theorem upr : WfRen Δ ξ Γ → WfRen ((A.rename ξ, l) :: Δ) (Expr.upr ξ) ((
     apply Lookup.zero
   · rename_i A _ lk
     rw [show (A.subst Expr.wk).rename (Expr.upr ξ) = (A.rename ξ).subst Expr.wk by autosubst]
-    apply Lookup.succ _ _ (wf lk)
+    apply Lookup.succ _ (wf lk)
 
 end WfRen
 

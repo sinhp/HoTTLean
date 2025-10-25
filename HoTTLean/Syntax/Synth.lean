@@ -27,7 +27,7 @@ theorem of_lt_length : i < Γ.length → ∃ A l, Lookup Γ i A l := by
     · exact ⟨_, _, Lookup.zero ..⟩
     · rename_i ih _
       have ⟨A, l, h⟩ := ih <| Nat.succ_lt_succ_iff.mp lt
-      exact ⟨A.subst Expr.wk, l, Lookup.succ _ _ h⟩
+      exact ⟨A.subst Expr.wk, l, Lookup.succ _ h⟩
 
 end Lookup
 
