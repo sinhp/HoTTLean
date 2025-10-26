@@ -27,9 +27,13 @@ now as objects in `Grpd`. -/
 def grothendieckClassifierIso : Grpd.of (∫ hF.splitIsofibration.classifier) ≅ B :=
   Grpd.mkIso (Functor.ClovenIsofibration.grothendieckClassifierIso ..)
 
+/-lemma ι_classifier_comp_forget {x} : ι I.classifier x ⋙ Groupoidal.forget =
+    Fiber.fiberInclusion ⋙ F
+    -/
 lemma grothendieckClassifierIso_inv_comp_forget :
-    hF.grothendieckClassifierIso.inv ⋙ homOf Functor.Groupoidal.forget = F :=
-  sorry
+    hF.grothendieckClassifierIso.inv ⋙ homOf Functor.Groupoidal.forget = F := by
+  apply Functor.ClovenIsofibration.grothendieckClassifierIso.inv_comp_forget
+
 
 end SplitIsofibration
 
@@ -177,8 +181,15 @@ def isoPushforwardOfIsPushforward  {B A} {F : B ⟶ A} (hF : SplitIsofibration F
 -- as a grothendieck construction)
 theorem splitIsofibration_pushforward {C B A} {F : B ⟶ A} (hF : SplitIsofibration F)
     {G : C ⟶ B} (hG : SplitIsofibration G) :
-    SplitIsofibration (pushforwardHom hF hG) :=
-  sorry
+    SplitIsofibration (pushforwardHom hF hG) := by
+  unfold Grpd.pushforwardHom homOf --SplitIsofibration
+  exact ⟨ Functor.ClovenIsofibration.forget _ ,
+          CategoryTheory.Functor.ClovenIsofibration.instIsSplitGroupoidalForget
+          ⟩
+
+  ---simp[Grpd.pushforwardHom,SplitIsofibration,homOf]
+  --apply (Functor.ClovenIsofibration.IsSplit )
+
 
 -- FIXME. For some reason needed in the proof
 -- `SplitIsofibration.IsStableUnderPushforward SplitIsofibration`
