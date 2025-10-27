@@ -6,8 +6,6 @@ import HoTTLean.Groupoids.Basic
 
 /-!
 Here we construct universes for the groupoid natural model.
-
--- TODO: flip all the diagrams in this file
 -/
 
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
@@ -160,11 +158,24 @@ coreAsSmall PGrpd ----> AsSmall PGrpd
      V                   V
 coreAsSmall Grpd -----> AsSmall Grpd
 -/
-
 def isPullbackCoreAsSmall :
     Functor.IsPullback (Core.inclusion _) (Ctx.coreAsSmallFunctor PGrpd.forgetToGrpd)
     (AsSmall.down ⋙ PGrpd.forgetToGrpd ⋙ AsSmall.up) (Core.inclusion _) :=
   Core.isPullback_map'_self _
+
+/--
+coreAsSmall PGrpd ----> PGrpd
+     |                   |
+     |                   |
+     |                   |
+     V                   V
+coreAsSmall Grpd -----> Grpd
+-/
+def isPullbackCoreAsSmall' :
+    Functor.IsPullback (Core.inclusion _ ⋙ AsSmall.down)
+    (Ctx.coreAsSmallFunctor PGrpd.forgetToGrpd)
+    (PGrpd.forgetToGrpd) (Core.inclusion _ ⋙ AsSmall.down) :=
+  Functor.IsPullback.Paste.horiz rfl rfl isPullbackAsSmall isPullbackCoreAsSmall
 
 /--
 ∫ toCo...iv A ----> coreAsSmall PGrpd

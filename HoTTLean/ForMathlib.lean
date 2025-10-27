@@ -582,4 +582,14 @@ theorem comp_heq_of_heq_id {A B : Type u} {C : Type*} [Category.{v} A] [Category
 
 end Functor
 
+lemma eqToHom_heq_id {C : Type*} [Category C] (x y z : C) (h : x = y)
+    (hz : z = x) : eqToHom h ≍ 𝟙 z := by cat_disch
+
 end CategoryTheory
+
+lemma Subtype.hext {α α' : Sort u} (hα : α ≍ α') {p : α → Prop} {p' : α' → Prop}
+    (hp : p ≍ p') {a : { x // p x }} {a' : { x // p' x }} (ha : a.1 ≍ a'.1) : a ≍ a' := by
+  subst hα hp
+  simp only [heq_eq_eq]
+  ext
+  simpa [← heq_eq_eq]

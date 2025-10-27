@@ -606,6 +606,43 @@ def toTransport_fiber (x : ∫ F) {c : C} (t : x.base ⟶ c) :
     (toTransport x t).fiber = 𝟙 _ :=
   rfl
 
+lemma transport_id {x : ∫ F} :
+    transport x (𝟙 x.base) = x := by
+  fapply Grothendieck.ext <;> simp [transport]
+
+lemma transport_eqToHom {X: C} {X' : ∫ F} (hX': (forget F).obj X' = X):
+    X'.transport (eqToHom hX') = X' := by
+  subst hX'
+  simp [transport_id]
+
+lemma toTransport_id {X : ∫ F} :
+    toTransport X (𝟙 X.base) = eqToHom transport_id.symm := by
+  apply Grothendieck.Hom.ext <;> simp
+
+lemma toTransport_eqToHom {X: C} {X' : ∫ F} (hX': (forget F).obj X' = X):
+    toTransport X' (eqToHom hX') = eqToHom (by subst hX'; simp[transport_id]) := by
+  subst hX'
+  simp [toTransport_id]
+
+lemma transport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t': c ⟶ d):
+      transport x (t ≫ t') = transport (c:= d) (transport x t) t' := by
+  simp [transport]
+
+lemma toTransport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t': c ⟶ d):
+    toTransport x (t ≫ t') =
+    toTransport x t ≫ toTransport (transport x t) t' ≫ eqToHom (transport_comp x t t').symm := by
+  simp only [← Category.assoc, ← heq_eq_eq, heq_comp_eqToHom_iff]
+  simp only [toTransport, transport_base, transport_fiber]
+  fapply Grothendieck.Hom.hext'
+  · rfl
+  · rfl
+  · simp [transport_comp]
+  · simp
+  · simp only [transport_base, Hom.mk_base, transport_fiber, Hom.comp_base, Hom.comp_fiber, map_id,
+      Category.comp_id]
+    symm
+    apply eqToHom_heq_id_dom
+
 /--
 Construct an isomorphism in a Grothendieck construction from isomorphisms in its base and fiber.
 -/

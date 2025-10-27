@@ -220,6 +220,34 @@ def toTransport (x : ∫(F)) {c : C} (t : x.base ⟶ c) : x ⟶ x.transport t :=
     (x.toTransport t).fiber = 𝟙 ((F.map t).obj x.fiber) :=
   Grothendieck.toTransport_fiber _ _
 
+lemma transport_congr (x x' : ∫ F) (e1 : x = x') {c : C} (t : x.base ⟶ c) (t' : x'.base ⟶ c)
+    (e : t = eqToHom (by simp[e1]) ≫ t') :
+  transport x t = transport x' t' := by aesop_cat
+
+lemma transport_id {x : ∫ F} : transport x (𝟙 x.base) = x := by
+  apply Grothendieck.transport_id
+
+lemma transport_eqToHom {X: C} {X' : F.Groupoidal} (hX': X'.base = X) :
+    X'.transport (eqToHom hX') = X' := by
+  apply Grothendieck.transport_eqToHom
+
+lemma toTransport_id {X : ∫ F} :
+    toTransport X (𝟙 X.base) = eqToHom transport_id.symm := by
+  apply Grothendieck.toTransport_id
+
+lemma toTransport_eqToHom {X: C} {X' : ∫ F} (hX': forget.obj X' = X):
+    toTransport X' (eqToHom hX') = eqToHom (by subst hX'; simp [transport_id]) := by
+  apply Grothendieck.toTransport_eqToHom
+
+lemma transport_comp (x : ∫ F) {c d : C} (t : x.base ⟶ c) (t' : c ⟶ d):
+    transport x (t ≫ t') = transport (transport x t) t' := by
+  apply Grothendieck.transport_comp
+
+lemma toTransport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t' : c ⟶ d):
+    toTransport x (t ≫ t') =
+    toTransport x t ≫ toTransport (transport x t) t' ≫ eqToHom (transport_comp x t t').symm := by
+  apply Grothendieck.toTransport_comp
+
 def isoMk {X Y : ∫(F)} (f : X ⟶ Y) : X ≅ Y := by
   fapply Grothendieck.isoMk
   · exact (Groupoid.isoEquivHom _ _).2 f.base
