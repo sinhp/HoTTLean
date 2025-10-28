@@ -133,23 +133,6 @@ def ofCartesianMonoidalCategoryLeft [CartesianMonoidalCategory Ctx] (Interval : 
     rw [← leftUnitor_naturality_assoc, h0, ← associator_naturality_assoc, ← h1]
     simp [← comp_whiskerRight_assoc, h2]
 
-attribute [local instance] BraidedCategory.ofCartesianMonoidalCategory in
-open MonoidalCategory CartesianMonoidalCategory in
-def ofCartesianMonoidalCategoryRight [CartesianMonoidalCategory Ctx] (Interval : Ctx)
-    (δ0 δ1 : 𝟙_ Ctx ⟶ Interval) : Cylinder Ctx where
-  I := tensorRight Interval
-  δ0 := (rightUnitorNatIso _).inv ≫ (tensoringRight _).map δ0
-  δ1 := (rightUnitorNatIso _).inv ≫ (tensoringRight _).map δ1
-  π := (tensoringRight _).map (toUnit _) ≫ (rightUnitorNatIso _).hom
-  δ0_π := by simp [← Functor.map_comp_assoc]
-  δ1_π := by simp [← Functor.map_comp_assoc]
-  symm := (tensorRightTensor _ _).inv ≫ (tensoringRight _).map (β_ _ _).hom ≫
-    (tensorRightTensor _ _).hom
-  symm_symm := by simp [← Functor.map_comp_assoc]
-  whiskerLeft_I_δ0_symm := sorry
-  whiskerLeft_I_δ1_symm := sorry
-  symm_π_π := sorry
-
 /-- A Hurewicz cleavage (just called `Hurewicz`) of `f` consists of a diagonal filler
 `lift` for every commutative square of the form
 ```
