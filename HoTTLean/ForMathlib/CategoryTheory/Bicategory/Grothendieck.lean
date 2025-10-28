@@ -585,6 +585,43 @@ def toTransport_fiber (x : ∫ F) {c : C} (t : x.base ⟶ c) :
     (toTransport x t).fiber = 𝟙 _ :=
   rfl
 
+lemma transport_id {x : ∫ F} :
+    transport x (𝟙 x.base) = x := by
+  fapply Grothendieck.ext <;> simp [transport]
+
+lemma transport_eqToHom {X: C} {X' : ∫ F} (hX': (forget F).obj X' = X):
+    X'.transport (eqToHom hX') = X' := by
+  subst hX'
+  simp [transport_id]
+
+lemma toTransport_id {X : ∫ F} :
+    toTransport X (𝟙 X.base) = eqToHom transport_id.symm := by
+  apply Grothendieck.Hom.ext <;> simp
+
+lemma toTransport_eqToHom {X: C} {X' : ∫ F} (hX': (forget F).obj X' = X):
+    toTransport X' (eqToHom hX') = eqToHom (by subst hX'; simp[transport_id]) := by
+  subst hX'
+  simp [toTransport_id]
+
+lemma transport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t': c ⟶ d):
+      transport x (t ≫ t') = transport (c:= d) (transport x t) t' := by
+  simp [transport]
+
+lemma toTransport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t': c ⟶ d):
+    toTransport x (t ≫ t') =
+    toTransport x t ≫ toTransport (transport x t) t' ≫ eqToHom (transport_comp x t t').symm := by
+  simp only [← Category.assoc, ← heq_eq_eq, heq_comp_eqToHom_iff]
+  simp only [toTransport, transport_base, transport_fiber]
+  fapply Grothendieck.Hom.hext'
+  · rfl
+  · rfl
+  · simp [transport_comp]
+  · simp
+  · simp only [transport_base, Hom.mk_base, transport_fiber, Hom.comp_base, Hom.comp_fiber, map_id,
+      Category.comp_id]
+    symm
+    apply eqToHom_heq_id_dom
+
 /--
 Construct an isomorphism in a Grothendieck construction from isomorphisms in its base and fiber.
 -/
@@ -1146,7 +1183,7 @@ include hom_id in
 lemma functorFromCompHom_id (c : C) : functorFromCompHom fib hom G (𝟙 c)
     = eqToHom (by simp [Cat.id_eq_id, Functor.id_comp]) := by
   ext x
-  simp [hom_id, functorFromCompHom]
+  simp [hom_id, eqToHom_map, functorFromCompHom]
 
 include hom_comp in
 lemma functorFromCompHom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g : c₂ ⟶ c₃):
@@ -1155,7 +1192,7 @@ lemma functorFromCompHom_comp (c₁ c₂ c₃ : C) (f : c₁ ⟶ c₂) (g : c₂
     Functor.whiskerLeft (F.map f) (functorFromCompHom fib hom G g) ≫
     eqToHom (by simp[Cat.comp_eq_comp, Functor.map_comp, Functor.assoc]) := by
   ext
-  simp [functorFromCompHom, hom_comp]
+  simp [functorFromCompHom, hom_comp, eqToHom_map]
 
 theorem functorFrom_comp : functorFrom fib hom hom_id hom_comp ⋙ G =
     functorFrom (functorFromCompFib fib G) (functorFromCompHom fib hom G)
@@ -1389,6 +1426,55 @@ def mapWhiskerRightAsSmallFunctor (α : F ⟶ G) :
       )
 
 end AsSmall
+
+noncomputable section
+
+variable {F} {x y : ∫ F} (f : x ⟶ y) [IsIso f]
+
+instance : IsIso f.base := by
+  refine ⟨ (CategoryTheory.inv f).base , ?_, ?_ ⟩
+  · simp [← Grothendieck.Hom.comp_base]
+  · simp [← Grothendieck.Hom.comp_base]
+
+def invFiber : y.fiber ⟶ (F.map f.base).obj x.fiber :=
+  eqToHom (by simp [← Functor.comp_obj, ← Cat.comp_eq_comp, ← Functor.map_comp,
+      ← Grothendieck.Hom.comp_base]) ≫
+    (F.map f.base).map (CategoryTheory.inv f).fiber
+
+@[simp]
+lemma fiber_comp_invFiber : f.fiber ≫ invFiber f = 𝟙 ((F.map f.base).obj x.fiber) := by
+  have h := Functor.Grothendieck.Hom.comp_fiber f (CategoryTheory.inv f)
+  rw! [IsIso.hom_inv_id] at h
+  have h0 : F.map (CategoryTheory.inv f).base ⋙ F.map f.base = 𝟭 _ := by
+    simp [← Cat.comp_eq_comp, ← Functor.map_comp, ← Grothendieck.Hom.comp_base, Cat.id_eq_id]
+  have h1 := Functor.congr_map (F.map f.base) h
+  simp [← heq_eq_eq, eqToHom_map, ← Functor.comp_map, Functor.congr_hom h0] at h1
+  dsimp [invFiber]
+  rw! [← h1]
+  simp
+
+@[simp]
+lemma invFiber_comp_fiber : invFiber f ≫ f.fiber = 𝟙 _ := by
+  have h := Functor.Grothendieck.Hom.comp_fiber (CategoryTheory.inv f) f
+  rw! [IsIso.inv_hom_id] at h
+  simp [invFiber]
+  convert h.symm
+  · simp
+  · simp
+  · simpa using (eqToHom_heq_id_cod _ _ _).symm
+
+instance : IsIso f.fiber :=
+  ⟨invFiber f , fiber_comp_invFiber f, invFiber_comp_fiber f⟩
+
+lemma inv_base : CategoryTheory.inv f.base = Grothendieck.Hom.base (CategoryTheory.inv f) := by
+  apply IsIso.inv_eq_of_hom_inv_id
+  simp [← Hom.comp_base]
+
+lemma inv_fiber : CategoryTheory.inv f.fiber = invFiber f := by
+  apply IsIso.inv_eq_of_hom_inv_id
+  simp
+
+end
 
 end Grothendieck
 

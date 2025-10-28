@@ -203,6 +203,22 @@ lemma Grpd.NatTrans.hext {X X' Y Y' : Grpd.{v,u}} (hX : X = X') (hY : Y = Y')
   subst hX hY hF hG
   aesop_cat
 
+lemma Grpd.comp_heq_comp {C C' : Grpd} (hC : C ≍ C') {X Y Z : C} {X' Y' Z' : C'}
+    (hX : X ≍ X') (hY : Y ≍ Y') (hZ : Z ≍ Z') {f : X ⟶ Y} {f' : X' ⟶ Y'}
+    {g : Y ⟶ Z} {g' : Y' ⟶ Z'} (hf : f ≍ f') (hg : g ≍ g') :
+    f ≫ g ≍ f' ≫ g' := by
+  aesop_cat
+
+lemma Grpd.inv_heq_of_heq_inv {C C' : Grpd} (hC : C ≍ C') {X Y : C} {X' Y' : C'}
+    (hX : X ≍ X') (hY : Y ≍ Y') {f : X ⟶ Y} {g : Y' ⟶ X'} (hf : f ≍ inv g) :
+    inv f ≍ g := by
+  aesop_cat
+
+lemma Grpd.inv_heq_inv {C C' : Grpd} (hC : C ≍ C') {X Y : C} {X' Y' : C'}
+    (hX : X ≍ X') (hY : Y ≍ Y') {f : X ⟶ Y} {f' : X' ⟶ Y'} (hf : f ≍ f') :
+    inv f ≍ inv f' := by
+  aesop_cat
+
 end
 
 namespace Grpd
@@ -224,5 +240,27 @@ def mkIso' {Δ Γ : Type u} [Groupoid.{v} Δ] [Groupoid.{v} Γ] (F : Δ ≅≅ �
   hom_inv_id := by simp
   inv_hom_id := by simp
 
+open MonoidalCategory
+
+instance {X : Type} : Groupoid (Codiscrete X) where
+  inv f := ⟨⟩
+  inv_comp := by aesop
+  comp_inv := by aesop
+
+def Interval : Grpd := Grpd.of $ AsSmall $ Codiscrete Bool
+
+def δ0 : 𝟙_ Grpd ⟶ Interval where
+  obj X := ⟨⟨.false⟩⟩
+  map _ := ⟨⟨⟩⟩
+  map_id := by aesop
+  map_comp := by aesop
+
+def δ1 : 𝟙_ Grpd ⟶ Interval where
+  obj X := ⟨⟨.true⟩⟩
+  map _ := ⟨⟨⟩⟩
+  map_id := by aesop
+  map_comp := by aesop
+
 end Grpd
+
 end CategoryTheory
