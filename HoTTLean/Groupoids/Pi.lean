@@ -186,15 +186,148 @@ def conjugatingObjNatTransEquiv' {x y : Γ} (f : x ⟶ y) (S) (T) :
     rw! (transparency := .default) [Category.id_comp, comp_eqToHom_heq_iff]
     apply Functor.Iso.whiskerLeft_hom_inv_heq
 
-def conjugatingObjNatTransEquiv {x y : Γ} (f : x ⟶ y) (S) (T) :
-    (A.map (inv f) ⋙ S ⋙ B.map f ⟶ T) ≃
-    (S ⋙ B.map f ⟶ A.map f ⋙ T) := conjugatingObjNatTransEquiv' A B f S T
+-- @[simp]
+-- lemma conjugatingObjNatTransEquiv'_apply {x y : Γ} (f : x ⟶ y) (S) (T) (g) :
+--     conjugatingObjNatTransEquiv' A B f S T g =
+--     eqToHom (by simp) ≫ g ≫ eqToHom (by simp) := by
+--   ext
+--   simp [conjugatingObjNatTransEquiv', Grpd.Functor.iso]
+
+@[simp]
+lemma conjugatingObjNatTransEquiv'_id (x : Γ) (S) (T) (g) :
+    conjugatingObjNatTransEquiv' A B (𝟙 x) S T g =
+    eqToHom (by simp) ≫ g ≫ eqToHom (by simp) := by
+  ext
+  simp [conjugatingObjNatTransEquiv', Grpd.Functor.iso]
+
+lemma conjugatingObjNatTransEquiv'_comp {x y z : Γ} (f1 : x ⟶ y) (f2 : y ⟶ z) (S) (T) (g) :
+    conjugatingObjNatTransEquiv' A B (f1 ≫ f2) S T g =
+    eqToHom (by simp [Grpd.Functor.iso, ← Grpd.comp_eq_comp]) ≫
+    (A.map f1 ⋙ A.map f2).whiskerLeft g ≫
+    eqToHom (by simp [Grpd.Functor.iso, ← Grpd.comp_eq_comp]) := by
+  simp [conjugatingObjNatTransEquiv', Grpd.Functor.iso]
+  rw! [Functor.map_comp A f1 f2]
+  simp
+
+lemma whiskerLeft_map_comp {x y z : Γ} (f1 : x ⟶ y) (f2 : y ⟶ z)
+    (T1 T2 : (A.obj z) ⥤ (B.obj z))
+    (g12 : T1 ⟶ T2) :
+    whiskerLeft (A.map (f1 ≫ f2)) g12 =
+    eqToHom (by simp) ≫ (A.map f1 ⋙ A.map f2).whiskerLeft g12 ≫ eqToHom (by simp) := by
+  aesop_cat
+
+lemma Functor.id_whiskerLeft {A B C D : Type*} [Category A] [Category B] [Category C] [Category D]
+    {H0 H1 : C ⥤ D} (α : H0 ⟶ H1) :
+    whiskerLeft (𝟭 C) α = α :=
+  rfl
+
+lemma Functor.comp_whiskerLeft {A B C D : Type*} [Category A] [Category B] [Category C] [Category D]
+    (F : A ⥤ B) (G : B ⥤ C) {H0 H1 : C ⥤ D} (α : H0 ⟶ H1) :
+    whiskerLeft (F ⋙ G) α = whiskerLeft F (whiskerLeft G α) :=
+  rfl
+
+lemma Functor.whiskerRight_whiskerLeft {A B C D : Type*} [Category A] [Category B] [Category C]
+    [Category D] (F : A ⥤ B) (G0 G1 : B ⥤ C) (H : C ⥤ D) (α : G0 ⟶ G1) :
+    whiskerRight (whiskerLeft F α) H = whiskerLeft F (whiskerRight α H) := by
+  rfl
+
+theorem whiskerLeft_twice' {A B C D : Type*} [Category A] [Category B] [Category C] [Category D]
+    (F : A ⥤ B) (G : B ⥤ C) {H K : C ⥤ D} (α : H ⟶ K) :
+    whiskerLeft F (whiskerLeft G α) =
+    whiskerLeft (F ⋙ G) α :=
+  rfl
+
+lemma conjugatingObjNatTransEquiv'_comp' {x y z : Γ} (f1 : x ⟶ y) (f2 : y ⟶ z)
+    (S0 : (A.obj x) ⥤ (B.obj x))
+    (S1 : (A.obj y) ⥤ (B.obj y))
+    (S2 : (A.obj z) ⥤ (B.obj z))
+    (g01 : A.map (CategoryTheory.inv f1) ⋙ S0 ⋙ B.map f1 ⟶ S1)
+    (g12 : A.map (CategoryTheory.inv f2) ⋙ S1 ⋙ B.map f2 ⟶ S2)
+    (g02 : A.map (CategoryTheory.inv (f1 ≫ f2)) ⋙ S0 ⋙ B.map (f1 ≫ f2) ⟶ S2)
+    (h : g02 = eqToHom (by simp [← Grpd.comp_eq_comp]) ≫
+      Functor.whiskerRight (Functor.whiskerLeft (A.map (CategoryTheory.inv f2)) g01) (B.map f2) ≫
+      eqToHom (by simp [← Grpd.comp_eq_comp]) ≫ g12) :
+    conjugatingObjNatTransEquiv' A B (f1 ≫ f2) S0 S2 g02 =
+    eqToHom (by simp [← Grpd.comp_eq_comp, Grpd.Functor.iso]) ≫
+    (whiskerRight (conjugatingObjNatTransEquiv' A B f1 S0 S1 g01) (B.map f2)) ≫
+    (whiskerLeft (A.map f1) (conjugatingObjNatTransEquiv' A B f2 S1 S2 g12)) ≫
+    eqToHom (by simp [← Grpd.comp_eq_comp, Grpd.Functor.iso]) := by
+  subst h
+  simp [conjugatingObjNatTransEquiv', Grpd.Functor.iso, Functor.associator_eq] at *
+  erw [Category.id_comp]
+  rw [whiskerLeft_map_comp]
+  rw [whiskerLeft_map_comp]
+  simp [← Category.assoc]
+  congr 2
+  rw [Functor.comp_whiskerLeft, Functor.whiskerRight_whiskerLeft, Functor.whiskerRight_whiskerLeft]
+  rw [whiskerLeft_twice' (A.map f2)]
+  simp only [← Grpd.comp_eq_comp]
+  rw! (castMode := .all) [← Functor.map_comp A f2, IsIso.hom_inv_id,
+    CategoryTheory.Functor.map_id, Grpd.id_eq_id]
+  simp only [Functor.id_whiskerLeft]
+  simp [← heq_eq_eq]
+  congr 1
+  · simp [← Grpd.comp_eq_comp]
+  · simp [← Grpd.comp_eq_comp]
+  · simp
 
 def conjugatingObjNatTransEquiv₁ {x y : Γ} (f : x ⟶ y) (S) (T) :
     (A.map (inv f) ⋙ S ⋙ B.map f ⟶ T) ≃
     (S ⋙ B.map f ≅ A.map f ⋙ T) := (conjugatingObjNatTransEquiv' A B f S T).trans
     (Groupoid.isoEquivHom (S ⋙ B.map f) (A.map f ⋙ T)).symm
 
+@[simp]
+lemma conjugatingObjNatTransEquiv₁_id_inv {x : Γ} (S) (T)
+    (g : A.map (inv (𝟙 x)) ⋙ S ⋙ B.map (𝟙 x) ⟶ T) :
+    (conjugatingObjNatTransEquiv₁ A B (𝟙 x) S T g).inv =
+    eqToHom (by simp) ≫ CategoryTheory.inv g ≫ eqToHom (by simp) := by
+  dsimp only [conjugatingObjNatTransEquiv₁, Equiv.trans_apply]
+  erw [conjugatingObjNatTransEquiv'_id]
+  simp [Groupoid.isoEquivHom]
+
+lemma conjugatingObjNatTransEquiv₁_comp_inv {x y z : Γ} (f1 : x ⟶ y) (f2 : y ⟶ z)
+      (S0 : (A.obj x) ⥤ (B.obj x))
+      (S1 : (A.obj y) ⥤ (B.obj y))
+      (S2 : (A.obj z) ⥤ (B.obj z))
+      (g01 : A.map (inv f1) ⋙ S0 ⋙ B.map f1 ⟶ S1)
+      (g12 : A.map (inv f2) ⋙ S1 ⋙ B.map f2 ⟶ S2)
+      (g02 : A.map (inv (f1 ≫ f2)) ⋙ S0 ⋙ B.map (f1 ≫ f2) ⟶ S2)
+      (h : g02 = eqToHom (by simp [← Grpd.comp_eq_comp]) ≫
+      Functor.whiskerRight (Functor.whiskerLeft (A.map (CategoryTheory.inv f2)) g01) (B.map f2) ≫
+      eqToHom (by simp [← Grpd.comp_eq_comp]) ≫ g12) :
+      (conjugatingObjNatTransEquiv₁ A B (f1 ≫ f2) S0 S2 g02).inv =
+      eqToHom (by simp [← Grpd.comp_eq_comp]) ≫
+      whiskerLeft (A.map f1) (conjugatingObjNatTransEquiv₁ A B f2 S1 S2 g12).inv ≫
+      whiskerRight ((conjugatingObjNatTransEquiv₁ A B f1 S0 S1 g01).inv) (B.map f2) ≫
+      eqToHom (by simp [← Grpd.comp_eq_comp]) := by
+  dsimp [conjugatingObjNatTransEquiv₁]
+  erw [conjugatingObjNatTransEquiv'_comp' A B f1 f2 S0 S1 S2 g01 g12 g02 h]
+  simp [Groupoid.isoEquivHom]
+  rfl
+
+-- lemma conjugatingObjNatTransEquiv₁_comp_inv {x y z : Γ} (f1 : x ⟶ y) (f2 : y ⟶ z) (S) (T)
+--     (g : A.map (inv (f1 ≫ f2)) ⋙ S ⋙ B.map (f1 ≫ f2) ⟶ T) :
+--     (conjugatingObjNatTransEquiv₁ A B (f1 ≫ f2) S T g).inv =
+--     eqToHom (by simp [Functor.assoc]) ≫
+--     (A.map f1 ⋙ A.map f2).whiskerLeft (CategoryTheory.inv g) ≫
+--     eqToHom (by simp [← Grpd.comp_eq_comp])
+--      := by
+--   simp only [conjugatingObjNatTransEquiv₁, Groupoid.isoEquivHom, Groupoid.inv_eq_inv,
+--     Equiv.trans_apply, Equiv.coe_fn_symm_mk]
+--   erw [conjugatingObjNatTransEquiv'_comp]
+--   simp [IsIso.inv_comp, inv_eqToHom, inv_whiskerLeft, Category.assoc]
+
+-- lemma conjugatingObjNatTransEquiv₁_comp_inv {x y z : Γ} (f1 : x ⟶ y) (f2 : y ⟶ z) (S) (T)
+--     (g : A.map (inv (f1 ≫ f2)) ⋙ S ⋙ B.map (f1 ≫ f2) ⟶ T) :
+--     (conjugatingObjNatTransEquiv₁ A B (f1 ≫ f2) S T g).inv =
+--     eqToHom (by simp [Functor.assoc]) ≫
+--     whiskerLeft (A.map f1) (whiskerLeft (A.map f2) (CategoryTheory.inv g)) ≫
+--     eqToHom (by simp [← Grpd.comp_eq_comp])
+--      := by
+--   dsimp only [conjugatingObjNatTransEquiv₁, Equiv.trans_apply]
+--   simp only [Groupoid.isoEquivHom, Groupoid.inv_eq_inv, Equiv.coe_fn_symm_mk]
+--   erw [conjugatingObjNatTransEquiv'_comp]
+--   simp only [IsIso.inv_comp, inv_eqToHom, inv_whiskerLeft, Category.assoc]
 end
 
 section
@@ -430,14 +563,149 @@ def strongTrans.naturality {x y : Γ} (g : x ⟶ y) :
       (PGrpd.objFiber' hs y).obj := PGrpd.mapFiber' hs g
   ((conjugatingObjNatTransEquiv₁ _ _ _ _ _).toFun fib).symm
 
+lemma eqToHom_heq_eqToHom {C : Type*} [Category C] (x y x' y' : C) (hx : x = x')
+    (h : x = y) (h' : x' = y') : eqToHom h ≍ eqToHom h' := by aesop
+
+lemma eqToHom_heq_id {C : Type*} [Category C] (x y z : C) (h : x = y)
+    (hz : z = x) : eqToHom h ≍ 𝟙 z := by cat_disch
+
+@[reassoc]
+lemma _root_.CategoryTheory.Functor.leftUnitor_hom_comp_rightUnitor_inv
+    {C : Type u₁} [Category.{v₁, u₁} C] {D : Type u₂}
+    [Category.{v₂, u₂} D] (F : C ⥤ D) : F.leftUnitor.hom ≫ F.rightUnitor.inv = 𝟙 _ := by
+  aesop_cat
+
+theorem _root_.CategoryTheory.PGrpd.mapFiber'_comp'
+    {A : Γ ⥤ Grpd.{v₁,u₁}} {α : Γ ⥤ PGrpd.{v₁,u₁}} (h : α ⋙ PGrpd.forgetToGrpd = A)
+    {x y z} (f : x ⟶ y)
+    (g : y ⟶ z) : PGrpd.mapFiber' h (f ≫ g)
+    = eqToHom (by simp) ≫ (A.map g).map (PGrpd.mapFiber' h f) ≫ PGrpd.mapFiber' h g := by
+  subst h
+  simp [PGrpd.mapFiber]
+
+@[simp]
+lemma strongTrans.naturality_id_hom {x : Γ} :
+    (strongTrans.naturality B s hs (𝟙 x)).hom = eqToHom (by simp) := by
+  dsimp [strongTrans.naturality]
+  erw [conjugatingObjNatTransEquiv₁_id_inv]
+  simp only [sigma_obj, sigma_map, PGrpd.mapFiber'_id, pi_obj, pi_map, eqToHom_comp_iff,
+    eqToHom_trans, IsIso.inv_comp_eq]
+  simp only [← heq_eq_eq, heq_comp_eqToHom_iff]
+  apply eqToHom_heq_eqToHom
+  · simp
+  · simp
+
+-- lemma Grpd.inv_heq_inv {C C' : Grpd} (hC : C ≍ C') {X Y : C} {X' Y' : C'}
+--     (hX : X ≍ X') (hY : Y ≍ Y') {f : X ⟶ Y} {f' : X' ⟶ Y'} (hf : f ≍ f') [IsIso f] :
+--     have : IsIso f' := by aesop
+--     inv f ≍ inv f' := by
+--   subst hC hX hY hf
+--   rfl
+
+lemma inv_heq_inv {C : Type*} [Category C] {X Y : C} {X' Y' : C}
+    (hX : X = X') (hY : Y = Y') {f : X ⟶ Y} {f' : X' ⟶ Y'} (hf : f ≍ f') [IsIso f] :
+    have : IsIso f' := by aesop
+    inv f ≍ inv f' := by
+  subst hX hY hf
+  rfl
+
+@[reassoc]
+lemma strongTrans.naturality_comp_hom_aux {x y} (g : x ⟶ y) :
+    A.map g ≫ ((piMap A B g).obj (PGrpd.objFiber' hs x)).obj =
+    (PGrpd.objFiber' hs x).obj ⋙ sigmaMap B g := by
+  simp [piMap, conjugating, ← Grpd.comp_eq_comp]
+
+-- lemma strongTrans.naturality_comp_hom' {x y z : Γ} (g1 : x ⟶ y) (g2 : y ⟶ z) :
+--     (strongTrans.naturality B s hs (g1 ≫ g2)).hom =
+--     eqToHom (by simp) ≫
+--     CategoryTheory.inv
+--         ((A.map g1 ⋙ A.map g2).whiskerLeft ((piMap A B g2).map (PGrpd.mapFiber' hs g1) ≫
+--         PGrpd.mapFiber' hs g2)) ≫
+--       eqToHom (by
+--         simp only [← Grpd.comp_eq_comp, ← Functor.map_comp, pi_obj, pi_map, ObjectProperty.ι_obj]
+--         simp only [← Functor.comp_obj, ← piMap_comp]
+--         apply strongTrans.naturality_comp_hom_aux) := by
+--   simp only [naturality, sigma_obj, sigma_map, Equiv.toFun_as_coe, Iso.symm_hom,
+--     ObjectProperty.ι_obj, pi_obj, pi_map, PGrpd.mapFiber'_comp']
+--   erw [conjugatingObjNatTransEquiv₁_comp_inv]
+--   simp only [← heq_eq_eq, heq_eqToHom_comp_iff, eqToHom_comp_heq_iff,
+--     comp_eqToHom_heq_iff]
+--   simp only [← Category.assoc, heq_comp_eqToHom_iff]
+--   simp only [← Functor.inv_whiskerLeft]
+--   congr! 2
+--   · rw [← Functor.comp_obj, ← piMap_comp]
+--     simp only [piMap_obj_obj]
+--     rfl
+--   · rw [← Functor.comp_obj, ← piMap_comp]
+--     simp only [piMap_obj_obj]
+--     rfl
+--   · simp only [Category.assoc]
+--     apply HEq.trans (eqToHom_comp_heq ..)
+--     rfl
+
+set_option maxHeartbeats 400000
+lemma strongTrans.naturality_comp_hom {x y z : Γ} (g1 : x ⟶ y) (g2 : y ⟶ z) :
+    (strongTrans.naturality B s hs (g1 ≫ g2)).hom =
+    eqToHom (by simp [Functor.assoc]) ≫
+    Functor.whiskerLeft (A.map g1) (strongTrans.naturality B s hs g2).hom ≫
+    Functor.whiskerRight (strongTrans.naturality B s hs g1).hom (sigmaMap B g2)
+    ≫ eqToHom (by simp [Functor.assoc, sigmaMap_comp]) := by
+  simp only [naturality, sigma_obj, sigma_map, Equiv.toFun_as_coe, Iso.symm_hom]
+  refine conjugatingObjNatTransEquiv₁_comp_inv A (sigma A B) g1 g2
+    (PGrpd.objFiber' hs x).obj (PGrpd.objFiber' hs y).obj (PGrpd.objFiber' hs z).obj
+    (PGrpd.mapFiber' hs g1) (PGrpd.mapFiber' hs g2)
+    (PGrpd.mapFiber' hs (g1 ≫ g2)) ?_
+  simp [PGrpd.mapFiber'_comp', piMap, conjugating]
+  rfl
+
+  -- rw [strongTrans.naturality_comp_hom']
+  -- simp only [sigma_obj, sigma_map, conjugatingObjNatTransEquiv₁, Groupoid.isoEquivHom,
+  --   Groupoid.inv_eq_inv, Equiv.trans_apply, Equiv.coe_fn_symm_mk]
+  -- simp only [← Functor.inv_whiskerLeft, ← CategoryTheory.Functor.inv_whiskerRight,
+  --   ← IsIso.inv_comp_assoc]
+  -- simp only [← heq_eq_eq, heq_eqToHom_comp_iff, eqToHom_comp_heq_iff,
+  --   comp_eqToHom_heq_iff, heq_comp_eqToHom_iff]
+  -- congr! 2
+  -- · simp [← Grpd.comp_eq_comp, sigmaMap_comp, Functor.assoc]
+  --   simp
+  -- · have h := conjugatingObjNatTransEquiv'_comp A (sigma A B) g1 g2
+  --     (PGrpd.objFiber' hs x).obj (PGrpd.objFiber' hs z).obj (PGrpd.mapFiber' hs (g1 ≫ g2))
+  --   simp [conjugatingObjNatTransEquiv', Grpd.Functor.iso, ← heq_eq_eq] at h
+
+set_option maxHeartbeats 400000
 @[simps]
 def strongTrans : (A ⋙ Grpd.forgetToCat).toPseudoFunctor'.StrongTrans
   (sigma A B ⋙ Grpd.forgetToCat).toPseudoFunctor' where
     app x := (PGrpd.objFiber' hs x.as).obj
     naturality {x y} g := strongTrans.naturality B s hs g.as
-    naturality_naturality := sorry
-    naturality_id := sorry
-    naturality_comp := sorry
+    naturality_naturality := by
+      intro x y f g η
+      have : f = g := LocallyDiscrete.eq_of_hom η
+      subst this
+      simp [Functor.toPseudoFunctor', pseudofunctorOfIsLocallyDiscrete]
+    naturality_id := by
+      intro x
+      simp only [Functor.toPseudoFunctor'_obj, Functor.comp_obj, sigma_obj,
+        Functor.toPseudoFunctor'_map, LocallyDiscrete.id_as, Functor.comp_map, sigma_map,
+        strongTrans.naturality_id_hom, Functor.toPseudoFunctor'_mapId, eqToIso.hom,
+        Bicategory.whiskerLeft_eqToHom, eqToHom_trans, Bicategory.eqToHom_whiskerRight,
+        Bicategory.leftUnitor, Bicategory.rightUnitor,
+        Functor.leftUnitor_hom_comp_rightUnitor_inv (PGrpd.objFiber' hs x.as).obj,
+        Functor.simpIdComp, ← heq_eq_eq, heq_eqToHom_comp_iff]
+      apply eqToHom_heq_id
+      simp [Grpd.forgetToCat, Cat.comp_eq_comp]
+    naturality_comp := by
+      intro x y z g1 g2
+      simp only [Functor.toPseudoFunctor'_obj, Functor.comp_obj, sigma_obj,
+        Functor.toPseudoFunctor'_map, LocallyDiscrete.comp_as, Functor.comp_map, sigma_map,
+        Bicategory.whiskerLeft, Functor.toPseudoFunctor'_mapComp, eqToIso.hom,
+        Bicategory.whiskerRight, Bicategory.associator, Functor.associator_eq, Iso.refl_hom,
+        Iso.refl_inv]
+      rw [Functor.whiskerLeft_eqToHom, Functor.eqToHom_whiskerRight,
+        strongTrans.naturality_comp_hom]
+      simp only [← Grpd.comp_eq_comp, Category.assoc]
+      erw [Category.id_comp, Category.id_comp, Category.comp_id]
+      simp only [Grpd.forgetToCat, id_eq, Cat.of_α, eqToHom_trans, eqToHom_refl, Category.comp_id]
 
 @[simps!]
 def mapStrongTrans : ∫ A ⥤ ∫ sigma A B :=
