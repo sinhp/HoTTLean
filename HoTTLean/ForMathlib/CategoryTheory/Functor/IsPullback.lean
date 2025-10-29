@@ -481,16 +481,12 @@ def isoIsPullback {P P' X Y Z : Type*} [Category P] [Category P']
       have e : ((h.toChosen ⋙ h'.fromChosen) ⋙ h'.toChosen ⋙ h.fromChosen) =
         (h.toChosen ⋙ (h'.fromChosen ⋙ h'.toChosen) ⋙ h.fromChosen) := by
         simp[comp]
-        --simp[Functor.assoc] Category.assoc
-      --simp?[-comp_obj]
       simp only[e,from_to_id,Functor.id_comp,to_from_id]
     · intro A B t
-      --simp?[-comp_map]
       have e : ((h.toChosen ⋙ h'.fromChosen) ⋙ h'.toChosen ⋙ h.fromChosen) =
         (h.toChosen ⋙ (h'.fromChosen ⋙ h'.toChosen) ⋙ h.fromChosen) := by
         simp[comp]
       rw![e]
-      --rw! (castMode :=.all)[e]
       simp only[← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
       rw[from_to_id,Functor.id_comp,to_from_id]
   inv_hom_id := by
@@ -567,7 +563,7 @@ lemma isoIsPullback.hom_comp_right {P P' X Y Z : Type*} [Category P] [Category P
     rw![Functor.assoc,h'.from_west]
     rw[toChosen_west]
 
-def IsPullback.botDegenerate {A A' B : Type*} [Category A] [Category A']
+def IsPullbackOfBotId {A A' B : Type*} [Category A] [Category A']
     [Category B]
     {i : A ≅≅ A'} {F1: A ⥤ B} {F2 : A' ⥤ B}
     (h' : F1 = i.hom ⋙ F2) : IsPullback i.hom F1 F2 (Functor.id B) := by
