@@ -678,14 +678,38 @@ lemma pre_map_fiber {x y} (f : x ⟶ y) : ((pre F G).map f).fiber = f.fiber := b
 @[simp]
 theorem pre_id : pre F (𝟭 C) = 𝟭 _ := rfl
 
+section
+
+variable {G H : D ⥤ C} (α : G ≅ H)
+
 /--
 An natural isomorphism between functors `G ≅ H` induces a natural isomorphism between the canonical
 morphism `pre F G` and `pre F H`, up to composition with
 `∫(G ⋙ F) ⥤ ∫(H ⋙ F)`.
 -/
-def preNatIso {G H : D ⥤ C} (α : G ≅ H) :
+def preNatIso :
     pre F G ≅ map (whiskerRight α.hom F) ⋙ (pre F H) :=
   Grothendieck.preNatIso _ _
+
+@[simp] theorem preNatIso_hom_app_base (x) :
+    ((preNatIso F α).hom.app x).base = α.hom.app x.base :=
+  Grothendieck.preNatIso_hom_app_base ..
+
+@[simp] theorem preNatIso_hom_app_fiber (x) :
+    ((preNatIso F α).hom.app x).fiber = 𝟙 _ :=
+  Grothendieck.preNatIso_hom_app_fiber ..
+
+theorem preNatIso_congr {G H : D ⥤ C} {α β : G ≅ H} (h : α = β) :
+    preNatIso F α = preNatIso F β ≪≫ eqToIso (by subst h; simp) := by
+  subst h
+  simp
+
+@[simp] theorem preNatIso_eqToIso {G H : D ⥤ C} {h : G = H} :
+    preNatIso F (eqToIso h) =
+    eqToIso (by subst h; simp [map_id_eq, Functor.id_comp]) :=
+  Grothendieck.preNatIso_eqToIso ..
+
+end
 
 /--
 Given an equivalence of categories `G`, `preInv _ G` is the (weak) inverse of the `pre _ G.functor`.
@@ -766,16 +790,6 @@ variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
 theorem map_comp_eq {G H : C ⥤ Grpd.{v₂,u₂}} (α : F ⟶ G) (β : G ⟶ H) :
     map (α ≫ β) = map α ⋙ map β := by
   simp [map, Grothendieck.map_comp_eq]
-
-theorem preNatIso_congr {G H : D ⥤ C} {α β : G ≅ H} (h : α = β) :
-    preNatIso F α = preNatIso F β ≪≫ eqToIso (by subst h; simp) :=
-  Grothendieck.preNatIso_congr _ h
-
-@[simp] theorem preNatIso_eqToIso {G H : D ⥤ C} {h : G = H} :
-    preNatIso F (eqToIso h) = eqToIso (by
-      subst h
-      simp [Groupoidal.map_id_eq]) :=
-  Grothendieck.preNatIso_eqToIso _
 
 theorem preNatIso_comp {G1 G2 G3 : D ⥤ C} (α : G1 ≅ G2) (β : G2 ≅ G3) :
     preNatIso F (α ≪≫ β) = preNatIso F α ≪≫ Functor.isoWhiskerLeft _ (preNatIso F β) ≪≫

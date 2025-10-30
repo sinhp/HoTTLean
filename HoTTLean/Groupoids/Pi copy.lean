@@ -47,55 +47,18 @@ lemma Functor.associator_eq {C D E E' : Type*} [Category C] [Category D] [Catego
 section
 variable {A B : Type*} [Category A] [Category B] (F : B ⥤ A)
 
-def IsSection : ObjectProperty (A ⥤ B) := fun s => s ⋙ F = Functor.id A
+-- NOTE to follow mathlib convention can use camelCase for definitions, and capitalised first letter when that definition is a Prop or Type
+def IsSection (s : A ⥤ B) := s ⋙ F = Functor.id A
 
-def IsOverId : MorphismProperty ((IsSection F).FullSubcategory) :=
-  fun s t α => Functor.whiskerRight α F = eqToHom s.property ≫ 𝟙 (𝟭 A) ≫ eqToHom t.property.symm
+abbrev Section := ObjectProperty.FullSubcategory (IsSection F)
 
-instance : (IsOverId F).IsMultiplicative where
-  id_mem := sorry
-  comp_mem := sorry
-
-abbrev Section := WideSubcategory (IsOverId F)
-
-
+instance Section.category : Category (Section F) :=
+  ObjectProperty.FullSubcategory.category (IsSection F)
 
 abbrev Section.ι : Section F ⥤ (A ⥤ B) :=
-  wideSubcategoryInclusion _ ⋙ ObjectProperty.ι (IsSection F)
+  ObjectProperty.ι (IsSection F)
 
 end
-
--- def WideSubcategory.groupoid {G : Type*} [Category G] [IsGroupoid G] (P : MorphismProperty G)
---     [P.IsMultiplicative] : Groupoid (WideSubcategory P) :=
---   sorry
-
--- instance {C : Type*} [Category C] [IsGroupoid C] (P : ObjectProperty C) :
---     IsGroupoid (P.FullSubcategory) :=
---   InducedCategory.isGroupoid C (ObjectProperty.ι _).obj
-
--- instance {A B : Type*} [Category A] [IsGroupoid A] [Category B] (F : B ⥤ A) :
---   IsGroupoid (A ⥤ B) := sorry
-
--- instance {A B : Type*} [Category A] [Category B] [IsGroupoid B] (F : B ⥤ A) :
---     IsGroupoid (IsSection F).FullSubcategory :=
---   sorry
-  -- InducedCategory.isGroupoid _ (ObjectProperty.ι _).obj
-
-instance {C : Type*} [Groupoid C] (P : ObjectProperty C) :
-    Groupoid (P.FullSubcategory) :=
-  InducedCategory.groupoid C (ObjectProperty.ι _).obj
-
-instance {A B : Type*} [Category A] [Category B] [Groupoid B] (F : B ⥤ A) :
-    IsGroupoid (Section F) where
-  all_isIso {x y} f := {
-    out := ⟨⟨
-      have : IsGroupoid (A ⥤ B) := sorry
-      have h := x.1
-      have : IsIso f.1 := sorry
-      CategoryTheory.inv f.1,
-      sorry⟩, sorry⟩
-  }
-  -- exact WideSubcategory.groupoid (G := (IsSection F).FullSubcategory) (IsOverId F)
 
 namespace ObjectProperty
 
@@ -113,6 +76,10 @@ lemma ι_mono {T C : Type u} [Category.{v} C] [Category.{v} T]
     rfl
 
 end ObjectProperty
+
+instance {C : Type*} [Groupoid C] (P : ObjectProperty C) :
+    Groupoid (P.FullSubcategory) :=
+  InducedCategory.groupoid C (ObjectProperty.ι _).obj
 
 instance Grpd.ι_mono (G : Grpd) (P : ObjectProperty G) : Mono (Grpd.homOf (ObjectProperty.ι P)) :=
   ⟨ fun _ _ e => ObjectProperty.ι_mono _ _ e ⟩
