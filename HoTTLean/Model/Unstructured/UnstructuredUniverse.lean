@@ -252,6 +252,8 @@ structure PolymorphicSigma (U0 U1 U2 : UnstructuredUniverse Ctx) where
 
 namespace PolymorphicSigma
 
+attribute [simp] pair_tp fst_tp snd_tp fst_pair snd_pair eta
+
 variable {U0 U1 U2 : UnstructuredUniverse Ctx}
 
 def mk' (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
@@ -351,6 +353,8 @@ structure PolymorphicPi (U0 U1 U2 : UnstructuredUniverse Ctx) where
 
 namespace PolymorphicPi
 
+attribute [simp] lam_tp unLam_tp unLam_lam lam_unLam
+
 variable {U0 U1 U2 : UnstructuredUniverse Ctx} (P : PolymorphicPi U0 U1 U2)
 
 lemma unLam_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ext A ⟶ U1.Ty}
@@ -360,6 +364,75 @@ lemma unLam_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.
   rw [← P.unLam_lam (U0.substWk σ A σA eq ≫ B) (U0.substWk σ A σA eq ≫ P.unLam B f f_tp)]
   . rw! [P.lam_comp σ eq B, P.lam_unLam]
   . rw [Category.assoc, P.unLam_tp]
+
+/--
+```
+Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B  Γ ⊢ᵢ a : A
+---------------------------------
+Γ ⊢ⱼ f a : B[id.a]
+``` -/
+def app {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) : Γ ⟶ U1.Tm :=
+  U0.sec A a a_tp ≫ P.unLam B f f_tp
+
+@[simp]
+theorem app_tp {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+    P.app B f f_tp a a_tp ≫ U1.tp = (U0.sec A a a_tp) ≫ B := by
+  simp [app]
+
+theorem app_comp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    {A : Γ ⟶ U0.Ty} (σA) (eq : σ ≫ A = σA)
+    (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+      P.app (U0.substWk σ A _ eq ≫ B)
+        (σ ≫ f) (by simp [f_tp, Pi_comp])
+        (σ ≫ a) (by simp [a_tp, eq]) =
+      σ ≫ P.app B f f_tp a a_tp := by
+  rw [app, app, reassoc_of% comp_sec, unLam_comp]
+
+/--
+```
+Γ ⊢ᵢ A  Γ.A ⊢ⱼ t : B  Γ ⊢ᵢ a : A
+--------------------------------
+Γ.A ⊢ⱼ (λA. t) a ≡ t[a] : B[a]
+``` -/
+@[simp]
+theorem app_lam {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (t : U0.ext A ⟶ U1.Tm) (t_tp : t ≫ U1.tp = B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+    P.app B (P.lam B t t_tp) (by simp) a a_tp = U0.sec A a a_tp ≫ t := by
+  simp [app]
+
+/--
+```
+Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B
+--------------------------------------
+Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ λA. f[↑] v₀ : ΠA. B
+```
+-/
+def etaExpand {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B) :
+    Γ ⟶ U2.Tm :=
+  P.lam B
+    (P.app (A := U0.disp A ≫ A) (U0.substWk .. ≫ B)
+      (U0.disp A ≫ f) (by simp [Pi_comp, f_tp])
+      (U0.var A) (by simp))
+    (by
+      rw [app_tp, substWk, reassoc_of% comp_substCons]
+      simp [substCons])
+
+@[simp]
+theorem etaExpand_eq {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B) :
+    P.etaExpand B f f_tp = f := by
+  unfold etaExpand
+  convert P.lam_unLam B f f_tp using 2
+  rw [app, unLam_comp (f_tp := f_tp), substWk, reassoc_of% comp_substCons]
+  simp [substCons]
 
 end PolymorphicPi
 
@@ -381,10 +454,9 @@ variable {U0 U1 : UnstructuredUniverse Ctx} (i : PolymorphicIdIntro U0 U1)
 
 namespace PolymorphicIdIntro
 
-variable {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+attribute [simp] refl_tp
 
-@[simp]
-lemma refl_tp' : i.refl a a_tp ≫ U1.tp = i.Id a a a_tp a_tp := refl_tp ..
+variable {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
 
 /-- Given `Γ ⊢ a : A` this is the identity type weakened to the context
 `Γ.(x : A) ⊢ Id(a,x) : U1.Ty` -/
