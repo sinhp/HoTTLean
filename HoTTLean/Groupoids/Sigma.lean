@@ -1,9 +1,6 @@
 import HoTTLean.Groupoids.UnstructuredModel
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 
--- TODO: come up with a more readable naming scheme for univs
-universe v u v₁ u₁ v₂ u₂ v₃ u₃ v₄ u₄
-
 noncomputable section
 
 namespace GroupoidModel
@@ -14,18 +11,22 @@ attribute [local simp] eqToHom_map Grpd.id_eq_id Grpd.comp_eq_comp Functor.id_co
 
 namespace FunctorOperation
 
+/-! We first define Sigma formation as an operation on functors into Grpd. -/
+
+universe v₁ u₁ v₂ u₂ v₃ u₃ v₄ u₄
+
 section
--- TODO: univ levels are A < Γ < B nooooo
-variable {Γ : Type u₂} [Category.{v₂} Γ] {A : Γ ⥤ Grpd.{v₁,u₁}}
-    (B : ∫ A ⥤ Grpd.{v₃,u₃}) (x : Γ)
+
+variable {Γ : Type u₁} [Category.{v₁} Γ] {A : Γ ⥤ Grpd.{v₂,u₂}} (B : ∫ A ⥤ Grpd.{v₃,u₃})
+
 /--
 For a point `x : Γ`, `(sigma A B).obj x` is the groupoidal Grothendieck
   construction on the composition
   `ι _ x ⋙ B : A.obj x ⥤ Groupoidal A ⥤ Grpd`
 -/
-def sigmaObj : Grpd := Grpd.of (∫ι A x ⋙ B)
+def sigmaObj (x : Γ) : Grpd := Grpd.of (∫ι A x ⋙ B)
 
-variable {x} {y : Γ} (f : x ⟶ y)
+variable {x y : Γ} (f : x ⟶ y)
 /--
 For a morphism `f : x ⟶ y` in `Γ`, `(sigma A B).map y` is a
 composition of functors.
@@ -113,8 +114,7 @@ variable {z : Γ} {f} {g : y ⟶ z}
       ιNatTrans_comp_app, Functor.map_comp, eqToHom_map, Grpd.comp_eq_comp, Grpd.eqToHom_obj, cast_heq_iff_heq, heq_eq_eq]
     aesop_cat
 
-@[simp] theorem sigmaMap_comp_map {A : Γ ⥤ Grpd.{v₁,u₁}}
-    {B : ∫(A) ⥤ Grpd.{v₃,u₃}} {x y z : Γ} {f : x ⟶ y} {g : y ⟶ z}
+@[simp] theorem sigmaMap_comp_map {B : ∫(A) ⥤ Grpd.{v₃,u₃}} {x y z : Γ} {f : x ⟶ y} {g : y ⟶ z}
     {p q : sigmaObj B x} (hpq : p ⟶ q)
     {h1 : (sigmaMap B (f ≫ g)).obj p = (sigmaMap B g).obj ((sigmaMap B f).obj p)}
     {h2 : (sigmaMap B g).obj ((sigmaMap B f).obj q) = (sigmaMap B (f ≫ g)).obj q}
@@ -152,8 +152,8 @@ lemma sigmaMap_forget : sigmaMap B f ⋙ forget = forget ⋙ A.map f := rfl
   unfolded into operations between functors.
   See `sigmaObj` and `sigmaMap` for the actions of this functor.
  -/
-@[simps] def sigma (A : Γ ⥤ Grpd.{v₁,u₁})
-    (B : ∫(A) ⥤ Grpd.{v₃,u₃}) : Γ ⥤ Grpd.{max v₁ v₃, max u₁ u₃} where
+@[simps] def sigma (A : Γ ⥤ Grpd.{v₂,u₂}) (B : ∫(A) ⥤ Grpd.{v₃,u₃}) :
+    Γ ⥤ Grpd.{max v₂ v₃, max u₂ u₃} where
   -- NOTE using Grpd.of here instead of earlier speeds things up
   obj x := sigmaObj B x
   map := sigmaMap B
@@ -216,8 +216,7 @@ namespace sigma
 
 section
 
-variable {Γ : Type u₂} [Groupoid.{v₂} Γ] {A : Γ ⥤ Grpd.{v₁,u₁}}
-    (B : ∫(A) ⥤ Grpd.{v₃,u₃})
+variable {Γ : Type u₁} [Groupoid.{v₁} Γ] {A : Γ ⥤ Grpd.{v₂,u₂}} (B : ∫(A) ⥤ Grpd.{v₃,u₃})
 
 @[simp] def assocFib (x : Γ) : sigmaObj B x ⥤ ∫(B) :=
   pre _ _
@@ -530,11 +529,11 @@ end FunctorOperation
 
 open FunctorOperation
 
-section
-
 namespace USig
 
-/-! We now define Sigma on small types.
+universe v₁ v₂ u
+
+/-! We now define Sigma on small types (represented as arrows into universes).
 
 Type `A` is `v₁`-sized. Type `B` depending on `A` is `v₂`-sized.
 The context category has to fit `ΣA. B` which is `max v₁ v₂`-sized,
@@ -546,6 +545,8 @@ variable {X : Type (v₂ + 1)} [LargeCategory.{v₂} X]
 
 variable
   (S : ∀ {Γ : Ctx.{max u (max v₁ v₂ + 1)}} (A : Γ ⥤ Grpd.{v₁,v₁}), (∫(A) ⥤ X) → (Γ ⥤ Y))
+  (S_naturality : ∀ {Γ Δ : Ctx.{max u (max v₁ v₂ + 1)}} (σ : Δ ⟶ Γ) {A : Γ ⥤ Grpd.{v₁,v₁}}
+    {B : ∫(A) ⥤ X}, σ ⋙ S A B = S (σ ⋙ A) (pre A σ ⋙ B))
   {Γ Δ : Ctx.{max u (max v₁ v₂ + 1)}}
   (σ : Δ ⟶ Γ)
   {A : Γ ⟶ U.{v₁, max u (max v₁ v₂ + 1)}.Ty}
@@ -553,18 +554,16 @@ variable
   (eq : σ ≫ A = σA)
   (B : U.ext A ⟶ U.{v₂, max u (max v₁ v₂ + 1)}.Ty)
 
--- TODO: make `u` the last univ param to match other Ctx-based defs.
 @[simp]
 abbrev SigAux
     (B : U.ext A ⟶ Ctx.coreAsSmall.{v₂, max u (max v₁ v₂ + 1)} X) :
     Γ ⟶ Ctx.coreAsSmall.{max v₁ v₂, max u (max v₁ v₂ + 1)} Y :=
   toCoreAsSmallEquiv.symm (S (toCoreAsSmallEquiv A) (toCoreAsSmallEquiv B))
 
+include S_naturality in
 theorem SigAux_comp
-    (S_naturality : ∀ {Γ Δ : Ctx.{max u (max v₁ v₂ + 1)}} (σ : Δ ⟶ Γ) {A : Γ ⥤ Grpd.{v₁,v₁}}
-      {B : ∫(A) ⥤ X}, σ ⋙ S A B = S (σ ⋙ A) (pre A σ ⋙ B))
     (B : U.ext A ⟶ Ctx.coreAsSmall.{v₂, max u (max v₁ v₂ + 1)} X) :
-    SigAux.{u,v₁,v₂} S (U.substWk σ A σA eq ≫ B) = σ ≫ SigAux.{u,v₁,v₂} S B := by
+    SigAux.{v₁,v₂,u} S (U.substWk σ A σA eq ≫ B) = σ ≫ SigAux.{v₁,v₂,u} S B := by
   simp only [SigAux, Grpd.comp_eq_comp]
   rw [← toCoreAsSmallEquiv_symm_apply_comp_left]
   congr 1
@@ -577,22 +576,22 @@ theorem SigAux_comp
   rfl
 
 def Sig : Γ ⟶ U.{max v₁ v₂, max u (max v₁ v₂ + 1)}.Ty :=
-  SigAux.{u,v₁,v₂} sigma B
+  SigAux.{v₁,v₂,u} sigma B
 
 /--
 Naturality for the formation rule for Σ-types.
 Also known as Beck-Chevalley.
 -/
-theorem Sig_comp : Sig.{u,v₁,v₂} (U.substWk σ A σA eq ≫ B) = σ ≫ Sig.{u,v₁,v₂} B :=
-  SigAux_comp.{u,v₁,v₂} sigma σ eq (by intros; rw [sigma_naturality]) B
+theorem Sig_comp : Sig.{v₁,v₂,u} (U.substWk σ A σA eq ≫ B) = σ ≫ Sig.{v₁,v₂,u} B :=
+  SigAux_comp.{v₁,v₂,u} sigma (by intros; rw [sigma_naturality]) σ eq B
 
-def assoc : U.ext B ≅ U.ext (Sig.{u,v₁,v₂} B) :=
+def assoc : U.ext B ≅ U.ext (Sig.{v₁,v₂,u} B) :=
   Grpd.mkIso' (sigma.assoc (toCoreAsSmallEquiv B)) ≪≫
     eqToIso (by dsimp [U.ext, Sig]; rw [toCoreAsSmallEquiv.apply_symm_apply])
 
 set_option maxHeartbeats 400000 in
-lemma assoc_comp : (assoc (U.substWk σ A σA eq ≫ B)).hom ≫ U.substWk σ (Sig.{u,v₁,v₂} B)
-    (Sig.{u,v₁,v₂} (U.substWk σ A σA eq ≫ B)) (Sig_comp.{u,v₁,v₂} ..).symm =
+lemma assoc_comp : (assoc (U.substWk σ A σA eq ≫ B)).hom ≫ U.substWk σ (Sig.{v₁,v₂,u} B)
+    (Sig.{v₁,v₂,u} (U.substWk σ A σA eq ≫ B)) (Sig_comp.{v₁,v₂,u} ..).symm =
     U.substWk (U.substWk σ A σA eq) B (U.substWk σ A σA eq ≫ B) rfl ≫ (assoc B).hom := by
   dsimp [assoc]
   simp only [Sig, SigAux, U.substWk_eq, eqToHom_refl, map_id_eq, Cat.of_α]
@@ -603,19 +602,17 @@ lemma assoc_comp : (assoc (U.substWk σ A σA eq ≫ B)).hom ≫ U.substWk σ (S
   simp only [pre_comp, Functor.id_comp]
   apply sigma.assoc_comp' (toCoreAsSmallEquiv B) (σ := σ) (toCoreAsSmallEquiv σA)
 
-lemma assoc_disp : (assoc B).hom ≫ U.disp (Sig.{u,v₁,v₂} B) = U.disp B ≫ U.disp A := by
+lemma assoc_disp : (assoc B).hom ≫ U.disp (Sig.{v₁,v₂,u} B) = U.disp B ≫ U.disp A := by
   simpa [assoc] using sigma.assoc_hom_comp_forget _
 
 end USig
 
 open USig in
-def USig : PolymorphicSigma
+def USig.{v₁,v₂,u} : PolymorphicSigma
     U.{v₁, max u (max v₁ v₂ + 1)}
     U.{v₂, max u (max v₁ v₂ + 1)}
     U.{max v₁ v₂, max u (max v₁ v₂ + 1)} :=
-  .mk' Sig.{u,v₁,v₂} Sig_comp assoc assoc_comp assoc_disp
-
-end
+  .mk' Sig.{v₁,v₂,u} Sig_comp assoc assoc_comp assoc_disp
 
 end GroupoidModel
 end
