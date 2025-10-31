@@ -247,12 +247,12 @@ structure PolymorphicSigma (U0 U1 U2 : UnstructuredUniverse Ctx) where
   (snd_pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
     (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
     (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B), snd B (pair B a a_tp b b_tp) (pair_tp ..) = b)
-  (eta : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
+  (pair_fst_snd : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
     (s_tp : s ≫ U2.tp = Sig B), pair B (fst B s s_tp) (fst_tp ..) (snd B s s_tp) (snd_tp ..) = s)
 
 namespace PolymorphicSigma
 
-attribute [simp] pair_tp fst_tp snd_tp fst_pair snd_pair eta
+attribute [simp] pair_tp fst_tp snd_tp fst_pair snd_pair pair_fst_snd
 
 variable {U0 U1 U2 : UnstructuredUniverse Ctx}
 
@@ -307,7 +307,7 @@ def mk' (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.
     simp only [← Category.assoc]
     rw [sec_apply_comp_var _ _ _ (by simp [assoc_disp])]
     simp
-  eta B s s_tp := by
+  pair_fst_snd B s s_tp := by
     simp only [← Category.assoc]
     rw! [sec_apply_comp_var _ _ _ (by simp [← assoc_disp])]
     rw [U1.substCons_apply_comp_var _ _ _ (by simp)]
@@ -319,13 +319,13 @@ lemma fst_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ex
     (s : Γ ⟶ U2.Tm) (s_tp : s ≫ U2.tp = S.Sig B) :
     S.fst (U0.substWk σ A σA eq ≫ B) (σ ≫ s) (by simp [s_tp, S.Sig_comp]) =
     σ ≫ S.fst B s s_tp := by
-  rw! [(S.eta B s (by simp [s_tp])).symm, ← S.pair_comp, S.fst_pair, S.fst_pair]
+  rw! [(S.pair_fst_snd B s (by simp [s_tp])).symm, ← S.pair_comp, S.fst_pair, S.fst_pair]
 
 lemma snd_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ext A ⟶ U1.Ty}
     (s : Γ ⟶ U2.Tm) (s_tp : s ≫ U2.tp = S.Sig B) :
     S.snd (U0.substWk σ A σA eq ≫ B) (σ ≫ s) (by simp [s_tp, S.Sig_comp]) =
     σ ≫ S.snd B s s_tp := by
-  rw! [(S.eta B s (by simp [s_tp])).symm, ← S.pair_comp, S.snd_pair, S.snd_pair]
+  rw! [(S.pair_fst_snd B s (by simp [s_tp])).symm, ← S.pair_comp, S.snd_pair, S.snd_pair]
 
 end PolymorphicSigma
 
