@@ -393,6 +393,10 @@ def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
    intro X Y f i X' hX'
    apply IsIso.comp_isIso
 
+
+def iso_inv {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
+    ClovenIsofibration F.inv := iso (F.symm)
+
 instance {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) : IsSplit (iso F) where
   liftObj_id h := by simp [← h, ← Functor.comp_obj]
   liftIso_id := by simp
@@ -595,13 +599,26 @@ variable {A A' B : Type u} [Category.{v} A] [Category.{v} A']
     [Category.{v} B] (i : A' ≅≅ A) {F : A ⥤ B} (IF: ClovenIsofibration F)
     (F' : A' ⥤ B) (hF' : F' = i.hom ⋙ F)
 
-def isoComp : ClovenIsofibration F' :=
-  let := i -- TODO: remove once defined
-  let := IF -- TODO: remove once defined
-  let := hF' -- TODO: remove once defined
-  sorry
 
-instance [IsSplit IF] : IsSplit (isoComp i IF F' hF') := sorry
+def isoComp : ClovenIsofibration F' := by
+  subst hF'
+  apply comp (iso ..) IF
+
+  -- let := i -- TODO: remove once defined
+  -- let := IF -- TODO: remove once defined
+  -- let := hF' -- TODO: remove once defined
+  -- sorry
+
+-- def isoComp : ClovenIsofibration F' :=
+--   let := i -- TODO: remove once defined
+--   let := IF -- TODO: remove once defined
+--   let := hF' -- TODO: remove once defined
+--   sorry
+#check eqToHom
+instance [IsSplit IF] : IsSplit (isoComp i IF F' hF') := by
+  simp[isoComp]
+  --rw![congrArg_cast_hom_right]
+  sorry
 
 end isoComp
 
@@ -665,8 +682,12 @@ lemma pushforward.strictify_comp_grothendieckClassifierIso_hom :
 variable {G} (IG : ClovenIsofibration G) [IsSplit IG]
 
 def pushforward.strictifyClovenIsofibration : (strictify IF G).ClovenIsofibration :=
-  let := IG -- TODO: remove
-  sorry
+  ClovenIsofibration.comp IG (Functor.ClovenIsofibration.iso_inv ..)
+
+
+-- def pushforward.strictifyClovenIsofibration : (strictify IF G).ClovenIsofibration :=
+--   let := IG -- TODO: remove
+--   sorry
 
 instance : (pushforward.strictifyClovenIsofibration IF IG).IsSplit :=
   sorry
@@ -711,7 +732,8 @@ def pushforward.homEquivAux2 {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
       dsimp [strictify]
       rw [Functor.assoc, grothendieckClassifierIso.inv_comp_forget, ← Functor.assoc, N.2,
         Functor.assoc, Iso.hom_inv_id', Functor.comp_id] ⟩
-  left_inv := sorry
+  left_inv :=
+    sorry
   right_inv := sorry
 
 open GroupoidModel.FunctorOperation.pi in
