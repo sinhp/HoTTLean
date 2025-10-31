@@ -506,18 +506,46 @@ lemma assoc_comp' {Δ : Type u₃} [Groupoid.{v₃} Δ] {σ : Δ ⥤ Γ} (Aσ) (
 
 section
 
-def fstAux' : ∫(sigma A B) ⥤ ∫(A) :=
-  (assoc B).inv ⋙ forget
+-- def fstAux' : ∫(sigma A B) ⥤ ∫(A) :=
+  -- (assoc B).inv ⋙ forget
 
-/-- `fst` projects out the pointed groupoid `(A,a)` appearing in `(A,B,a : A,b : B a)` -/
-def fst : ∫(sigma A B) ⥤ PGrpd :=
-  fstAux' B ⋙ toPGrpd A
+-- /-- `fst` projects out the pointed groupoid `(A,a)` appearing in `(A,B,a : A,b : B a)` -/
+-- def fst : ∫(sigma A B) ⥤ PGrpd :=
+--   fstAux' B ⋙ toPGrpd A
 
-theorem fst_forgetToGrpd : fst B ⋙ PGrpd.forgetToGrpd = forget ⋙ A := by
-  dsimp only [fst, fstAux']
-  rw [Functor.assoc, (Functor.Groupoidal.isPullback A).comm_sq,
-    ← Functor.assoc]
-  conv => left; left; rw [Functor.assoc, assoc_inv_comp_forget_comp_forget]
+-- theorem fst_forgetToGrpd : fst B ⋙ PGrpd.forgetToGrpd = forget ⋙ A := by
+--   dsimp only [fst, fstAux']
+--   rw [Functor.assoc, (Functor.Groupoidal.isPullback A).comm_sq,
+--     ← Functor.assoc]
+--   conv => left; left; rw [Functor.assoc, assoc_inv_comp_forget_comp_forget]
+
+def fstNatTrans : sigma A B ⟶ A where
+  app x := forget
+  naturality x y f:= by simp [sigmaMap_forget]
+
+lemma map_fstNatTrans_eq : map (fstNatTrans B) = (assoc B).inv ⋙ forget := by
+  apply Functor.Groupoidal.FunctorTo.hext
+  · simp [Functor.assoc, assoc_inv_comp_forget_comp_forget, map_forget]
+  · intro x
+    simp only [fstNatTrans, map_obj_fiber, sigma_obj, Functor.Groupoidal.forget_obj, assoc,
+      Functor.Iso.symm_inv, Functor.comp_obj, functorIsoFrom_hom_obj, assocFib, heq_eq_eq]
+    rw! (castMode := .all) [pre_obj_base]
+    simp
+    rfl
+  · intro x y f
+    simp only [fstNatTrans, map_map_fiber, sigma_obj, Grpd.comp_eq_comp, Functor.comp_obj,
+      Functor.Groupoidal.forget_obj, sigma_map, sigmaMap_obj_base, eqToHom_refl, forget_map,
+      Category.id_comp, assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, assocFib,
+      Functor.comp_map, functorIsoFrom_hom_map, comp_base, Functor.Groupoidal.comp_fiber,
+      heq_eqToHom_comp_iff]
+    rw! [pre_map_base]
+    simp only [ι_map_base, ι_obj_base, assocHom, assocFib, assocIso, ι_map_fiber, ι_obj_fiber]
+    rw [preNatIso_hom_app_base, ιNatIso_hom, ιNatTrans_app_base]
+    simp only [Functor.comp_obj, Pi.id_apply, homMk_base, homMk_fiber]
+    erw [CategoryTheory.Functor.map_id (A.map (𝟙 y.base))]
+    erw [Category.id_comp]
+    simp
+    rfl
 
 end
 end
