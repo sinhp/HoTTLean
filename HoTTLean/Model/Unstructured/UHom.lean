@@ -291,13 +291,9 @@ lemma code_el (s : UHomSeq Ctx) {Γ : Ctx} {i : Nat} (ilen : i < s.length)
     code s ilen (el s ilen a a_tp) = a := by
   simp [code, el]
 
--- Sadly, we have to spell out `ilen` and `jlen` due to
--- https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Optional.20implicit.20argument
-variable {i j : Nat} (ilen : i < s.length + 1) (jlen : j < s.length + 1)
-
 /-! ## Pi -/
 
-/-- The data of `Pi` and `lam` formers at the `max` of any two universes.
+/-- `Pi` and `lam` formers at the `max` of any two universes.
 This interprets
 ```
 Γ ⊢ᵢ A type  Γ.A ⊢ⱼ B type
@@ -305,163 +301,37 @@ This interprets
 Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ ΠA. B type
 ``` -/
 class PiSeq (s : UHomSeq Ctx) where
-  polyPi (i j : Nat)
+  polyPi (s) (i j : Nat)
+    -- Sadly, we have to spell out `ilen` and `jlen` due to
+    -- https://leanprover.zulipchat.com/#narrow/stream/270676-lean4/topic/Optional.20implicit.20argument
     (ilen : i < s.length + 1 := by get_elem_tactic)
     (jlen : j < s.length + 1 := by get_elem_tactic) :
     PolymorphicPi s[i] s[j] s[max i j]
 
+-- Re-export for use with dot notation.
+abbrev polyPi := @PiSeq.polyPi
+
 /-! ## Sigma -/
 
-/-- The data of `Sig` and `pair` formers at the `max` of any two universes. -/
+/-- `Sig` and `pair` formers at the `max` of any two universes. -/
 class SigSeq (s : UHomSeq Ctx) where
-  polySig (i j : Nat)
+  polySig (s) (i j : Nat)
     (ilen : i < s.length + 1 := by get_elem_tactic)
     (jlen : j < s.length + 1 := by get_elem_tactic) :
     PolymorphicSigma s[i] s[j] s[max i j]
 
-#exit
+abbrev polySig := @SigSeq.polySig
+
 /-! ## Identity types -/
 
+/-- `Id` and `refl` formers at any universe,
+together with identity elimination into any other universe. -/
 class IdSeq (s : UHomSeq Ctx) where
-  nmII (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : IdIntro s[i]
-  nmIEB (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) :
-    IdElimBase (nmII i ilen)
-  nmId (i j : Nat) (ilen : i < s.length + 1 := by get_elem_tactic)
-    (jlen : j < s.length + 1 := by get_elem_tactic) : Id (nmIEB i ilen) s[j]
+  idIntro (s) (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : PolymorphicIdIntro s[i] s[i]
+  idElim (s) (i j : Nat)
+    (ilen : i < s.length + 1 := by get_elem_tactic)
+    (jlen : j < s.length + 1 := by get_elem_tactic) :
+    PolymorphicIdElim (idIntro i) s[j]
 
-section Id
-open IdSeq
-variable [s.IdSeq]
-
-/--
-```
-Γ ⊢ᵢ A  Γ ⊢ᵢ a0, a1 : A
------------------------
-Γ ⊢ᵢ Id(A, a0, a1)
-``` -/
-def mkId {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty) (a0 a1 : (Γ) ⟶ s[i].Tm)
-    (a0_tp : a0 ≫ s[i].tp = A) (a1_tp : a1 ≫ s[i].tp = A) :
-    (Γ) ⟶ s[i].Ty :=
-  (nmII i).mkId a0 a1 (a1_tp ▸ a0_tp)
-
-theorem comp_mkId {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
-    (A : (Γ) ⟶ s[i].Ty) (σA) (eq : (σ) ≫ A = σA)
-    (a0 a1 : (Γ) ⟶ s[i].Tm)
-    (a0_tp : a0 ≫ s[i].tp = A) (a1_tp : a1 ≫ s[i].tp = A) :
-    (σ) ≫ s.mkId ilen A a0 a1 a0_tp a1_tp =
-      s.mkId ilen σA ((σ) ≫ a0) ((σ) ≫ a1)
-        (by simp [eq, a0_tp]) (by simp [eq, a1_tp]) := by
-  simp [mkId, IdIntro.mkId]
-  rw [← Category.assoc]; congr 1
-  apply (nmII i).isKernelPair.hom_ext <;> simp
-
-/--
-```
-Γ ⊢ᵢ t : A
------------------------
-Γ ⊢ᵢ refl(t) : Id(A, t, t)
-``` -/
-def mkRefl {Γ : Ctx} (t : (Γ) ⟶ s[i].Tm) : (Γ) ⟶ s[i].Tm :=
-  (nmII i).mkRefl t
-
-theorem comp_mkRefl {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
-    (t : (Γ) ⟶ s[i].Tm) :
-    (σ) ≫ s.mkRefl ilen t = s.mkRefl ilen ((σ) ≫ t) := by
-  simp [mkRefl, IdIntro.mkRefl]
-
-@[simp]
-theorem mkRefl_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty)
-    (t : (Γ) ⟶ s[i].Tm) (t_tp : t ≫ s[i].tp = A) :
-    s.mkRefl ilen t ≫ s[i].tp = s.mkId ilen A t t t_tp t_tp :=
-  (nmII i).mkRefl_tp t
-
-/--
-```
-Γ ⊢ᵢ t : A
------------------------
-Γ ⊢ᵢ idRec(t) : Id(A, t, t)
-``` -/
-def mkIdRec {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty)
-    (t : (Γ) ⟶ s[i].Tm) (t_tp : t ≫ s[i].tp = A)
-    (B : (s[i].ext A) ⟶ s[i].Ty)
-    (B_eq : s.mkId ilen ((s[i].disp A) ≫ A)
-      ((s[i].disp A) ≫ t) (s[i].var A) (by> simp [*]) (var_tp ..) = B)
-    (M : (s[i].ext B) ⟶ s[j].Ty)
-    (r : (Γ) ⟶ s[j].Tm) (r_tp : r ≫ s[j].tp =
-      (substCons _ (s[i].sec A t t_tp) _ (s.mkRefl ilen t)
-        (by> simp [comp_mkId, t_tp, ← B_eq])) ≫ M)
-    (u : (Γ) ⟶ s[i].Tm) (u_tp : u ≫ s[i].tp = A)
-    (h : (Γ) ⟶ s[i].Tm) (h_tp : h ≫ s[i].tp = s.mkId ilen A t u t_tp u_tp) :
-    (Γ) ⟶ s[j].Tm := by sorry
-  -- refine (nmId i j).toId'.mkJ t
-  --   ((substWk _ (substWk _ (𝟙 _) _ _ (by simp [t_tp])) _ _ ?_) ≫ M)
-  --   r ?_ u (t_tp ▸ u_tp) h ?_
-  -- · simp [← B_eq, comp_mkId, ← mkId.eq_def]; congr 1 <;> simp [t_tp, substWk]
-  -- · simp [r_tp]; rw [← Functor.map_comp_assoc]; congr 1
-  --   apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.reflSubst, mkRefl, substWk, sec]
-  -- · simp [h_tp, mkId, IdIntro.mkId]
-
-theorem comp_mkIdRec {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
-    (A : (Γ) ⟶ s[i].Ty) (σA) (σA_eq : (σ) ≫ A = σA)
-    (t t_tp B B_eq σB) (σB_eq : (s[i].substWk σ _ _ σA_eq) ≫ B = σB)
-    (M) (r : (Γ) ⟶ (s[j]'jlen).Tm) (r_tp u u_tp h h_tp) :
-    (σ) ≫ s.mkIdRec ilen jlen A t t_tp B B_eq M r r_tp u u_tp h h_tp =
-    s.mkIdRec ilen jlen σA ((σ) ≫ t) (by> simp [t_tp, ← σA_eq])
-      σB (by>
-        simp [← σB_eq, ← B_eq]
-        rw [comp_mkId]; congr! 1
-        · rw [← Category.assoc, ← Category.assoc, substWk_disp]
-        · simp
-        · rw [← Category.assoc, substWk_disp]; simp [σA_eq])
-      ((s[i].substWk (s[i].substWk σ _ _ σA_eq) _ _ σB_eq) ≫ M)
-      ((σ) ≫ r) (by>
-        -- simp [*]
-        -- simp only [← Category.assoc]; congr! 2
-        -- simp [comp_substCons, comp_sec, substWk, comp_mkRefl]
-        sorry)
-      ((σ) ≫ u) (by> simp [*])
-      ((σ) ≫ h) (by> simp [*, comp_mkId]) := by sorry
-  -- simp [mkIdRec, Id'.mkJ]
-  -- change let σ' := _; _ = (σ') ≫ _; intro σ'
-  -- refine .trans ?h1 (congr((σ') ≫ $((nmId i j).comp_j σ t ((?v) ≫ M) r ?h2)).trans ?h3)
-  -- case v =>
-  --   exact s[i].substWk (s[i].substWk (𝟙 _) _ _ (by simp [t_tp])) _ _ (by
-  --     simp [← B_eq, comp_mkId, ← mkId.eq_def]
-  --     congr! 1 <;>
-  --     · subst t_tp; rw [substWk_disp_functor_map_assoc]; simp)
-  -- · simp [← Category.assoc]; congr 1
-  --   apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.motiveSubst]
-  --   · dsimp [Id'.endPtSubst, σ']
-  --     simp only [substCons_var]
-  --   · rw [substWk_disp_functor_map]
-  --     apply (s[i].disp_pullback _).hom_ext <;> simp [Id'.endPtSubst, σ', substWk_disp_functor_map]
-  -- · simp [r_tp]
-  --   simp [← Category.assoc]; congr 1
-  --   apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.reflSubst]; rfl
-  --   rw [substWk_disp_functor_map, substCons_disp_functor_map_assoc]
-  --   apply (s[i].disp_pullback _).hom_ext <;> simp
-  --   simp [substWk_disp_functor_map]
-  -- · congr 2; simp only [← Category.assoc]; congr 1
-  --   apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.motiveSubst]
-  --   apply (s[i].disp_pullback _).hom_ext <;> simp
-  --   · simp [substWk_disp_functor_map_assoc]
-  --   · simp [substWk_disp_functor_map, substWk_disp_functor_map_assoc]
-
-@[simp]
-theorem mkIdRec_tp {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty)
-    (t t_tp B B_eq M) (r : (Γ) ⟶ s[j].Tm) (r_tp u u_tp h h_tp) :
-    s.mkIdRec ilen jlen A t t_tp B B_eq M r r_tp u u_tp h h_tp ≫ s[j].tp =
-      (substCons _ (s[i].sec _ u u_tp) _ h (by> simp [h_tp, comp_mkId, ← B_eq])) ≫ M := by
-  -- simp [mkIdRec, Id'.mkJ_tp]; rw [← Category.assoc]; congr 1
-  -- apply (s[i].disp_pullback _).hom_ext <;> simp [Id'.endPtSubst, sec, substWk]
-  sorry
-
-@[simp]
-theorem mkIdRec_mkRefl {Γ : Ctx} (A : (Γ) ⟶ s[i].Ty)
-    (t t_tp B B_eq M) (r : (Γ) ⟶ s[j].Tm) (r_tp) :
-    s.mkIdRec ilen jlen A t t_tp B B_eq M r r_tp t t_tp
-      (s.mkRefl ilen t) (s.mkRefl_tp ilen _ t t_tp) = r := by
-  -- simp [mkIdRec, mkRefl, Id'.mkJ_refl]
-  sorry
-
-end Id
+abbrev idIntro := @IdSeq.idIntro
+abbrev idElim := @IdSeq.idElim
