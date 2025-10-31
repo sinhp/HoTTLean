@@ -595,14 +595,31 @@ instance : IsSplit (comp IF IG) where
 
 section isoComp
 
-variable {A A' B : Type u} [Category.{v} A] [Category.{v} A']
-    [Category.{v} B] (i : A' ≅≅ A) {F : A ⥤ B} (IF: ClovenIsofibration F)
-    (F' : A' ⥤ B) (hF' : F' = i.hom ⋙ F)
+@[simps]
+def ofEq (F' : A ⥤ B) (hF' : F = F') : ClovenIsofibration F' where
+  liftObj f hf a ha := IF.liftObj f (by convert ha)
+  liftIso f hf a ha := IF.liftIso f (by convert ha)
+  isHomLift f hf a ha := by
+    subst hF'
+    apply IF.isHomLift
+  liftIso_IsIso := by
+    subst hF'
+    exact IF.liftIso_IsIso
 
-
-def isoComp : ClovenIsofibration F' := by
+instance (F' : A ⥤ B) (hF' : F = F') : (ofEq IF F' hF').IsSplit := by
   subst hF'
-  apply comp (iso ..) IF
+  exact inferInstanceAs IF.IsSplit
+
+variable {A' : Type u} [Category.{v} A']
+    (i : A' ≅≅ A) (F' : A' ⥤ B) (hF' : F' = i.hom ⋙ F)
+
+@[simps!]
+def isoComp : ClovenIsofibration F' :=
+  ofEq (comp (iso ..) IF) F' hF'.symm
+
+-- by
+--   subst hF'
+--   apply comp (iso ..) IF
 
   -- let := i -- TODO: remove once defined
   -- let := IF -- TODO: remove once defined
@@ -614,11 +631,10 @@ def isoComp : ClovenIsofibration F' := by
 --   let := IF -- TODO: remove once defined
 --   let := hF' -- TODO: remove once defined
 --   sorry
-#check eqToHom
-instance [IsSplit IF] : IsSplit (isoComp i IF F' hF') := by
-  simp[isoComp]
+-- #check eqToHom
+instance : IsSplit (isoComp IF i F' hF') :=
+  inferInstanceAs (ofEq ..).IsSplit
   --rw![congrArg_cast_hom_right]
-  sorry
 
 end isoComp
 
