@@ -595,6 +595,28 @@ def mapStrongTrans : ∫ A ⥤ ∫ B :=
   Pseudofunctor.Grothendieck.map (strongTrans app naturality naturality_id naturality_comp) ⋙
   (Functor.Grothendieck.toPseudoFunctor'Iso _).inv
 
+@[simp]
+lemma mapStrongTrans_obj_base (x) :
+    ((mapStrongTrans app naturality naturality_id naturality_comp).obj x).base = x.base :=
+  rfl
+
+@[simp]
+lemma mapStrongTrans_obj_fiber (x) :
+    ((mapStrongTrans app naturality naturality_id naturality_comp).obj x).fiber =
+    (app x.base).obj x.fiber :=
+  rfl
+
+@[simp]
+lemma mapStrongTrans_map_base {x y} (f : x ⟶ y) :
+    ((mapStrongTrans app naturality naturality_id naturality_comp).map f).base = f.base :=
+  rfl
+
+@[simp]
+lemma mapStrongTrans_map_fiber {x y} (f : x ⟶ y) :
+    ((mapStrongTrans app naturality naturality_id naturality_comp).map f).fiber =
+    (naturality f.base).inv.app x.fiber ≫ (app y.base).map f.fiber :=
+  rfl
+
 lemma mapStrongTrans_comp_map_self (happ : ∀ x, app x ⋙ φ.app x = 𝟭 _)
     (hnaturality : ∀ {x y} (f : x ⟶ y) (a : A.obj x),
       (φ.app y).map ((naturality f).hom.app a) =
@@ -868,21 +890,53 @@ variable {Γ : Type u₂} [Groupoid.{v₂} Γ] {A : Γ ⥤ Grpd.{u₁,u₁}} (B 
 def strongTrans.app (x) : A.obj x ⟶ (sigma A B).obj x :=
   (PGrpd.objFiber' hs x).obj.obj
 
-def strongTrans.conjugate {x y : Γ} (g : x ⟶ y) :
+@[simp]
+lemma strongTrans.app_obj_base (y) (a) :
+    ((strongTrans.app B s hs y).obj a).base = a :=
+  Functor.congr_obj (PGrpd.objFiber' hs y).obj.property a
+
+-- NOTE: simp should just end at ((strongTrans.app B s hs y).obj a).fiber
+-- @[simp]
+-- lemma strongTrans.app_obj_fiber (y) (a) :
+--     ((strongTrans.app B s hs y).obj a).fiber = sorry := by
+--   simp [app]
+--   sorry
+  -- Functor.congr_obj (PGrpd.objFiber' hs y).obj.property a
+
+@[simp]
+lemma strongTrans.app_map_base (y) {a a'} (f : a ⟶ a') :
+    ((strongTrans.app B s hs y).map f).base = eqToHom (by simp) ≫
+    f ≫ eqToHom (by simp) := by
+  have := Functor.congr_hom (PGrpd.objFiber' hs y).obj.property f
+  simp at this
+  simp [strongTrans.app, this]
+
+def strongTrans.twoCell {x y : Γ} (g : x ⟶ y) :
     A.map (CategoryTheory.inv g) ⋙ strongTrans.app B s hs x ⋙ sigmaMap B g ⟶
   strongTrans.app B s hs y := (PGrpd.mapFiber' hs g).1
 
 @[simp]
-lemma strongTrans.conjugate_id (x) :
-    conjugate B s hs (𝟙 x) = eqToHom (by simp) := by
-  simp [conjugate]
+lemma strongTrans.twoCell_app_base {x y : Γ} (g : x ⟶ y) (a) :
+    ((strongTrans.twoCell B s hs g).app a).base = eqToHom (by
+      simp only [Functor.map_inv, sigma_obj, Functor.comp_obj, sigmaMap_obj_base, app_obj_base]
+      simp [← Functor.comp_obj, ← Grpd.comp_eq_comp]) := by
+  have := NatTrans.congr_app (PGrpd.mapFiber' hs g).2 a
+  simp only [sigma_obj, sigma.fstNatTrans_app, pi_obj_α, Functor.comp_obj,
+    Functor.Groupoidal.forget_obj, IsOverId, Set.mem_setOf_eq, Functor.whiskerRight_app, forget_map,
+    Category.id_comp, eqToHom_trans, eqToHom_app] at this
+  rw [twoCell, this]
+
+@[simp]
+lemma strongTrans.twoCell_id (x) :
+    twoCell B s hs (𝟙 x) = eqToHom (by simp) := by
+  simp [twoCell]
   rfl
 
 set_option maxHeartbeats 400000 in
 lemma strongTrans.pi_map_map {x y z} (f : x ⟶ y) (g : y ⟶ z) :
     (((pi A B).map g).map (PGrpd.mapFiber' hs f)).1 =
     Functor.whiskerLeft (A.map (CategoryTheory.inv g))
-    (Functor.whiskerRight (conjugate B s hs f) (sigmaMap B g)) :=
+    (Functor.whiskerRight (twoCell B s hs f) (sigmaMap B g)) :=
   Section.functor_map_map (A := A)
     (B := sigma A B) (sigma.fstNatTrans B) g (PGrpd.mapFiber' hs f)
 
@@ -898,26 +952,39 @@ sigma x -> sigma x -> sigma z
 ```
 -/
 @[simp]
-lemma strongTrans.conjugate_comp {x y z} (f : x ⟶ y) (g : y ⟶ z) :
-    conjugate B s hs (f ≫ g) = eqToHom (by simp [← Grpd.comp_eq_comp, sigmaMap_comp]) ≫
+lemma strongTrans.twoCell_comp {x y z} (f : x ⟶ y) (g : y ⟶ z) :
+    twoCell B s hs (f ≫ g) = eqToHom (by simp [← Grpd.comp_eq_comp, sigmaMap_comp]) ≫
     Functor.whiskerLeft (A.map (CategoryTheory.inv g))
-      (Functor.whiskerRight (conjugate B s hs f) (sigmaMap B g)) ≫
-    conjugate B s hs g := by
-  conv => left; simp only [conjugate, sigma_obj, pi_obj_α, Set.mem_setOf_eq,
+      (Functor.whiskerRight (twoCell B s hs f) (sigmaMap B g)) ≫
+    twoCell B s hs g := by
+  conv => left; simp only [twoCell, sigma_obj, pi_obj_α, Set.mem_setOf_eq,
     PGrpd.mapFiber'_comp' hs f g, MorphismProperty.WideSubcategory.comp_def,
-    MorphismProperty.coe_eqToHom, pi_map_map]
+    MorphismProperty.WideSubcategory.coe_eqToHom, pi_map_map]
   rfl
 
 def strongTrans.naturality {x y : Γ} (g : x ⟶ y) :
     A.map g ⋙ strongTrans.app B s hs y ≅ strongTrans.app B s hs x ⋙ sigmaMap B g :=
-  ((conjugatingObjNatTransEquiv₁ _ _ _ _ _).toFun (conjugate B s hs g)).symm
+  ((conjugatingObjNatTransEquiv₁ _ _ _ _ _).toFun (twoCell B s hs g)).symm
+
+@[simp]
+lemma strongTrans.naturality_inv_app_base {x y} (f : x ⟶ y) (a) :
+    Hom.base ((strongTrans.naturality B s hs f).inv.app a) = eqToHom (by simp) := by
+  simp only [sigma_obj, Functor.comp_obj, sigmaMap_obj_base, naturality, sigma_map,
+    conjugatingObjNatTransEquiv₁, Grpd.Functor.iso, Grpd.functorIsoOfIso_inv, Functor.mapIso_inv,
+    asIso_inv, Grpd.functorIsoOfIso_hom, Functor.mapIso_hom, asIso_hom,
+    conjugatingObjNatTransEquiv', Groupoid.isoEquivHom, Groupoid.inv_eq_inv, Equiv.toFun_as_coe,
+    Equiv.trans_apply, Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk, IsIso.inv_comp,
+    Functor.inv_whiskerLeft, inv_eqToHom, Iso.symm_mk, NatTrans.comp_app, eqToHom_app,
+    Functor.whiskerLeft_app]
+  rw [comp_base, base_eqToHom]
+  simp
 
 @[simp]
 lemma strongTrans.naturality_id_hom (x : Γ) :
     (strongTrans.naturality B s hs (𝟙 x)).hom = eqToHom (by simp) := by
   dsimp [strongTrans.naturality]
   erw [conjugatingObjNatTransEquiv₁_id_inv]
-  simp [sigma_obj, sigma_map, eqToHom_trans, conjugate_id]
+  simp [sigma_obj, sigma_map, eqToHom_trans, twoCell_id]
 
 -- lemma Grpd.inv_heq_inv {C C' : Grpd} (hC : C ≍ C') {X Y : C} {X' Y' : C'}
 --     (hX : X ≍ X') (hY : Y ≍ Y') {f : X ⟶ Y} {f' : X' ⟶ Y'} (hf : f ≍ f') [IsIso f] :
@@ -977,10 +1044,10 @@ lemma strongTrans.naturality_comp_hom {x y z : Γ} (g1 : x ⟶ y) (g2 : y ⟶ z)
     eqToHom (by simp [Functor.assoc, sigmaMap_comp]) := by
   apply (conjugatingObjNatTransEquiv₁_comp_inv A (sigma A B) g1 g2
     (app B s hs x) (app B s hs y) (app B s hs z)
-    (conjugate B s hs g1) (conjugate B s hs g2)
-    (conjugate B s hs (g1 ≫ g2)) ?_).trans
+    (twoCell B s hs g1) (twoCell B s hs g2)
+    (twoCell B s hs (g1 ≫ g2)) ?_).trans
   · simp [naturality]
-  · apply (strongTrans.conjugate_comp ..).trans
+  · apply (strongTrans.twoCell_comp ..).trans
     rw [Functor.whiskerRight_whiskerLeft]
     simp only [sigma, eqToHom_refl]
     erw [Category.id_comp]
@@ -1006,7 +1073,7 @@ lemma strongTrans.app_map_naturality_hom_app {x y : Γ} (f : x ⟶ y) (a : (A.ob
   simp only [Set.mem_setOf_eq, IsOverId, sigma.fstNatTrans] at h
   simp only [sigma_obj, pi_obj_α, Functor.comp_obj, Functor.Groupoidal.forget_obj,
     Functor.whiskerRight_app, forget_map, Category.id_comp, eqToHom_trans, eqToHom_app] at h
-  simp [conjugate, h]
+  simp [twoCell, h]
 
   -- rw [strongTrans.naturality_comp_hom']
   -- simp only [sigma_obj, sigma_map, conjugatingObjNatTransEquiv₁, Groupoid.isoEquivHom,
@@ -1066,10 +1133,20 @@ def mapStrongTrans : ∫ A ⥤ ∫ sigma A B :=
 lemma mapStrongTrans_obj_base (x) : ((mapStrongTrans B s hs).obj x).base = x.base :=
   rfl
 
-@[simp]
+-- NOTE: `mapStrongTrans_obj_fiber_base` and `mapStrongTrans_obj_fiber_fiber` preferred over this
 lemma mapStrongTrans_obj_fiber (x) : ((mapStrongTrans B s hs).obj x).fiber =
-    (PGrpd.objFiber' hs x.base).obj.obj.obj x.fiber :=
+    (strongTrans.app B s hs x.base).obj x.fiber :=
   rfl
+
+@[simp]
+lemma mapStrongTrans_obj_fiber_base (x) : ((mapStrongTrans B s hs).obj x).fiber.base =
+    x.fiber := by
+  simp [mapStrongTrans]
+
+@[simp]
+lemma mapStrongTrans_obj_fiber_fiber (x) : ((mapStrongTrans B s hs).obj x).fiber.fiber =
+    ((strongTrans.app B s hs x.base).obj x.fiber).fiber := by
+  simp [mapStrongTrans]
 
 @[simp]
 lemma mapStrongTrans_map_base {x y} (f : x ⟶ y) : ((mapStrongTrans B s hs).map f).base =
@@ -1077,6 +1154,25 @@ lemma mapStrongTrans_map_base {x y} (f : x ⟶ y) : ((mapStrongTrans B s hs).map
   rfl
 
 @[simp]
+lemma mapStrongTrans_map_fiber_base {x y} (f : x ⟶ y) :
+    ((mapStrongTrans B s hs).map f).fiber.base =
+    eqToHom (by simp [mapStrongTrans_obj_fiber]) ≫
+    f.fiber ≫ eqToHom (by simp [mapStrongTrans_obj_fiber]) := by
+  simp only [mapStrongTrans, Section.mapStrongTrans_obj_base, sigma_obj,
+    Section.mapStrongTrans_map_base, sigma_map, Section.mapStrongTrans_obj_fiber, sigmaMap_obj_base,
+    Section.mapStrongTrans_map_fiber, Functor.comp_obj]
+  rw [comp_base]
+  simp
+
+lemma mapStrongTrans_map_fiber_fiber {x y} (f : x ⟶ y) :
+    ((mapStrongTrans B s hs).map f).fiber.fiber =
+    sorry := by
+  simp [mapStrongTrans]
+  rw [comp_fiber]
+  simp
+  sorry
+
+-- @[simp] -- TODO remove in favour of fiber_fiber
 lemma mapStrongTrans_map_fiber {x y} (f : x ⟶ y) : ((mapStrongTrans B s hs).map f).fiber =
     eqToHom (sorry) ≫
     (PGrpd.mapFiber' hs f.base).1.app ((A.map f.base).obj x.fiber) ≫
@@ -1127,54 +1223,54 @@ lemma assocHom_app_base_fiber
   simp
   rfl
 
-lemma _root_.GroupoidModel.FunctorOperation.sigma.assoc_inv_obj_base_base'
-    {Γ : Type u₂} [Groupoid Γ] {A : Γ ⥤ Grpd} (B : ∫ A ⥤ Grpd)
-    (x : ∫ sigma A B) :
-    ((sigma.assoc B).inv.obj x).base.base = x.base := by
-  simp only [sigma.assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj,
-    sigma.assocFib.eq_1]
-  rw! (castMode := .all) [pre_obj_base]
-  simp
-  rfl
+-- lemma _root_.GroupoidModel.FunctorOperation.sigma.assoc_inv_obj_base_base'
+--     {Γ : Type u₂} [Groupoid Γ] {A : Γ ⥤ Grpd} (B : ∫ A ⥤ Grpd)
+--     (x : ∫ sigma A B) :
+--     ((sigma.assoc B).inv.obj x).base.base = x.base := by
+--   simp only [sigma.assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj,
+--     sigma.assocFib.eq_1]
+--   rw! (castMode := .all) [pre_obj_base]
+--   simp
+--   rfl
 
-lemma _root_.GroupoidModel.FunctorOperation.sigma.assoc_inv_obj_base_fiber'
-    {Γ : Type u₂} [Groupoid Γ] {A : Γ ⥤ Grpd} (B : ∫ A ⥤ Grpd)
-    (x : ∫ sigma A B) :
-    ((sigma.assoc B).inv.obj x).base.fiber = x.fiber.base := by
-  simp only [sigma.assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj,
-    sigma.assocFib.eq_1]
-  rw! (castMode := .all) [pre_obj_base]
-  simp
-  rfl
+-- lemma _root_.GroupoidModel.FunctorOperation.sigma.assoc_inv_obj_base_fiber'
+--     {Γ : Type u₂} [Groupoid Γ] {A : Γ ⥤ Grpd} (B : ∫ A ⥤ Grpd)
+--     (x : ∫ sigma A B) :
+--     ((sigma.assoc B).inv.obj x).base.fiber = x.fiber.base := by
+--   simp only [sigma.assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj,
+--     sigma.assocFib.eq_1]
+--   rw! (castMode := .all) [pre_obj_base]
+--   simp
+--   rfl
 
-lemma _root_.GroupoidModel.FunctorOperation.sigma.assoc_inv_map_base_base'
-    {Γ : Type u₂} [Groupoid Γ] {A : Γ ⥤ Grpd} (B : ∫ A ⥤ Grpd)
-    {X Y : ∫ sigma A B} (f : X ⟶ Y) :
-    ((sigma.assoc B).inv.map f).base.base = f.base := by
-  simp only [sigma.assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj,
-    sigma.assocFib.eq_1, functorIsoFrom_hom_map, sigma_map, comp_base, pre_map_base,
-    assocHom_app_base_base, ι_map_base, ι_obj_base]
-  erw [Category.comp_id]
-  simp [Hom.base]
+-- lemma _root_.GroupoidModel.FunctorOperation.sigma.assoc_inv_map_base_base'
+--     {Γ : Type u₂} [Groupoid Γ] {A : Γ ⥤ Grpd} (B : ∫ A ⥤ Grpd)
+--     {X Y : ∫ sigma A B} (f : X ⟶ Y) :
+--     ((sigma.assoc B).inv.map f).base.base = f.base := by
+--   simp only [sigma.assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj,
+--     sigma.assocFib.eq_1, functorIsoFrom_hom_map, sigma_map, comp_base, pre_map_base,
+--     assocHom_app_base_base, ι_map_base, ι_obj_base]
+--   erw [Category.comp_id]
+--   simp [Hom.base]
 
--- TODO replace simps! with this
-lemma _root_.GroupoidModel.FunctorOperation.sigma.assoc_inv_map_base_fiber'
-    {Γ : Type u₂} [Groupoid Γ] {A : Γ ⥤ Grpd} (B : ∫ A ⥤ Grpd)
-    {X Y : ∫ sigma A B} (f : X ⟶ Y) :
-    ((sigma.assoc B).inv.map f).base.fiber = eqToHom (by
-      simp
-      rw! [sigma.assoc_inv_map_base_base', sigma.assoc_inv_obj_base_fiber']) ≫
-      f.fiber.base := by
-  simp only [sigma.assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj,
-    sigma.assocFib.eq_1, functorIsoFrom_hom_map, sigma_map, comp_base, comp_fiber,
-    sigmaMap_obj_base]
-  rw! [pre_map_base, ι_map_fiber]
-  simp only [ι_map_base, ι_obj_base, ι_obj_fiber]
-  erw [Grpd.map_id_map, assocHom_app_base_fiber]
-  simp only [sigma.assocFib.eq_1, Functor.comp_obj, eqToHom_refl, Category.id_comp, eqToHom_trans]
-  erw [Category.id_comp]
-  simp
-  rfl
+-- -- TODO replace simps! with this
+-- lemma _root_.GroupoidModel.FunctorOperation.sigma.assoc_inv_map_base_fiber'
+--     {Γ : Type u₂} [Groupoid Γ] {A : Γ ⥤ Grpd} (B : ∫ A ⥤ Grpd)
+--     {X Y : ∫ sigma A B} (f : X ⟶ Y) :
+--     ((sigma.assoc B).inv.map f).base.fiber = eqToHom (by
+--       simp
+--       rw! [sigma.assoc_inv_map_base_base, sigma.assoc_inv_obj_base_fiber']) ≫
+--       f.fiber.base := by
+--   simp only [sigma.assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj,
+--     sigma.assocFib.eq_1, functorIsoFrom_hom_map, sigma_map, comp_base, comp_fiber,
+--     sigmaMap_obj_base]
+--   rw! [pre_map_base, ι_map_fiber]
+--   simp only [ι_map_base, ι_obj_base, ι_obj_fiber]
+--   erw [Grpd.map_id_map, assocHom_app_base_fiber]
+--   simp only [sigma.assocFib.eq_1, Functor.comp_obj, eqToHom_refl, Category.id_comp, eqToHom_trans]
+--   erw [Category.id_comp]
+--   simp
+--   rfl
 
 lemma mapStrongTrans_comp_map_fstNatTrans :
     mapStrongTrans B s hs ⋙ map (sigma.fstNatTrans B) = 𝟭 _ := by
@@ -1228,16 +1324,18 @@ lemma inversion_comp_forgetToGrpd : inversion B s hs ⋙ PGrpd.forgetToGrpd = B 
 lemma ι_comp_inversion {x} : ι A x ⋙ inversion B s hs =
     (PGrpd.objFiber' hs x).obj.obj ⋙ toPGrpd (ι A x ⋙ B) := by
   apply PGrpd.Functor.hext
-  · simp only [Functor.assoc, inversion_comp_forgetToGrpd, toPGrpd_forgetToGrpd]
+  · simp only [Functor.assoc, inversion_comp_forgetToGrpd]
     -- rw [← Functor.assoc, (PGrpd.objFiber' hs x).property, Functor.id_comp]
     sorry
   · intro a
     rfl -- This is probably bad practice
   · intro a b h
     simp
-    have h := sigma.assoc_inv_map_fiber B ((mapStrongTrans B s hs).map ((ι A x).map h))
-    rw [← heq_eq_eq, heq_eqToHom_comp_iff] at h
-    apply h.trans
+    -- have h := sigma.assoc_inv_map_fiber B ((mapStrongTrans B s hs).map ((ι A x).map h))
+    -- rw [← heq_eq_eq, heq_eqToHom_comp_iff] at h
+    -- apply h.trans
+    -- simp
+    rw [mapStrongTrans_map_fiber]
     simp
     sorry
 
@@ -1583,15 +1681,32 @@ theorem lam_naturality : σ ⋙ lam A β = lam (σ ⋙ A) (pre A σ ⋙ β) := b
   · apply lam_naturality_obj
   · apply lam_naturality_map
 
+lemma objFiber_lam_obj_obj_obj {x y : ∫ A} (f : x ⟶ y) :
+    ((PGrpd.objFiber (lam A β) y.base).obj.obj.map (Hom.fiber f)).fiber = sorry :=
+  sorry
+
 lemma inversion_lam : inversion (β ⋙ PGrpd.forgetToGrpd) (lam A β)
     (lam_comp_forgetToGrpd ..) = β := by
   apply PGrpd.Functor.hext
   · simp [inversion_comp_forgetToGrpd]
   · intro x
-    simp [inversion]
+    simp only [inversion, comp_obj, toPGrpd_obj_base, Functor.Grothendieck.forget_obj,
+      toPGrpd_obj_fiber, sigma.assoc_inv_obj_fiber, mapStrongTrans_obj_base,
+      mapStrongTrans_obj_fiber, sigma_obj, sigma.fstNatTrans_app, PGrpd.objFiber'_rfl, heq_eq_eq]
     sorry
+    -- simp only [inversion, comp_obj, toPGrpd_obj_base, Functor.Grothendieck.forget_obj,
+    --   toPGrpd_obj_fiber, sigma.assoc_inv_obj_fiber, mapStrongTrans_obj_base,
+    --   mapStrongTrans_obj_fiber, sigma_obj, sigma.fstNatTrans_app, PGrpd.objFiber'_rfl, heq_eq_eq]
+    -- rfl
   · intro x y f
     simp [inversion]
+    rw [mapStrongTrans_map_fiber]
+    simp
+    rw [comp_fiber]
+    rw [fiber_eqToHom]
+    simp
+    rw [comp_fiber]
+    simp
     sorry
 
 end
