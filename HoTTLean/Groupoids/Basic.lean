@@ -71,10 +71,10 @@ instance : HasFiniteLimits Ctx := inferInstanceAs (HasFiniteLimits Grpd)
 
 namespace Ctx
 
-def coreAsSmall (C : Type (v+1)) [Category.{v} C] : Ctx.{max u (v+1)} :=
+def coreAsSmall (C : Type (v+1)) [LargeCategory.{v} C] : Ctx.{max u (v+1)} :=
   Grpd.of (Core (AsSmall C))
 
-def coreAsSmallFunctor {C : Type (v+1)} [Category.{v} C] {D : Type (w+1)} [Category.{w} D]
+def coreAsSmallFunctor {C : Type (v+1)} [LargeCategory.{v} C] {D : Type (w+1)} [LargeCategory.{w} D]
     (F : C ⥤ D) : coreAsSmall.{v, max u (v+1) (w+1)} C
     ⟶ coreAsSmall.{w, max u (v+1) (w+1)} D :=
   Grpd.homOf $ Functor.core $ AsSmall.down ⋙ F ⋙ AsSmall.up
@@ -85,8 +85,9 @@ open Ctx
 
 section
 
-variable {Γ Δ : Type u} [Groupoid Γ] [Groupoid Δ] (σ : Δ ⥤ Γ) {C : Type (v+1)} [Category.{v} C]
-    {D : Type (v+1)} [Category.{v} D]
+variable {Γ Δ : Type u} [Groupoid Γ] [Groupoid Δ] (σ : Δ ⥤ Γ)
+    {C : Type (v+1)} [LargeCategory.{v} C]
+    {D : Type (v+1)} [LargeCategory.{v} D]
 
 def toCoreAsSmallEquiv : (Γ ⥤ coreAsSmall C) ≃ Γ ⥤ C :=
   Core.functorToCoreEquiv.symm.trans functorToAsSmallEquiv
