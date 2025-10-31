@@ -963,11 +963,11 @@ theorem EqTmIH.lam {Γ A A' B t t' l l'} :
     obtain ⟨_, hΓ₁, _, _, hA₁, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ'
     cases Part.mem_unique hΓ hΓ₁
     cases Part.mem_unique hA hA₁
-    sorry
-    -- exact ⟨_, hΓ, _, _, I.mem_ofType_pi.2 ⟨rfl, _, hA, _, hB, by simp⟩, _,
-    --   I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, by simp⟩,
-    --   I.mem_ofTerm_lam.2 ⟨rfl, _, hA', _, ht', by simp⟩,
-    --   mkLam_tp (t_tp := ttp) ..⟩
+    refine ⟨_, hΓ, by omega, ?_⟩
+    refine ⟨_, I.mem_ofType_pi.2 ⟨rfl, _, hA, _, hB, rfl⟩, ?_⟩
+    refine ⟨_, I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, rfl⟩, ?_⟩
+    refine ⟨I.mem_ofTerm_lam.2 ⟨rfl, _, hA', _, ht', rfl⟩, ?_⟩
+    rw [lam_tp, ttp]
 
 theorem EqTmIH.app {Γ A B B' f f' a a' l l'} :
     I.EqTpIH ((A, l) :: Γ) l' B B' →
@@ -1035,12 +1035,12 @@ theorem EqTmIH.fst_snd {Γ A A' B B' p p' l l'} :
 theorem EqTmIH.refl_tm {Γ A t t' l} :
     I.EqTmIH Γ l A t t' → I.EqTmIH Γ l (Expr.Id l A t t) (Expr.refl l t) (Expr.refl l t')
   | ⟨_, hΓ, _, _, hA, _, ht, ht', ttp⟩ => by
-    exact ⟨_, hΓ, _, _,
+    refine ⟨_, hΓ, _, _,
       I.mem_ofType_Id.2 ⟨_, hA, _, ht, _, ht, ttp, ttp, rfl⟩, _,
       I.mem_ofTerm_refl.2 ⟨_, ht, rfl⟩,
       I.mem_ofTerm_refl.2 ⟨_, ht', rfl⟩,
-      sorry⟩
-      --refl_tp ..⟩
+      ?_⟩
+    simp; congr
 
 theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
     I.EqTmIH Γ l A t t' →
@@ -1104,13 +1104,14 @@ theorem EqTmIH.app_lam {Γ A B t u l l'} :
     obtain ⟨_, hΓ₁, _, _, hA₁, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ'
     cases Part.mem_unique hΓ hΓ₁
     cases Part.mem_unique hA hA₁
-    sorry
-    -- exact ⟨_, hΓ, _, _, I.mem_ofType_toSb _ hu utp hB, _,
-    --   I.mem_ofTerm_app.2 ⟨_, _,
-    --     I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, by simp⟩, _, hu, _, utp, _, hB,
-    --     lam_tp (t_tp := ttp) ..,
-    --     (app_lam (t_tp := ttp) ..).symm⟩,
-    --   I.mem_ofTerm_toSb _ hu _ ht, by simp [ttp]⟩
+    refine ⟨_, hΓ, by omega, ?_⟩
+    refine ⟨_, I.mem_ofType_toSb _ hu utp hB, ?_⟩
+    refine ⟨_, I.mem_ofTerm_app.2 ⟨_, _,
+        I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, by simp [ttp]⟩, _, hu, _, utp, _, hB,
+        lam_tp (b_tp := ttp) ..,
+        (PolymorphicPi.app_lam (t_tp := ttp) ..).symm⟩,
+        ?_⟩
+    exact ⟨I.mem_ofTerm_toSb _ hu _ ht, by simp [ttp]⟩
 
 theorem EqTmIH.fst_snd_pair {Γ A B t u l l'} :
     I.WfTpIH ((A, l) :: Γ) l' B → I.WfTmIH Γ l A t → I.WfTmIH Γ l' (Expr.subst t.toSb B) u →
