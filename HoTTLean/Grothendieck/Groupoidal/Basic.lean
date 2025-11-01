@@ -220,6 +220,34 @@ def toTransport (x : ∫(F)) {c : C} (t : x.base ⟶ c) : x ⟶ x.transport t :=
     (x.toTransport t).fiber = 𝟙 ((F.map t).obj x.fiber) :=
   Grothendieck.toTransport_fiber _ _
 
+lemma transport_congr (x x' : ∫ F) (e1 : x = x') {c : C} (t : x.base ⟶ c) (t' : x'.base ⟶ c)
+    (e : t = eqToHom (by simp[e1]) ≫ t') :
+  transport x t = transport x' t' := by aesop_cat
+
+lemma transport_id {x : ∫ F} : transport x (𝟙 x.base) = x := by
+  apply Grothendieck.transport_id
+
+lemma transport_eqToHom {X: C} {X' : F.Groupoidal} (hX': X'.base = X) :
+    X'.transport (eqToHom hX') = X' := by
+  apply Grothendieck.transport_eqToHom
+
+lemma toTransport_id {X : ∫ F} :
+    toTransport X (𝟙 X.base) = eqToHom transport_id.symm := by
+  apply Grothendieck.toTransport_id
+
+lemma toTransport_eqToHom {X: C} {X' : ∫ F} (hX': forget.obj X' = X):
+    toTransport X' (eqToHom hX') = eqToHom (by subst hX'; simp [transport_id]) := by
+  apply Grothendieck.toTransport_eqToHom
+
+lemma transport_comp (x : ∫ F) {c d : C} (t : x.base ⟶ c) (t' : c ⟶ d):
+    transport x (t ≫ t') = transport (transport x t) t' := by
+  apply Grothendieck.transport_comp
+
+lemma toTransport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t' : c ⟶ d):
+    toTransport x (t ≫ t') =
+    toTransport x t ≫ toTransport (transport x t) t' ≫ eqToHom (transport_comp x t t').symm := by
+  apply Grothendieck.toTransport_comp
+
 def isoMk {X Y : ∫(F)} (f : X ⟶ Y) : X ≅ Y := by
   fapply Grothendieck.isoMk
   · exact (Groupoid.isoEquivHom _ _).2 f.base
@@ -678,14 +706,38 @@ lemma pre_map_fiber {x y} (f : x ⟶ y) : ((pre F G).map f).fiber = f.fiber := b
 @[simp]
 theorem pre_id : pre F (𝟭 C) = 𝟭 _ := rfl
 
+section
+
+variable {G H : D ⥤ C} (α : G ≅ H)
+
 /--
 An natural isomorphism between functors `G ≅ H` induces a natural isomorphism between the canonical
 morphism `pre F G` and `pre F H`, up to composition with
 `∫(G ⋙ F) ⥤ ∫(H ⋙ F)`.
 -/
-def preNatIso {G H : D ⥤ C} (α : G ≅ H) :
+def preNatIso :
     pre F G ≅ map (whiskerRight α.hom F) ⋙ (pre F H) :=
   Grothendieck.preNatIso _ _
+
+@[simp] theorem preNatIso_hom_app_base (x) :
+    ((preNatIso F α).hom.app x).base = α.hom.app x.base :=
+  Grothendieck.preNatIso_hom_app_base ..
+
+@[simp] theorem preNatIso_hom_app_fiber (x) :
+    ((preNatIso F α).hom.app x).fiber = 𝟙 _ :=
+  Grothendieck.preNatIso_hom_app_fiber ..
+
+theorem preNatIso_congr {G H : D ⥤ C} {α β : G ≅ H} (h : α = β) :
+    preNatIso F α = preNatIso F β ≪≫ eqToIso (by subst h; simp) := by
+  subst h
+  simp
+
+@[simp] theorem preNatIso_eqToIso {G H : D ⥤ C} {h : G = H} :
+    preNatIso F (eqToIso h) =
+    eqToIso (by subst h; simp [map_id_eq, Functor.id_comp]) :=
+  Grothendieck.preNatIso_eqToIso ..
+
+end
 
 /--
 Given an equivalence of categories `G`, `preInv _ G` is the (weak) inverse of the `pre _ G.functor`.
@@ -717,6 +769,54 @@ theorem pre_comp_forget (α : D ⥤ C) (A : C ⥤ Grpd) :
     simp
   · simp
 
+noncomputable section
+
+variable {F} {x y : ∫ F} (f : x ⟶ y) [IsIso f]
+
+instance : IsIso f.base := by
+  refine ⟨ (CategoryTheory.inv f).base , ?_, ?_ ⟩
+  · simp [← comp_base]
+  · simp [← comp_base]
+
+def invFiber : y.fiber ⟶ (F.map f.base).obj x.fiber :=
+  eqToHom (by simp [← Functor.comp_obj, ← Grpd.comp_eq_comp, ← Functor.map_comp,
+      ← Groupoidal.comp_base]) ≫
+    (F.map f.base).map (CategoryTheory.inv f).fiber
+
+@[simp]
+lemma fiber_comp_invFiber : f.fiber ≫ invFiber f = 𝟙 ((F.map f.base).obj x.fiber) := by
+  have h := comp_fiber f (CategoryTheory.inv f)
+  rw! [IsIso.hom_inv_id] at h
+  have h0 : F.map (CategoryTheory.inv f).base ⋙ F.map f.base = 𝟭 _ := by
+    simp [← Grpd.comp_eq_comp, ← Functor.map_comp, ← comp_base]
+  have h1 := Functor.congr_map (F.map f.base) h
+  simp [← heq_eq_eq, eqToHom_map, ← Functor.comp_map, Functor.congr_hom h0] at h1
+  dsimp [invFiber]
+  rw! [← h1]
+  simp
+
+@[simp]
+lemma invFiber_comp_fiber : invFiber f ≫ f.fiber = 𝟙 _ := by
+  have h := comp_fiber (CategoryTheory.inv f) f
+  rw! [IsIso.inv_hom_id] at h
+  simp [invFiber]
+  convert h.symm
+  · simp
+  · simp
+  · simpa using (eqToHom_heq_id_cod _ _ _).symm
+
+instance : IsIso f.fiber :=
+  ⟨invFiber f , fiber_comp_invFiber f, invFiber_comp_fiber f⟩
+
+lemma inv_base : CategoryTheory.inv f.base = (CategoryTheory.inv f).base := by
+  apply IsIso.inv_eq_of_hom_inv_id
+  simp [← comp_base]
+
+lemma inv_fiber : CategoryTheory.inv f.fiber = invFiber f := by
+  apply IsIso.inv_eq_of_hom_inv_id
+  simp
+
+end
 end
 
 section
@@ -766,16 +866,6 @@ variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
 theorem map_comp_eq {G H : C ⥤ Grpd.{v₂,u₂}} (α : F ⟶ G) (β : G ⟶ H) :
     map (α ≫ β) = map α ⋙ map β := by
   simp [map, Grothendieck.map_comp_eq]
-
-theorem preNatIso_congr {G H : D ⥤ C} {α β : G ≅ H} (h : α = β) :
-    preNatIso F α = preNatIso F β ≪≫ eqToIso (by subst h; simp) :=
-  Grothendieck.preNatIso_congr _ h
-
-@[simp] theorem preNatIso_eqToIso {G H : D ⥤ C} {h : G = H} :
-    preNatIso F (eqToIso h) = eqToIso (by
-      subst h
-      simp [Groupoidal.map_id_eq]) :=
-  Grothendieck.preNatIso_eqToIso _
 
 theorem preNatIso_comp {G1 G2 G3 : D ⥤ C} (α : G1 ≅ G2) (β : G2 ≅ G3) :
     preNatIso F (α ≪≫ β) = preNatIso F α ≪≫ Functor.isoWhiskerLeft _ (preNatIso F β) ≪≫
@@ -901,6 +991,25 @@ lemma pre_congr_functor {Γ Δ : Type*} [Category Γ] [Category Δ] (σ : Δ ⥤
   subst h
   simp only [eqToHom_refl, map_id_eq]
   exact rfl
+
+lemma fiber_eqToHom_comp_heq {Γ : Type*} [Category Γ]
+    {F : Γ ⥤ Grpd} {x' x y : ∫ F} (h : x' = x) (f : x ⟶ y) :
+    (eqToHom h ≫ f).fiber ≍ f.fiber := by
+  subst h
+  simp [eqToHom_map]
+
+lemma fiber_eq_eqToHom_comp_heq {Γ : Type*} [Category Γ]
+    {F : Γ ⥤ Grpd} {x' x y : ∫ F} (g : x' ⟶ x) (h : x' = x) (hg : g = eqToHom h)
+    (f : x ⟶ y) : (eqToHom h ≫ f).fiber ≍ f.fiber := by
+  subst h
+  simp [eqToHom_map]
+
+lemma fiber_comp_eqToHom_heq {Γ : Type*} [Category Γ]
+    {F : Γ ⥤ Grpd} {x y y' : ∫ F} (h : y = y') (f : x ⟶ y) :
+    (f ≫ eqToHom h).fiber ≍ f.fiber := by
+  subst h
+  simp
+
 
 end
 

@@ -31,7 +31,7 @@ end
 
 open Functor
 
-lemma hext {A : Type u} [Category.{v} A] {B: Type u₁} [Groupoid.{v₁} B]
+lemma hext {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B]
     {F F' G G' : A ⥤ B} (α : F ⟶ G) (β : F' ⟶ G')
     (hF : F = F') (hG : G = G') (happ : ∀ x, α.app x ≍ β.app x) :
     α ≍ β := by

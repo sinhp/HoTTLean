@@ -1,6 +1,8 @@
 import Mathlib.CategoryTheory.Functor.Category
 import Mathlib.CategoryTheory.Category.ULift
 
+universe v u v₁ u₁ v₂ u₂
+
 namespace CategoryTheory.Functor
 
 structure Iso (C D : Type*) [Category C] [Category D] where
@@ -320,6 +322,30 @@ def toEquivalence (h : X ≅≅ Y) : X ≌ Y where
   unitIso := eqToIso h.hom_inv_id.symm
   counitIso := eqToIso h.inv_hom_id
   functor_unitIso_comp x := by simp [eqToHom_map]
+
+lemma whiskerLeft_inv_hom_heq {C : Type u} [Category.{v} C] {D : Type u₁}
+    [Category.{v₁} D] {E : Type u₂} [Category.{v₂} E] (F : C ≅≅ D) (G H : D ⥤ E) (η : G ⟶ H) :
+    (F.inv ⋙ F.hom).whiskerLeft η ≍ η := by
+  rw [F.inv_hom_id]
+  aesop_cat
+
+lemma whiskerLeft_inv_hom {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
+    {E : Type u₂} [Category.{v₂} E] (F : C ≅≅ D) (G H : D ⥤ E) (η : G ⟶ H) :
+    (F.inv ⋙ F.hom).whiskerLeft η = eqToHom (by aesop) ≫ η ≫ eqToHom (by aesop) := by
+  simpa [← heq_eq_eq] using
+    whiskerLeft_inv_hom_heq F G H η
+
+lemma whiskerLeft_hom_inv_heq {C : Type u} [Category.{v} C] {D : Type u₁}
+    [Category.{v₁} D] {E : Type u₂} [Category.{v₂} E] (F : D ≅≅ C) (G H : D ⥤ E) (η : G ⟶ H) :
+    (F.hom ⋙ F.inv).whiskerLeft η ≍ η := by
+  rw [F.hom_inv_id]
+  aesop_cat
+
+lemma whiskerLeft_hom_inv {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
+    {E : Type u₂} [Category.{v₂} E] (F : D ≅≅ C) (G H : D ⥤ E) (η : G ⟶ H) :
+    (F.hom ⋙ F.inv).whiskerLeft η = eqToHom (by aesop) ≫ η ≫ eqToHom (by aesop) := by
+  simpa [← heq_eq_eq] using
+    whiskerLeft_hom_inv_heq F G H η
 
 end Iso
 
