@@ -791,63 +791,7 @@ lemma pushforward.homEquiv_apply_coe {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A
      simp[homEquivAux1]
      simp[Trans.trans]
      simp[homEquivAux2]
-     --sorry
 
-
-lemma pushforward.homEquiv_naturality {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D']
-    (σ : D ⥤ A) (σ' : D' ⥤ A) (s : D' ⥤ D) (eq : σ' = s ⋙ σ)
-    (M : D ⥤ pushforward IF IG) (hM : M ⋙ Groupoidal.forget = σ):
-    (homEquiv IF IG (s ⋙ σ)) ⟨s ⋙ M, sorry⟩ =
-    ⟨pre (σ ⋙ IF.classifier) s ⋙ ((homEquiv IF IG σ) ⟨M, hM⟩),sorry⟩  := by
-    ext
-    simp[homEquiv]
-    fapply Functor.ext
-    · intro p
-      simp[homEquivAux2]
-      congr 1
-      simp[homEquivAux1]
-      sorry
-    sorry
-
-
-
-lemma pushforward.homEquiv_comp1 {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D']
-    (σ : D ⥤ A) (σ' : D' ⥤ A) (s : D' ⥤ D) (eq : σ' = s ⋙ σ)
-    (M : D ⥤ pushforward IF IG) (hM : M ⋙ Groupoidal.forget = σ) :
-    (pushforward.homEquiv IF IG σ' ⟨s ⋙ M, by rw [Functor.assoc, hM, eq]⟩).1 =
-    Groupoidal.map (eqToHom (by rw [eq, Functor.assoc])) ⋙
-    pre _ s ⋙ (pushforward.homEquiv IF IG σ ⟨M, hM⟩).1 := by
-  subst eq
-  simp
-  sorry
-  -- fapply Functor.ext
-  -- · sorry
-  -- · sorry
-  --simp[Groupoidal.map_id_eq]
-  --simp[homEquiv]
-  --simp only[pre,Grothendieck.pre]
-  -- fapply Groupoidal.FunctorTo.ext
-  -- · intro p
-  --   --cases p
-  --   simp
-  --   simp[Groupoidal.map_id_eq]
-  --   simp[homEquiv,homEquivAux2,grothendieckClassifierIso]
-  --   congr!
-  --   ·
-  --     sorry
-  --   · sorry
-  --   · sorry
-  --   · sorry
-  -- · intro x y f
-  --   simp
-  --   sorry
-   -- rw![Functor.Groupoidal.pre_comp]
-    --simp[homEquiv]
-    --sorry
-
-  -- conv => lhs ;rhs ; simp only[pushforward.homEquiv_naturality]
-  -- --rw![pushforward.homEquiv_naturality]
-  -- sorry
 
 /-- Naturality in the universal property of the pushforward. -/
 lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D']
@@ -859,19 +803,13 @@ lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D
   subst eq
   rw[pushforward.homEquiv_apply_coe]
   rw[pushforward.homEquiv_apply_coe]
-  simp only [← Functor.assoc, eqToHom_refl, Iso.cancel_iso_hom_right]
+  simp only [← Functor.assoc, eqToHom_refl, Iso.cancel_iso_hom_right,map_id_eq, Cat.of_α,
+             Functor.simpIdComp]
+  rw[GroupoidModel.FunctorOperation.pi.equivFun_comp
+            (τ := s) (F := M) (σ' := s ⋙ σ) (σ := σ) (hF:= hM) (hτ := rfl)]
   simp[Groupoidal.map_id_eq]
 
 
-  fapply Functor.ext
-  · sorry
-  · sorry
-  -- simp[Groupoidal.map_id_eq]
-  -- simp[homEquiv]
-
-  -- conv => lhs ;rhs ; simp only[pushforward.homEquiv_naturality]
-  -- --rw![pushforward.homEquiv_naturality]
-  -- sorry
 
 end pushforward
 
