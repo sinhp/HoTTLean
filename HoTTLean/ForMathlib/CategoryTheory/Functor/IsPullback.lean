@@ -562,7 +562,7 @@ lemma isoIsPullback.hom_comp_right {P P' X Y Z : Type*} [Category P] [Category P
     rw! [Functor.assoc,h'.from_west]
     rw [toChosen_west]
 
-def IsPullbackOfBotId {A A' B : Type*} [Category A] [Category A']
+def ofBotId {A A' B : Type*} [Category A] [Category A']
     [Category B]
     {i : A ≅≅ A'} {F1: A ⥤ B} {F2 : A' ⥤ B}
     (h' : F1 = i.hom ⋙ F2) : IsPullback i.hom F1 F2 (Functor.id B) := by

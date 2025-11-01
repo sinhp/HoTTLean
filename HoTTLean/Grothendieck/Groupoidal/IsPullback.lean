@@ -108,6 +108,28 @@ theorem toPGrpd_eq_toPGrpd' : toPGrpd A = toPGrpd' A := by
 def isPullback : Functor.IsPullback (toPGrpd A) forget PGrpd.forgetToGrpd A :=
   cast (by rw [toPGrpd_eq_toPGrpd']) (isPullback' A)
 
+/--
+The left square is a pullback since the right square and outer square are.
+    ∫(σ ⋙ A) ------------ pre ---------> ∫(A)
+        |                                  |
+        |                                  |
+     forget                              forget
+        |                                  |
+        |                                  |
+        v                                  v
+        Δ -------------- σ ---------------> Γ
+-/
+def pre_isPullback {C : Type u} [Groupoid.{v, u} C] {D : Type u₁}
+    [Groupoid.{v₁, u₁} D] (F : C ⥤ Grpd) (G : D ⥤ C) :
+    Functor.IsPullback (pre F G) (forget (F := G ⋙ F)) (forget (F := F)) G :=
+  Functor.IsPullback.Paste.ofRight
+  (no := pre F G) (rth := toPGrpd F) (west := forget (F := G ⋙ F)) (sah := forget (F := F))
+  (east := PGrpd.forgetToGrpd) (uth := F)
+  (by simp [Functor.Groupoidal.pre_comp_forget])
+  (by simp [Functor.Groupoidal.toPGrpd_forgetToGrpd])
+  (by apply Functor.Groupoidal.isPullback)
+  (by apply Functor.Groupoidal.isPullback)
+
 end
 
 section

@@ -20,8 +20,8 @@ variable {p : 𝒳 ⥤ 𝒮} {S : 𝒮}
 
 @[simp]
 lemma functor_obj_fiberInclusion_obj (a : Fiber p S) :
-    p.obj (Fiber.fiberInclusion.obj a) = S := by
-  exact a.2
+    p.obj (Fiber.fiberInclusion.obj a) = S :=
+  a.2
 
 lemma functor_map_fiberInclusion_map {a b : Fiber p S}
     (f : a ⟶ b) :
@@ -368,7 +368,7 @@ lemma grothendieckClassifierIso.hom_comp_self :
 end
 
 @[simps!]
-def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
+def iso {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B] (F : A ≅≅ B) :
     ClovenIsofibration F.hom where
   liftObj {b0 b1} f hf x hF := F.inv.obj b1
   liftIso {b0 b1} f hf x hF := eqToHom (by simp [← hF, ← Functor.comp_obj]) ≫ F.inv.map f
@@ -382,7 +382,7 @@ def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
    intro X Y f i X' hX'
    apply IsIso.comp_isIso
 
-instance {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) : IsSplit (iso F) where
+instance {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B] (F : A ≅≅ B) : IsSplit (iso F) where
   liftObj_id h := by simp [← h, ← Functor.comp_obj]
   liftIso_id := by simp
   liftObj_comp := by simp
@@ -481,7 +481,7 @@ instance (A : Type u) [Category.{v} A] : IsSplit (id A) :=
 
 section
 
-variable {A B C : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} C] {F : A ⥤ B}
+variable {A B C : Type*} [Category A] [Category B] [Category C] {F : A ⥤ B}
   (IF : ClovenIsofibration F) {G : B ⥤ C} (IG : ClovenIsofibration G)
 
 def comp.liftObj {X Y: C} (f: X ⟶ Y) [IsIso f] {X': A} (hX': (F ⋙ G).obj X' = X) : A :=
@@ -580,23 +580,35 @@ instance : IsSplit (comp IF IG) where
 
 section isoComp
 
-variable {A A' B : Type u} [Category.{v} A] [Category.{v} A']
-    [Category.{v} B] (i : A' ≅≅ A) {F : A ⥤ B} (IF: ClovenIsofibration F)
-    (F' : A' ⥤ B) (hF' : F' = i.hom ⋙ F)
+@[simps]
+def ofEq (F' : A ⥤ B) (hF' : F = F') : ClovenIsofibration F' where
+  liftObj f hf a ha := IF.liftObj f (by convert ha)
+  liftIso f hf a ha := IF.liftIso f (by convert ha)
+  isHomLift f hf a ha := by
+    subst hF'
+    apply IF.isHomLift
+  liftIso_IsIso := by
+    subst hF'
+    exact IF.liftIso_IsIso
 
+instance (F' : A ⥤ B) (hF' : F = F') : (ofEq IF F' hF').IsSplit := by
+  subst hF'
+  exact inferInstanceAs IF.IsSplit
+
+variable {A' : Type u₁} [Category.{v₁} A']
+    (i : A' ≅≅ A) (F' : A' ⥤ B) (hF' : F' = i.hom ⋙ F)
+
+@[simps!]
 def isoComp : ClovenIsofibration F' :=
-  let := i -- TODO: remove once defined
-  let := IF -- TODO: remove once defined
-  let := hF' -- TODO: remove once defined
-  sorry
+  ofEq (comp (iso ..) IF) F' hF'.symm
 
-instance [IsSplit IF] : IsSplit (isoComp i IF F' hF') := sorry
+instance : IsSplit (isoComp IF i F' hF') :=
+  inferInstanceAs (ofEq ..).IsSplit
 
 end isoComp
 
 end
 
--- this has been proven in the `clans` branch.
 def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A']
     [Groupoid.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
     (isPullback : Functor.IsPullback top F' F bot) (IF : ClovenIsofibration F) [IsSplit IF] :
@@ -608,10 +620,10 @@ def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoi
   have eq1 : Groupoidal.pre IF.classifier bot ⋙ Groupoidal.forget = Groupoidal.forget ⋙ bot := by
     simp [Groupoidal.pre_comp_forget]
   have q1 : Functor.IsPullback (Groupoidal.pre IF.classifier bot ⋙ i.hom)
-      (Groupoidal.forget (F := (bot ⋙ IF.classifier))) F bot := sorry
-  --   Functor.IsPullback.Paste.horiz eq1 (by simp [i_comp_F])
-  --   (IsPullback.IsPullback.botDegenerate i_comp_F.symm)
-  --   (Groupoidal.compGrothendieck.isPullback ..)
+      (Groupoidal.forget (F := (bot ⋙ IF.classifier))) F bot :=
+    Functor.IsPullback.Paste.horiz eq1 (by simp [i_comp_F])
+    (Functor.IsPullback.ofBotId i_comp_F.symm)
+    (Groupoidal.pre_isPullback ..)
   let j : A' ≅≅ Functor.Groupoidal (F := bot ⋙ IF.classifier) :=
     Functor.IsPullback.isoIsPullback isPullback q1
   have e : F' = j.hom ⋙ (Groupoidal.forget (F := bot ⋙ IF.classifier)) :=
@@ -638,7 +650,7 @@ def tpClovenIsofibration : (GroupoidModel.U.{u}.tp).ClovenIsofibration :=
   let i : U.{u}.Tm ≅≅ Functor.Groupoidal (F := Core.inclusion _ ⋙ AsSmall.down) :=
     Functor.IsPullback.isoIsPullback IsPullback.isPullbackCoreAsSmall'
       (Functor.Groupoidal.isPullback (Core.inclusion _ ⋙ AsSmall.down))
-  isoComp i (Functor.ClovenIsofibration.forget _)
+  isoComp (Functor.ClovenIsofibration.forget _) i
   _ (Functor.IsPullback.isoIsPullback.hom_comp_right _ _ rfl).symm
 
 instance : IsSplit tpClovenIsofibration := by
