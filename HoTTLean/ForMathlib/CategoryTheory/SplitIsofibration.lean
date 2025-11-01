@@ -705,8 +705,12 @@ def pushforward.strictifyClovenIsofibration : (strictify IF G).ClovenIsofibratio
 --   let := IG -- TODO: remove
 --   sorry
 
-instance : (pushforward.strictifyClovenIsofibration IF IG).IsSplit :=
-  sorry
+instance : (pushforward.strictifyClovenIsofibration IF IG).IsSplit := by
+  simp[pushforward.strictifyClovenIsofibration]
+  have h: (iso_inv IF.grothendieckClassifierIso).IsSplit := by
+    apply Functor.ClovenIsofibration.instIsSplitIso
+  apply CategoryTheory.Functor.ClovenIsofibration.instIsSplitComp
+
 
 /-- The object part (a groupoid) of the pushforward along `F`, of `G`,
 defined as the Grothendieck construction applied to (unstructured) Pi-type construction
@@ -779,6 +783,7 @@ lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D
     (pushforward.homEquiv IF IG σ' ⟨s ⋙ M, by rw [Functor.assoc, hM, eq]⟩).1 =
     Groupoidal.map (eqToHom (by rw [eq, Functor.assoc])) ⋙
     pre _ s ⋙ (pushforward.homEquiv IF IG σ ⟨M, hM⟩).1 := by
+
   sorry
 
 end pushforward
