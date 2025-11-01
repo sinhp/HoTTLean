@@ -673,11 +673,15 @@ def strongTrans.twoCell {x y : Γ} (g : x ⟶ y) :
     A.map (CategoryTheory.inv g) ⋙ strongTrans.app B s hs x ⋙ sigmaMap B g ⟶
   strongTrans.app B s hs y := (PGrpd.mapFiber' hs g).1
 
+lemma strongTrans.twoCell_app_base_aux {x y : Γ} (g : x ⟶ y) (a) :
+    base ((A.map (CategoryTheory.inv g) ⋙ app B s hs x ⋙ sigmaMap B g).obj a) =
+    base ((app B s hs y).obj a) := by
+  simp only [Functor.map_inv, sigma_obj, Functor.comp_obj, sigmaMap_obj_base, app_obj_base]
+  simp [← Functor.comp_obj, ← Grpd.comp_eq_comp]
+
 @[simp]
 lemma strongTrans.twoCell_app_base {x y : Γ} (g : x ⟶ y) (a) :
-    ((strongTrans.twoCell B s hs g).app a).base = eqToHom (by
-      simp only [Functor.map_inv, sigma_obj, Functor.comp_obj, sigmaMap_obj_base, app_obj_base]
-      simp [← Functor.comp_obj, ← Grpd.comp_eq_comp]) := by
+    ((strongTrans.twoCell B s hs g).app a).base = eqToHom (twoCell_app_base_aux ..) := by
   have := NatTrans.congr_app (PGrpd.mapFiber' hs g).2 a
   simp only [sigma_obj, sigma.fstNatTrans_app, pi_obj_α, Functor.comp_obj,
     Functor.Groupoidal.forget_obj, IsOverId, Set.mem_setOf_eq, Functor.whiskerRight_app, forget_map,
@@ -891,16 +895,6 @@ lemma inversion_comp_forgetToGrpd : inversion B s hs ⋙ PGrpd.forgetToGrpd = B 
   simp only [inversion, Functor.assoc, toPGrpd_forgetToGrpd]
   conv => left; right; rw [← Functor.assoc, ← sigma.map_fstNatTrans_eq]
   simp [← Functor.assoc, mapStrongTrans_comp_map_fstNatTrans]
-
-lemma fiber_eqToHom_comp_heq {x' x y : ∫ A} (h : x' = x) (f : x ⟶ y) :
-    (eqToHom h ≫ f).fiber ≍ f.fiber := by
-  subst h
-  simp
-
-lemma fiber_eq_eqToHom_comp_heq {x' x y : ∫ A} (g : x' ⟶ x) (h : x' = x) (hg : g = eqToHom h)
-    (f : x ⟶ y) : (eqToHom h ≫ f).fiber ≍ f.fiber := by
-  subst h
-  simp
 
 -- NOTE: this is not as general as the `mapStrongTrans` simp lemmas
 lemma mapStrongTrans_map_ι_map_fiber_fiber_heq {x : Γ} {a b : A.obj x} (h : a ⟶ b) :
@@ -1326,9 +1320,15 @@ lemma strongTrans.twoCell_lam_app {x y : ∫ A} (f : x ⟶ y) :
         rw! [← Functor.map_comp, IsIso.hom_inv_id, CategoryTheory.Functor.map_id, Category.id_comp]
         rfl) ≫
         (β.map ((ιNatTrans (Hom.base f)).app x.fiber)).fiber) := by
-  simp [twoCell, lam]
+  simp only [sigma_obj, lam, comp_obj, twoCell, sigma.fstNatTrans_app, pi_obj_α,
+    PGrpd.objFiber'_rfl, Set.mem_setOf_eq, PGrpd.mapFiber'_rfl, sigmaMap_obj_base,
+    Functor.Grothendieck.forget_obj, Functor.comp_map, Functor.Grothendieck.forget_map,
+    sigmaMap_obj_fiber]
   convert_to (whiskerLeftInvLamObjObjSigMap A β f.base).app ((A.map f.base).obj x.fiber) = _
-  simp [whiskerLeftInvLamObjObjSigMap, lamObjFiberObjCompSigMap, lamObjFiberObjCompSigMap.app]
+  simp only [comp_obj, whiskerLeftInvLamObjObjSigMap, lamObjFiberObjCompSigMap, NatTrans.comp_app,
+    whiskerLeft_app, lamObjFiberObjCompSigMap.app, sigmaMap_obj_base,
+    Functor.Grothendieck.forget_obj, Functor.comp_map, Functor.Grothendieck.forget_map,
+    sigmaMap_obj_fiber, eqToHom_app]
   have h : (A.map (CategoryTheory.inv (Hom.base f))).obj ((A.map (Hom.base f)).obj x.fiber) =
       x.fiber := by simp [← Functor.comp_obj, ← Grpd.comp_eq_comp]
   rw! [h]
@@ -1416,45 +1416,76 @@ lemma lamObjFiber_inversion_heq (x) :
   refine HEq.trans ?_ (PGrpd.objFiber'_heq hs)
   apply lamObjFiber_inversion_heq'
 
+lemma strongTrans.twoCell_app_inversion {x y} (f : x ⟶ y) (a) :
+    (strongTrans.twoCell B s hs f).app ((A.map f).obj ((A.map (CategoryTheory.inv f)).obj a)) =
+    eqToHom (by simp only [← Functor.comp_obj]; simp [← Grpd.comp_eq_comp]) ≫
+    (strongTrans.twoCell B s hs f).app a ≫
+    eqToHom (by simp only [← Functor.comp_obj]; simp [← Grpd.comp_eq_comp]) := by
+  simp only [twoCell]
+  have h : ((A.map f).obj ((A.map (CategoryTheory.inv f)).obj a)) = a := by
+    simp [← Functor.comp_obj, ← Grpd.comp_eq_comp]
+  apply (NatTrans.congr _ h).trans
+  simp
+
+lemma mapStrongTrans_obj_inversion_fiber {x y} (f : x ⟶ y) (a) :
+    ((mapStrongTrans B s hs).obj ((A.map f ⋙ ι A y).obj ((A.map (CategoryTheory.inv f)).obj a))).fiber =
+    (strongTrans.app B s hs y).obj a := by
+  simp only [Functor.comp_obj, mapStrongTrans_obj_base, ι_obj_base, sigma_obj,
+    mapStrongTrans_obj_fiber, ι_obj_fiber, Functor.map_inv]
+  simp [← Functor.comp_obj, ← Grpd.comp_eq_comp]
+
+lemma mapStrongTrans_map_inversion_fiber {x y} (f : x ⟶ y) (a) :
+    ((mapStrongTrans B s hs).map ((ιNatTrans f).app ((A.map (CategoryTheory.inv f)).obj a))).fiber =
+    (strongTrans.twoCell B s hs f).app a ≫
+    eqToHom (mapStrongTrans_obj_inversion_fiber A B s hs f a).symm := by
+  have h : (ιNatTrans f).app ((A.map (CategoryTheory.inv f)).obj a) =
+      homMk f (𝟙 _) := by
+    fapply Functor.Groupoidal.Hom.ext
+    · simp
+    · simp; rfl
+  rw! (castMode := .all) [h]
+  simp [mapStrongTrans_map_fiber B s hs, strongTrans.twoCell_app_inversion]
+
+lemma lamObjFiberObjCompSigMap_app_inversion {x y} (f : x ⟶ y) (a) :
+    lamObjFiberObjCompSigMap.app A (inversion B s hs) f ((A.map (CategoryTheory.inv f)).obj a) ≍
+    (strongTrans.twoCell B s hs f).app a := by
+  have h := mapStrongTrans_map_inversion_fiber A B s hs f a
+  simp [← heq_eq_eq] at h
+  apply HEq.trans _ h
+  fapply Functor.Groupoidal.Hom.hext'
+  · simp
+  · simp only [Functor.map_inv, Functor.comp_obj, mapStrongTrans_obj_base, ι_obj_base, sigma_obj,
+      mapStrongTrans_map_base, Functor.Groupoidal.ιNatTrans_app_base, sigma_map]
+    apply Grpd.Functor.hcongr_obj
+    · rw [inversion_comp_forgetToGrpd]
+    · rw [inversion_comp_forgetToGrpd]
+    · rw [inversion_comp_forgetToGrpd]
+    · rw [Functor.map_inv]
+      simp only [mapStrongTrans_obj_fiber, ι_obj_base, sigma_obj, ι_obj_fiber]
+      apply Grpd.Functor.hcongr_obj rfl _ _ HEq.rfl
+      · simp [inversion_comp_forgetToGrpd]
+      · apply lamObjFiber_obj_obj_inversion_heq
+  · simp only [Functor.map_inv, Functor.comp_obj, mapStrongTrans_obj_base, ι_obj_base,
+      mapStrongTrans_obj_fiber, sigma_obj, ι_obj_fiber]
+    apply Grpd.Functor.hcongr_obj
+    · rfl
+    · simp
+    · apply lamObjFiber_obj_obj_inversion_heq
+    · simp
+  · rw [mapStrongTrans_map_fiber_base]
+    simp
+    rfl
+  · apply (lamObjFiberObjCompSigMap.app_fiber_heq ..).trans
+    simp [inversion]
+
 lemma whiskerLeftInvLamObjObjSigMap_inversion_app {x y} (f : x ⟶ y) (a) :
     (whiskerLeftInvLamObjObjSigMap A (inversion B s hs) f).app a ≍
-    (PGrpd.mapFiber' hs f).1.app a := by
+    (strongTrans.twoCell B s hs f).app a := by
   simp [whiskerLeftInvLamObjObjSigMap, lamObjFiberObjCompSigMap]
   have h := Functor.congr_obj (((pi A B).map f).obj (PGrpd.objFiber' hs x)).obj.property a
   simp only [sigma_obj, sigma.fstNatTrans_app, pi_obj_α, Functor.comp_obj,
     Functor.Groupoidal.forget_obj, Functor.id_obj] at h
-  fapply Functor.Groupoidal.Hom.hext'
-  · rw [inversion_comp_forgetToGrpd]
-  · apply Functor.Groupoidal.hext'
-    · rw [inversion_comp_forgetToGrpd]
-    · simp [h]
-      simp [← Functor.comp_obj, ← Grpd.comp_eq_comp]
-    · simp
-      sorry
-  · rw [← lamObjFiber_obj_obj]
-    apply Grpd.Functor.hcongr_obj rfl _ _ HEq.rfl
-    · simp
-    · apply lamObjFiber_obj_obj_inversion_heq
-  · rw [comp_base]
-    conv => lhs; rhs; rw [base_eqToHom]
-    simp only [sigmaMap_obj_base, lamObjFiberObjCompSigMap.app_base, Functor.comp_obj,
-      Category.id_comp]
-    have := NatTrans.congr_app (PGrpd.mapFiber' hs f).property a
-    simp only [sigma_obj, sigma.fstNatTrans, pi_obj_α, Functor.comp_obj,
-      Functor.Groupoidal.forget_obj, Set.mem_setOf_eq, Functor.whiskerRight_app, forget_map,
-      Category.id_comp, eqToHom_trans, eqToHom_app] at this
-    simp only [this]
-    apply eqToHom_heq_eqToHom
-    simp only [Functor.map_inv, ← Functor.comp_obj, ← Grpd.comp_eq_comp, IsIso.inv_hom_id,
-      Grpd.id_eq_id, Functor.id_obj, lamObjFiberObj_obj_base]
-    exact h.symm
-  · sorry
-  -- · rw [comp_base]
-  --   simp only [sigmaMap_obj_base, lamObjFiberObjCompSigMap.app_base, Functor.comp_obj,
-  --     Category.id_comp, homMk_base]
-  --   rw [base_eqToHom]
-  -- · rw [comp_fiber]
-  --   sorry
+  exact (comp_eqToHom_heq ..).trans (lamObjFiberObjCompSigMap_app_inversion ..)
 
 lemma lamMapFiber_inversion_heq {x y} (f : x ⟶ y) :
     lamMapFiber A (pi.inversion B s hs) f ≍ PGrpd.mapFiber s f := by

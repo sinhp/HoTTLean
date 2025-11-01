@@ -964,6 +964,25 @@ lemma pre_congr_functor {Γ Δ : Type*} [Category Γ] [Category Δ] (σ : Δ ⥤
   simp only [eqToHom_refl, map_id_eq]
   exact rfl
 
+lemma fiber_eqToHom_comp_heq {Γ : Type*} [Category Γ]
+    {F : Γ ⥤ Grpd} {x' x y : ∫ F} (h : x' = x) (f : x ⟶ y) :
+    (eqToHom h ≫ f).fiber ≍ f.fiber := by
+  subst h
+  simp [eqToHom_map]
+
+lemma fiber_eq_eqToHom_comp_heq {Γ : Type*} [Category Γ]
+    {F : Γ ⥤ Grpd} {x' x y : ∫ F} (g : x' ⟶ x) (h : x' = x) (hg : g = eqToHom h)
+    (f : x ⟶ y) : (eqToHom h ≫ f).fiber ≍ f.fiber := by
+  subst h
+  simp [eqToHom_map]
+
+lemma fiber_comp_eqToHom_heq {Γ : Type*} [Category Γ]
+    {F : Γ ⥤ Grpd} {x y y' : ∫ F} (h : y = y') (f : x ⟶ y) :
+    (f ≫ eqToHom h).fiber ≍ f.fiber := by
+  subst h
+  simp
+
+
 end
 
 end Groupoidal

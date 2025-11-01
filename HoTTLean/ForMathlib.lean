@@ -599,7 +599,6 @@ lemma eqToHom_heq_eqToHom {C : Type*} [Category C] (x y x' y' : C) (hx : x = x')
 lemma eqToHom_heq_id {C : Type*} [Category C] (x y z : C) (h : x = y)
     (hz : z = x) : eqToHom h ≍ 𝟙 z := by cat_disch
 
-
 end CategoryTheory
 
 lemma hcongr_fun {α α' : Type u} (hα : α ≍ α') (β : α → Type v) (β' : α' → Type v) (hβ : β ≍ β')
