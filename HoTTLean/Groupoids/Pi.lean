@@ -964,6 +964,8 @@ end
 
 end
 
+
+
 variable {Γ : Type u} {Δ : Type u} [Groupoid.{v} Γ] [Groupoid.{v} Δ] {σ : Δ ⥤ Γ}
   {A : Γ ⥤ Grpd.{u₁,u₁}} (B : ∫ A ⥤ Grpd.{u₁,u₁})
 
@@ -979,8 +981,7 @@ The function `equivFun` is the forward direction in this bijection.
 The function `equivInv` is the inverse direction in this bijection.
 -/
 def equivFun (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) : ∫ σ ⋙ A ⥤ ∫ B :=
-  (isPullback B).lift (inversion (pre A σ ⋙ B) (F ⋙ toPGrpd _) (by
-    rw [Functor.assoc, toPGrpd_forgetToGrpd, ← Functor.assoc, hF, pi_naturality]))
+  (isPullback B).lift (inversion (pre A σ ⋙ B) (F ⋙ toPGrpd _) sorry)
   (pre A σ) (inversion_comp_forgetToGrpd ..)
 
 lemma equivFun_comp_forget (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
@@ -989,9 +990,7 @@ lemma equivFun_comp_forget (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
 
 @[inherit_doc equivFun]
 def equivInv (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) : Δ ⥤ ∫ pi A B :=
-  (isPullback (pi A B)).lift (lam (σ ⋙ A) (G ⋙ toPGrpd _)) σ (by
-    rw [lam_comp_forgetToGrpd, pi_naturality, Functor.assoc,
-      toPGrpd_forgetToGrpd, ← Functor.assoc, hG])
+  (isPullback (pi A B)).lift (lam (σ ⋙ A) (G ⋙ toPGrpd _)) σ sorry
 
 lemma equivInv_comp_forget (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) :
     equivInv B G hG ⋙ forget = σ := by
@@ -1012,6 +1011,34 @@ lemma equivFun_equivInv (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A 
       rw [Functor.assoc, toPGrpd_forgetToGrpd, ← Functor.assoc, hG]
     rw! [Functor.IsPullback.fac_left, Functor.IsPullback.fac_left, this, inversion_lam]
   · rw [Functor.IsPullback.fac_right, hG]
+
+lemma equivFun_comp {Δ' : Type u} [Groupoid.{v} Δ'] {σ' : Δ' ⥤ Γ} (τ : Δ' ⥤ Δ) (hτ : τ ⋙ σ = σ')
+    (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
+    equivFun B (τ ⋙ F) (by rw [Functor.assoc, hF, hτ]) =
+    map (eqToHom (by aesop_cat)) ⋙ pre _ τ ⋙ equivFun B F hF := by
+  cases hτ
+  simp only [equivFun, pre_comp, eqToHom_refl, map_id_eq, Cat.of_α, Functor.id_comp]
+  symm
+  apply (isPullback B).lift_uniq
+  · simp only [Functor.assoc, Functor.IsPullback.fac_left]
+    sorry
+  · simp [Functor.assoc, Functor.IsPullback.fac_right]
+
+lemma equivInv_comp {Δ' : Type u} [Groupoid.{v} Δ'] {σ' : Δ' ⥤ Γ} (τ : Δ' ⥤ Δ) (hτ : τ ⋙ σ = σ')
+    (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) :
+    equivInv B (map (eqToHom (Functor.assoc ..)) ⋙ pre _ τ ⋙ G)
+    (by simp [map_id_eq, Functor.assoc, hG]) =
+    τ ⋙ equivInv B G hG := by
+  cases hτ
+  simp [map_id_eq, equivInv]
+  symm
+  apply (isPullback (pi A B)).lift_uniq
+  · simp only [Functor.assoc, Functor.IsPullback.fac_left]
+    sorry
+  · simp [Functor.assoc, Functor.IsPullback.fac_right]
+
+
+
 
 -- TODO: work out naturality equations for this bijection
 
