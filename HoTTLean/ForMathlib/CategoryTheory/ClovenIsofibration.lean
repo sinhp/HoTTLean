@@ -382,11 +382,16 @@ def iso {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B] (F : A
    intro X Y f i X' hX'
    apply IsIso.comp_isIso
 
-instance {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B] (F : A ≅≅ B) : IsSplit (iso F) where
+instance {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B] (F : A ≅≅ B) :
+    IsSplit (iso F) where
   liftObj_id h := by simp [← h, ← Functor.comp_obj]
   liftIso_id := by simp
   liftObj_comp := by simp
   liftIso_comp := by simp
+
+@[simp]
+abbrev iso_inv {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
+    ClovenIsofibration F.inv := iso (F.symm)
 
 section
 
@@ -636,6 +641,119 @@ instance {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A'
   dsimp [ofIsPullback]
   infer_instance
 
+section pushforward
+
+open CategoryTheory.Functor.Groupoidal GroupoidModel.FunctorOperation.pi.Over
+
+variable {C B A : Type u} [Groupoid.{u} C] [Groupoid.{u} B] [Groupoid.{u} A] {F : B ⥤ A}
+  (IF : ClovenIsofibration F) [IsSplit IF] (G : C ⥤ B)
+
+def pushforward.strictify : C ⥤ ∫ IF.classifier :=
+  G ⋙ IF.grothendieckClassifierIso.inv
+
+@[simp]
+lemma pushforward.strictify_comp_grothendieckClassifierIso_hom :
+    strictify IF G ⋙ IF.grothendieckClassifierIso.hom = G := by
+  simp [strictify, Functor.assoc]
+
+variable {G} (IG : ClovenIsofibration G) [IsSplit IG]
+
+def pushforward.strictifyClovenIsofibration : (strictify IF G).ClovenIsofibration :=
+  ClovenIsofibration.comp IG (Functor.ClovenIsofibration.iso_inv ..)
+
+instance : (pushforward.strictifyClovenIsofibration IF IG).IsSplit := by
+  simp[pushforward.strictifyClovenIsofibration]
+  have h: (iso_inv IF.grothendieckClassifierIso).IsSplit := by
+    apply Functor.ClovenIsofibration.instIsSplitIso
+  apply CategoryTheory.Functor.ClovenIsofibration.instIsSplitComp
+
+/-- The object part (a groupoid) of the pushforward along `F`, of `G`,
+defined as the Grothendieck construction applied to (unstructured) Pi-type construction
+in the HoTTLean groupoid model. -/
+abbrev pushforward := ∫ GroupoidModel.FunctorOperation.pi (IF.classifier)
+    (pushforward.strictifyClovenIsofibration IF IG).classifier
+
+/-- `∫ σ.hom ⋙ hF.splitIsofibration.classifier` is the pullback of `F` along `σ`,
+`∫ (splitIsofibration_strictify hF hG).classifier` is isomorphic to `G`.
+So up to isomorphism this is the hom set bijection we want. -/
+@[simps]
+def pushforward.homEquivAux1 {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
+    {M : D ⥤ pushforward IF IG // M ⋙ Groupoidal.forget = σ} ≃
+    {N : ∫ σ ⋙ IF.classifier ⥤ ∫ (strictifyClovenIsofibration IF IG).classifier //
+      N ⋙ Functor.Groupoidal.forget = pre IF.classifier σ } where
+  toFun M := ⟨equivFun _ M.1 M.2, equivFun_comp_forget ..⟩
+  invFun N := ⟨(equivInv (strictifyClovenIsofibration IF IG).classifier N.1 N.2),
+    equivInv_comp_forget (strictifyClovenIsofibration IF IG).classifier N.1 N.2⟩
+  left_inv _ := by
+    ext
+    simp [equivInv_equivFun]
+  right_inv _ := by
+    ext
+    simp [equivFun_equivInv]
+
+@[simps!]
+def pushforward.homEquivAux2 {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
+    {M : ∫ σ ⋙ IF.classifier ⥤ ∫ (strictifyClovenIsofibration IF IG).classifier //
+      M ⋙ Functor.Groupoidal.forget = pre IF.classifier σ } ≃
+    {N : ∫ σ ⋙ IF.classifier ⥤ C //
+      N ⋙ G = pre IF.classifier σ ⋙ IF.grothendieckClassifierIso.hom } where
+  toFun M := ⟨(M.1 ⋙ ((strictifyClovenIsofibration IF IG)).grothendieckClassifierIso.hom),
+    by
+      conv => lhs ; rhs ; rw [← strictify_comp_grothendieckClassifierIso_hom IF G]
+      rw [Functor.assoc]
+      slice_lhs 2 3 => rw [← Functor.assoc, grothendieckClassifierIso.hom_comp_self]
+      slice_rhs 1 2 => rw [← M.2]
+      rw [Functor.assoc] ⟩
+  invFun N := ⟨N.1 ⋙ ((strictifyClovenIsofibration IF IG)).grothendieckClassifierIso.inv,
+    by
+      dsimp [strictify]
+      rw [Functor.assoc, grothendieckClassifierIso.inv_comp_forget, ← Functor.assoc, N.2,
+        Functor.assoc, Iso.hom_inv_id', Functor.comp_id] ⟩
+  left_inv := by
+    simp only [Function.LeftInverse, Subtype.forall, Subtype.mk.injEq]
+    intro a h
+    simp[Functor.assoc]
+  right_inv := by
+    simp[Function.RightInverse]
+    intro a
+    simp[Functor.assoc]
+
+open GroupoidModel.FunctorOperation.pi in
+/-- The universal property of the pushforward, expressed as a (natural) bijection of hom sets. -/
+def pushforward.homEquiv {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
+    {M : D ⥤ pushforward IF IG // M ⋙ Groupoidal.forget = σ} ≃
+    {N : ∫ σ ⋙ IF.classifier ⥤ C //
+      N ⋙ G = pre IF.classifier σ ⋙ IF.grothendieckClassifierIso.hom} :=
+  calc {M : D ⥤ pushforward IF IG // M ⋙ Groupoidal.forget = σ}
+  _ ≃ {N : ∫ σ ⋙ IF.classifier ⥤ ∫ (strictifyClovenIsofibration IF IG).classifier //
+      N ⋙ Functor.Groupoidal.forget = pre IF.classifier σ } :=
+    pushforward.homEquivAux1 ..
+  _ ≃ {N : ∫ σ ⋙ IF.classifier ⥤ C //
+      N ⋙ G = pre IF.classifier σ ⋙ IF.grothendieckClassifierIso.hom } :=
+    pushforward.homEquivAux2 ..
+
+lemma pushforward.homEquiv_apply_coe {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A)
+      (M : {M : D ⥤ pushforward IF IG // M ⋙ Groupoidal.forget = σ}) :
+     ((pushforward.homEquiv IF IG σ) M).1 =
+     equivFun (strictifyClovenIsofibration IF IG).classifier M M.2 ⋙
+    (strictifyClovenIsofibration IF IG).grothendieckClassifierIso.hom := by
+     simp[pushforward.homEquiv]
+     simp[homEquivAux1]
+     simp[Trans.trans]
+     simp[homEquivAux2]
+
+/-- Naturality in the universal property of the pushforward. -/
+lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D']
+    (σ : D ⥤ A) (σ' : D' ⥤ A) (s : D' ⥤ D) (eq : σ' = s ⋙ σ)
+    (M : D ⥤ pushforward IF IG) (hM : M ⋙ Groupoidal.forget = σ) :
+    (pushforward.homEquiv IF IG σ' ⟨s ⋙ M, by rw [Functor.assoc, hM, eq]⟩).1 =
+    Groupoidal.map (eqToHom (by rw [eq, Functor.assoc])) ⋙
+    pre _ s ⋙ (pushforward.homEquiv IF IG σ ⟨M, hM⟩).1 := by
+  subst eq
+  rw [pushforward.homEquiv_apply_coe, pushforward.homEquiv_apply_coe]
+  simp [← Functor.assoc, Functor.simpIdComp, equivFun_comp (hF:= hM), Groupoidal.map_id_eq]
+
+end pushforward
 end ClovenIsofibration
 end
 end Functor
