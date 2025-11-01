@@ -598,7 +598,6 @@ instance (F' : A ⥤ B) (hF' : F = F') : (ofEq IF F' hF').IsSplit := by
 variable {A' : Type u₁} [Category.{v₁} A']
     (i : A' ≅≅ A) (F' : A' ⥤ B) (hF' : F' = i.hom ⋙ F)
 
-@[simps!]
 def isoComp : ClovenIsofibration F' :=
   ofEq (comp (iso ..) IF) F' hF'.symm
 

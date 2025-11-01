@@ -682,6 +682,8 @@ lemma path_unPath (p : cylinder.I.obj Γ ⟶ U.Tm) (p_tp : p ≫ U.tp = cylinder
 
 namespace hurewiczUTp
 
+attribute [local irreducible] tpClovenIsofibration
+
 variable (σ : Δ ⟶ Γ) (p0 : Γ ⟶ U.{v}.Tm) (p : cylinder.I.obj Γ ⟶ U.Ty)
     (p0_tp : p0 ≫ U.tp = cylinder.δ0.app Γ ≫ p)
 
@@ -707,7 +709,7 @@ def liftMap : {x y : Grpd.Interval × Γ} → (f : x ⟶ y) →
   p0.map f.2 ≫ liftMap0 p0 p p0_tp (ft y2)
 
 lemma liftMap_id (x) : liftMap p0 p p0_tp (𝟙 x) = 𝟙 (liftObj p0 p p0_tp x) := by
-  rcases x with ⟨⟨⟨_|_⟩⟩, _⟩ <;> simp [liftMap]
+  rcases x with ⟨⟨⟨_|_⟩⟩, _⟩ <;> simp
 
 lemma liftMap_comp {x y z} (f : x ⟶ y) (g : y ⟶ z) :
     liftMap p0 p p0_tp (f ≫ g) = liftMap p0 p p0_tp f ≫ liftMap p0 p p0_tp g := by
@@ -787,22 +789,14 @@ lemma I_map_obj_ff (x : Δ) : (cylinder.I.map σ).obj ({ down := { as := false }
     ({ down := { as := false } }, σ.obj x) := by
   rfl
 
--- @[simp]
--- lemma I_map_obj_tt (x) : (cylinder.I.map σ).obj (tt x) = tt (σ.obj x) := by
---   rfl
-
--- lemma map_map_ft (y) : ((cylinder.I.map σ).map (ft y)) = (ft (σ.obj y)) := by
---   simp [ft, ← CategoryTheory.Functor.map_id]
---   rfl
-
 lemma lift_map_ffm {x y : Δ} (f : x ⟶ y) : (lift p0 p p0_tp).map (ffm (σ.map f)) =
     p0.map (σ.map f) := by
-  simp
+  simp [liftMap]
 
 lemma lift_map_ft (x : Δ) : (lift p0 p p0_tp).map (ft (σ.obj x)) =
     tpClovenIsofibration.liftIso (p.map (ft (σ.obj x)))
     (by simpa using Functor.congr_obj p0_tp (σ.obj x)) := by
-  simp
+  simp [liftObj, liftMap]
 
 lemma lift_map_ft' (x : Δ) : (lift p0 p p0_tp).map (ft (σ.obj x)) =
     tpClovenIsofibration.liftIso (p.map (⟨⟨⟨⟩⟩, σ.map (𝟙 _)⟩ : ff (σ.obj x) ⟶ tt (σ.obj x)))
@@ -813,9 +807,9 @@ lemma lift_map_ft' (x : Δ) : (lift p0 p p0_tp).map (ft (σ.obj x)) =
   rfl
 
 lemma lift_map_tf (x : Δ) : (lift p0 p p0_tp).map (tf (σ.obj x)) =
-    inv (tpClovenIsofibration.liftIso (p.map (ft (σ.obj x)))
-    (by simpa using Functor.congr_obj p0_tp (σ.obj x))) := by
-  simp
+    eqToHom (by simp; rfl) ≫ inv (tpClovenIsofibration.liftIso (p.map (ft (σ.obj x)))
+      (by simpa using Functor.congr_obj p0_tp (σ.obj x))) := by
+  simp [liftMap]
 
 lemma lift_map_tf' (x : Δ) : (lift p0 p p0_tp).map (tf (σ.obj x)) =
     eqToHom (by simp [ft]; rfl) ≫
@@ -860,7 +854,9 @@ lemma lift_comp : lift (σ ≫ p0) (cylinder.I.map σ ≫ p)
       · have : (cylinder.I.map σ).map f = tf (σ.obj x) ≫ ffm (σ.map f.2) ≫ ft (σ.obj y) := by aesop
         slice_rhs 2 3 => simp only [Grpd.comp_eq_comp, Functor.comp_map, this, Functor.map_comp,
           lift_map_ffm, lift_map_tf', lift_map_ft']
-        simp [ft]
+        simp only [U_Tm, comp_eq_comp, lift_obj, liftObj, U_Ty, U_tp, Functor.comp_obj, ft,
+          Functor.comp_map, lift_map, liftMap, liftMap0, Category.assoc, eqToHom_trans,
+          eqToHom_refl, Category.comp_id, eqToHom_trans_assoc, Category.id_comp, IsIso.eq_inv_comp]
         erw [IsIso.hom_inv_id_assoc]
         rfl
 
