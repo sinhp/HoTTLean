@@ -12,50 +12,6 @@ namespace CategoryTheory
 
 namespace Functor
 
-namespace IsPullback
-
-def isoIsPullback {P P' X Y Z : Type*} [Category P] [Category P']
-    [Category X] [Category Y] [Category Z]
-    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
-    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g) :
-  P ≅≅ P' := sorry
-
-lemma isoIsPullback.invCompFst {P P' X Y Z : Type*} [Category P] [Category P']
-    [Category X] [Category Y] [Category Z]
-    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
-    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g):
-    (isoIsPullback h h').inv ⋙ fst = fst' := sorry
-
-lemma isoIsPullback.homCompLeft {P P' X Y Z : Type*} [Category P] [Category P']
-    [Category X] [Category Y] [Category Z]
-    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
-    {fst' : P' ⥤ X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g):
-    (isoIsPullback h h').hom ⋙ fst' = fst := sorry
-
-  lemma isoIsPullback.homCompLeft' {P P' X Y Z : Type*} [Category P] [Category P']
-    [Category X] [Category Y] [Category Z]
-    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
-    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g) {hom } (e: hom =  (isoIsPullback h h').hom):
-    hom ⋙ fst' = fst := sorry
-
-  lemma isoIsPullback.homCompRight' {P P' X Y Z : Type*} [Category P] [Category P']
-    [Category X] [Category Y] [Category Z]
-    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤ Z} {g : Y ⥤  Z}
-    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g) {hom } (e: hom =  (isoIsPullback h h').hom):
-    hom ⋙ snd' = snd := sorry
-
-  def IsPullback.botDegenerate {A A' B : Type*} [Category A] [Category A']
-    [Category B]
-    {i : A ≅≅ A'} {F1: A ⥤ B} {F2 : A' ⥤ B}
-    (h' : F1 = i.hom ⋙ F2) : IsPullback i.hom F1 F2 (Functor.id B) := sorry
-
-end IsPullback
-
 namespace Fiber
 section
 
@@ -659,7 +615,7 @@ def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoi
   let j : A' ≅≅ Functor.Groupoidal (F := bot ⋙ IF.classifier) :=
     Functor.IsPullback.isoIsPullback isPullback q1
   have e : F' = j.hom ⋙ (Groupoidal.forget (F := bot ⋙ IF.classifier)) :=
-    (IsPullback.isoIsPullback.homCompRight' isPullback q1 (hom := j.hom) (by simp[j])).symm
+    (IsPullback.isoIsPullback.hom_comp_right isPullback q1 (hom := j.hom) (by simp[j])).symm
   isoComp j (Functor.ClovenIsofibration.forget ..) _ e
 
 instance {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A']
@@ -683,7 +639,7 @@ def tpClovenIsofibration : (GroupoidModel.U.{u}.tp).ClovenIsofibration :=
     Functor.IsPullback.isoIsPullback IsPullback.isPullbackCoreAsSmall'
       (Functor.Groupoidal.isPullback (Core.inclusion _ ⋙ AsSmall.down))
   isoComp i (Functor.ClovenIsofibration.forget _)
-  _ (Functor.IsPullback.isoIsPullback.homCompRight' _ _ rfl).symm
+  _ (Functor.IsPullback.isoIsPullback.hom_comp_right _ _ rfl).symm
 
 instance : IsSplit tpClovenIsofibration := by
   dsimp [tpClovenIsofibration]

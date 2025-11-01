@@ -645,7 +645,31 @@ lemma Prod.sectR_comp_snd {C : Type u₁} [Category.{v₁} C] (Z : C)
     (D : Type u₂) [Category.{v₂} D] : sectR Z D ⋙ snd C D = 𝟭 D :=
   rfl
 
+section
+variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D] (P Q : ObjectProperty D)
+  (F : C ⥤ D) (hF : ∀ X, P (F.obj X))
+
+theorem ObjectProperty.lift_comp_inclusion_eq :
+    P.lift F hF ⋙ P.ι = F :=
+  rfl
+
+end
+
+lemma eqToHom_heq_eqToHom {C : Type*} [Category C] (x y x' y' : C) (hx : x = x')
+    (h : x = y) (h' : x' = y') : eqToHom h ≍ eqToHom h' := by aesop
+
 end CategoryTheory
+
+lemma hcongr_fun {α α' : Type u} (hα : α ≍ α') (β : α → Type v) (β' : α' → Type v) (hβ : β ≍ β')
+    (f : (x : α) → β x) (f' : (x : α') → β' x) (hf : f ≍ f')
+    {x : α} {x' : α'} (hx : x ≍ x') : f x ≍ f' x' := by
+  subst hα hβ hf hx
+  rfl
+
+lemma fun_hext {α α' : Type u} (hα : α ≍ α') (β : α → Type v) (β' : α' → Type v) (hβ : β ≍ β')
+    (f : (x : α) → β x) (f' : (x : α') → β' x)
+    (hf : {x : α} → {x' : α'} → (hx : x ≍ x') → f x ≍ f' x') : f ≍ f' := by
+  aesop
 
 lemma Subtype.hext {α α' : Sort u} (hα : α ≍ α') {p : α → Prop} {p' : α' → Prop}
     (hp : p ≍ p') {a : { x // p x }} {a' : { x // p' x }} (ha : a.1 ≍ a'.1) : a ≍ a' := by

@@ -203,14 +203,6 @@ section
 variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
   (F : C ⥤ Grpd) {G H : D ⥤ C} (α : G ≅ H)
 
-@[simp] theorem preNatIso_hom_app_base (x) :
-    ((preNatIso F α).hom.app x).base = α.hom.app x.base :=
-  Grothendieck.preNatIso_hom_app_base _ _ _
-
-@[simp] theorem preNatIso_hom_app_fiber (x) :
-    ((preNatIso F α).hom.app x).fiber = 𝟙 _ :=
-  Grothendieck.preNatIso_hom_app_fiber _ _ _
-
 @[simp]
 theorem map_eqToHom_toPGrpd {Γ : Type*} [Category Γ] (A A' : Γ ⥤ Grpd) (h : A = A'):
     map (eqToHom h) ⋙ toPGrpd A' = toPGrpd A := by

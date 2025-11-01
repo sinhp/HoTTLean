@@ -888,6 +888,14 @@ lemma toPseudoFunctor'Iso.inv_comp_forget : toPseudoFunctor'Iso.inv F ⋙ forget
     Pseudofunctor.Grothendieck.forget _ :=
   rfl
 
+lemma map_eq_pseudofunctor_map {G} (α : F ⟶ G) : map α = (toPseudoFunctor'Iso F).hom ⋙
+    Pseudofunctor.Grothendieck.map α.toStrongTrans' ⋙
+    (toPseudoFunctor'Iso G).inv := by
+  fapply Functor.ext
+  · aesop
+  · intro _
+    aesop
+
 end Pseudofunctor
 
 section
