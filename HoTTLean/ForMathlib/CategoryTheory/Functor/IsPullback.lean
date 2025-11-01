@@ -467,6 +467,119 @@ def ofIso' : IsPullback north' west' east' south' :=
 
 end
 
+def isoIsPullback {P P' X Y Z : Type*} [Category P] [Category P']
+    [Category X] [Category Y] [Category Z]
+    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
+    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g) :
+    P ≅≅ P' where
+  hom := h.toChosen ⋙ h'.fromChosen
+  inv := h'.toChosen ⋙ h.fromChosen
+  hom_inv_id := by
+    fapply Functor.ext
+    · intro A
+      have e : ((h.toChosen ⋙ h'.fromChosen) ⋙ h'.toChosen ⋙ h.fromChosen) =
+        (h.toChosen ⋙ (h'.fromChosen ⋙ h'.toChosen) ⋙ h.fromChosen) := by
+        simp[comp]
+      simp only[e,from_to_id,Functor.id_comp,to_from_id]
+    · intro A B t
+      have e : ((h.toChosen ⋙ h'.fromChosen) ⋙ h'.toChosen ⋙ h.fromChosen) =
+        (h.toChosen ⋙ (h'.fromChosen ⋙ h'.toChosen) ⋙ h.fromChosen) := by
+        simp[comp]
+      rw![e]
+      simp only[← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
+      rw[from_to_id,Functor.id_comp,to_from_id]
+  inv_hom_id := by
+    fapply Functor.ext
+    · intro A
+      have e : ((h'.toChosen ⋙ h.fromChosen) ⋙ h.toChosen ⋙ h'.fromChosen) =
+        (h'.toChosen ⋙ (h.fromChosen ⋙ h.toChosen) ⋙ h'.fromChosen) := by
+        simp[comp]
+      simp only[e,from_to_id,Functor.id_comp,to_from_id]
+    · intro A B t
+      have e : ((h'.toChosen ⋙ h.fromChosen) ⋙ h.toChosen ⋙ h'.fromChosen) =
+        (h'.toChosen ⋙ (h.fromChosen ⋙ h.toChosen) ⋙ h'.fromChosen) := by
+        simp[comp]
+      rw![e]
+      simp only[← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
+      rw[from_to_id,Functor.id_comp,to_from_id]
+
+lemma isoIsPullback.inv_comp_left {P P' X Y Z : Type*} [Category P] [Category P']
+    [Category X] [Category Y] [Category Z]
+    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
+    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g):
+    (isoIsPullback h h').inv ⋙ fst = fst' := by
+  dsimp[isoIsPullback]
+  fapply Functor.ext
+  · intro A
+    simp only[Functor.assoc,h.from_north]
+    rw[toChosen_north]
+  · intros A B t
+    simp only[← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
+    rw![Functor.assoc,h.from_north]
+    rw[toChosen_north]
+
+lemma isoIsPullback.hom_comp_left {P P' X Y Z : Type*} [Category P] [Category P']
+    [Category X] [Category Y] [Category Z]
+    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
+    {fst' : P' ⥤ X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g):
+    (isoIsPullback h h').hom ⋙ fst' = fst := by
+  dsimp[isoIsPullback]
+  fapply Functor.ext
+  · intro A
+    simp only[Functor.assoc,h'.from_north]
+    rw[toChosen_north]
+  · intros A B t
+    simp only[← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
+    rw![Functor.assoc,h'.from_north]
+    rw[toChosen_north]
+
+lemma isoIsPullback.hom_comp_left' {P P' X Y Z : Type*} [Category P] [Category P']
+    [Category X] [Category Y] [Category Z]
+    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
+    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g) {hom } (e: hom =  (isoIsPullback h h').hom):
+    hom ⋙ fst' = fst := by
+  rw[e]
+  apply isoIsPullback.hom_comp_left
+
+lemma isoIsPullback.hom_comp_right {P P' X Y Z : Type*} [Category P] [Category P']
+    [Category X] [Category Y] [Category Z]
+    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤ Z} {g : Y ⥤  Z}
+    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g) {hom } (e: hom =  (isoIsPullback h h').hom):
+    hom ⋙ snd' = snd := by
+  rw[e]
+  unfold isoIsPullback
+  simp
+  fapply Functor.ext
+  · intro A
+    simp only[Functor.assoc,h'.from_west]
+    rw[toChosen_west]
+  · intros A B t
+    simp only[← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
+    rw![Functor.assoc,h'.from_west]
+    rw[toChosen_west]
+
+def IsPullbackOfBotId {A A' B : Type*} [Category A] [Category A']
+    [Category B]
+    {i : A ≅≅ A'} {F1: A ⥤ B} {F2 : A' ⥤ B}
+    (h' : F1 = i.hom ⋙ F2) : IsPullback i.hom F1 F2 (Functor.id B) := by
+  fapply ofUniversal
+  · aesop
+  · intro C inst Cn Cw h
+    simp
+    have hinv : Cn ⋙ i.inv ⋙ i.hom = Cn ∧ Cn ⋙ i.inv ⋙ F1 = Cw := by
+      aesop_cat
+    exact ⟨ Cn ⋙ i.inv, hinv⟩
+  · intro C inst Cn Cw h
+    simp
+    have hinv : Cn ⋙ i.inv ⋙ i.hom = Cn ∧ Cn ⋙ i.inv ⋙ F1 = Cw := by
+      aesop_cat
+    exact ⟨ Cn ⋙ i.inv, hinv⟩
+
 namespace Paste
 variable {Algeria Libya Egypt Niger Chad Sudan : Type*} [Category Algeria]
   [Category Libya] [Category Egypt] [Category Niger] [Category Chad] [Category Sudan]
