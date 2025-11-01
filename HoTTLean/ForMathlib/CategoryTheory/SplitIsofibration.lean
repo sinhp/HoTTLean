@@ -776,6 +776,14 @@ def pushforward.homEquiv {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
       N ⋙ G = pre IF.classifier σ ⋙ IF.grothendieckClassifierIso.hom } :=
     pushforward.homEquivAux2 ..
 
+lemma pushforward.homEquiv_naturality {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D']
+    (σ : D ⥤ A) (σ' : D' ⥤ A) (s : D' ⥤ D) (eq : σ' = s ⋙ σ)
+    (M : D ⥤ pushforward IF IG) (hM : M ⋙ Groupoidal.forget = σ):
+    (homEquiv IF IG (s ⋙ σ)) ⟨s ⋙ M, sorry⟩ =
+    ⟨pre (σ ⋙ IF.classifier) s ⋙ ((homEquiv IF IG σ) ⟨M, hM⟩),sorry⟩  := by
+
+    sorry
+
 /-- Naturality in the universal property of the pushforward. -/
 lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D']
     (σ : D ⥤ A) (σ' : D' ⥤ A) (s : D' ⥤ D) (eq : σ' = s ⋙ σ)
@@ -783,7 +791,11 @@ lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D
     (pushforward.homEquiv IF IG σ' ⟨s ⋙ M, by rw [Functor.assoc, hM, eq]⟩).1 =
     Groupoidal.map (eqToHom (by rw [eq, Functor.assoc])) ⋙
     pre _ s ⋙ (pushforward.homEquiv IF IG σ ⟨M, hM⟩).1 := by
-
+  subst eq
+  simp[Groupoidal.map_id_eq]
+  simp[homEquiv]
+  conv => lhs ;rhs ; simp only[pushforward.homEquiv_naturality]
+  --rw![pushforward.homEquiv_naturality]
   sorry
 
 end pushforward
