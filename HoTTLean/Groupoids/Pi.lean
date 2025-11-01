@@ -185,7 +185,7 @@ lemma conjugating_map {x y : Γ} (f : x ⟶ y) {s1 s2 : A.obj x ⥤ B.obj x} (h 
     conjugating A B (f ≫ g) = conjugating A B f ⋙ conjugating A B g := by
   simp [conjugating]
 
-@[simp] lemma conjugating_naturality_map {Δ : Type u₃} [Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ)
+@[simp] lemma conjugating_comp_map {Δ : Type u₃} [Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ)
     {x y} (f : x ⟶ y) : conjugating (σ ⋙ A) (σ ⋙ B) f = conjugating A B (σ.map f) := by
   simp [conjugating]
 
@@ -591,11 +591,11 @@ section
 variable {Γ : Type u₂} [Groupoid.{v₂} Γ] (A : Γ ⥤ Grpd.{u₁,u₁}) (B : ∫(A) ⥤ Grpd.{u₁,u₁})
   {Δ : Type u₃} [Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ)
 
-lemma conjugating_naturality_sigma {x y} (f : x ⟶ y):
+lemma conjugating_comp_sigma {x y} (f : x ⟶ y):
     conjugating (σ ⋙ A) (sigma (σ ⋙ A) (pre A σ ⋙ B)) f ≍
     conjugating A (sigma A B) (σ.map f) := by
   rw! [← sigma_naturality]
-  rw [conjugating_naturality_map]
+  rw [conjugating_comp_map]
 
 lemma comm_sq_of_comp_mono {C : Type*} [Category C]
     {X Y Z W X' Y' Z' W' : C}
@@ -1183,7 +1183,7 @@ lemma lam_comp_forgetToGrpd : lam A β ⋙ PGrpd.forgetToGrpd = pi A (β ⋙ PGr
 
 variable {Δ : Type u₃} [Groupoid.{v₃} Δ] (σ : Δ ⥤ Γ)
 
-lemma lam_naturality_aux (x) :
+lemma lam_comp_aux (x) :
     ι A (σ.obj x) ⋙ β ⋙ PGrpd.forgetToGrpd = ι (σ ⋙ A) x ⋙ pre A σ ⋙ β ⋙ PGrpd.forgetToGrpd := by
   simp [← Functor.assoc, ← ι_comp_pre]
 
@@ -1217,7 +1217,7 @@ lemma lamObjFiberObjCompSigMap.app_naturality {x y} (f : x ⟶ y) (a) :
   any_goals apply Grpd.comp_hcongr
   any_goals simp only [comp_obj, Functor.comp_map, heq_eq_eq]
   any_goals apply sigmaObj_naturality
-  any_goals apply lam_naturality_aux
+  any_goals apply lam_comp_aux
   any_goals apply sigmaMap_naturality_heq
   any_goals apply lamObjFiberObj_naturality
   any_goals simp [app]; rfl
@@ -1248,7 +1248,7 @@ lemma whiskerLeftInvLamObjObjSigMap_naturality_heq {x y} (f : x ⟶ y) :
   · apply sigmaMap_naturality_heq
   · apply lamObjFiberObjCompSigMap_naturality
 
-lemma lam_naturality_map {x y} (f : x ⟶ y) :
+lemma lam_comp_map {x y} (f : x ⟶ y) :
     lamMapFiber A β (σ.map f) ≍ lamMapFiber (σ ⋙ A) (pre A σ ⋙ β) f := by
   apply Section.hom_hext
   · simp [Functor.assoc, sigmaObj_naturality]
@@ -1265,11 +1265,11 @@ lemma lam_naturality_map {x y} (f : x ⟶ y) :
   · apply lamObjFiber_naturality
   · apply whiskerLeftInvLamObjObjSigMap_naturality_heq
 
-theorem lam_naturality : σ ⋙ lam A β = lam (σ ⋙ A) (pre A σ ⋙ β) := by
+theorem lam_comp : σ ⋙ lam A β = lam (σ ⋙ A) (pre A σ ⋙ β) := by
   apply PGrpd.Functor.hext
   · simp [Functor.assoc, lam_comp_forgetToGrpd, pi_comp]
   · apply lamObjFiber_naturality
-  · apply lam_naturality_map
+  · apply lam_comp_map
 
 @[simp]
 lemma strongTrans.app_lam_obj_base (x : Γ) (a) :
@@ -1504,9 +1504,95 @@ lemma lam_inversion : lam A (inversion B s hs) = s := by
   · apply lamObjFiber_inversion_heq
   · apply lamMapFiber_inversion_heq
 
+lemma inversion_comp {Δ : Type u} [Groupoid.{v} Δ] {σ : Δ ⥤ Γ} :
+    inversion (A := σ ⋙ A) (pre _ σ ⋙ B) (σ ⋙ s) (by rw [Functor.assoc, hs, ← pi_comp]) =
+    pre _ σ ⋙ inversion B s hs := by
+  rw [← inversion_lam (σ ⋙ A) (pre A σ ⋙ inversion B s hs)]
+  congr 1
+  · simp [Functor.assoc]
+  · rw [← lam_comp, lam_inversion]
+
 end
 
 end
+
+namespace Over
+
+variable {Γ : Type u} {Δ : Type u} [Groupoid.{v} Γ] [Groupoid.{v} Δ] {σ : Δ ⥤ Γ}
+  {A : Γ ⥤ Grpd.{u₁,u₁}} (B : ∫ A ⥤ Grpd.{u₁,u₁})
+
+/-- lifts of `σ : Δ ⥤ Γ` along `forget : ∫ pi A B ⥤ Γ`
+biject (since the Grothendieck construction is a pullback) with
+lifts of `pi (σ ⋙ A) (pre A σ ⋙ B) : Δ ⥤ Grpd` along `forgetToGrpd : PGrpd ⥤ Grpd`
+biject (via `lam` and `inversion`) with
+lifts of `pre A σ ⋙ B : ∫ σ ⋙ A ⥤ Grpd` along `forgetToGrpd : PGrpd ⥤ Grpd`
+biject (since the Grothendieck construction is a pullback) with
+lifts of `pre A σ : ∫ σ ⋙ A ⥤ ∫ A` along `forget : ∫ B ⥤ ∫ A`.
+
+The function `equivFun` is the forward direction in this bijection.
+The function `equivInv` is the inverse direction in this bijection.
+-/
+def equivFun (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) : ∫ σ ⋙ A ⥤ ∫ B :=
+  (isPullback B).lift (inversion (pre A σ ⋙ B) (F ⋙ toPGrpd _) (by
+    rw [Functor.assoc, toPGrpd_forgetToGrpd, ← Functor.assoc, hF, pi_comp]))
+  (pre A σ) (inversion_comp_forgetToGrpd ..)
+
+lemma equivFun_comp_forget (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
+    equivFun B F hF ⋙ forget = pre A σ := by
+  simp [equivFun, Functor.IsPullback.fac_right]
+
+@[inherit_doc equivFun]
+def equivInv (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) : Δ ⥤ ∫ pi A B :=
+  (isPullback (pi A B)).lift (lam (σ ⋙ A) (G ⋙ toPGrpd _)) σ (by
+    rw [lam_comp_forgetToGrpd, ← pi_comp, Functor.assoc,
+      toPGrpd_forgetToGrpd, ← Functor.assoc, hG])
+
+lemma equivInv_comp_forget (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) :
+    equivInv B G hG ⋙ forget = σ := by
+  simp [equivInv, Functor.IsPullback.fac_right]
+
+lemma equivInv_equivFun (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
+    equivInv B (equivFun B F hF) (equivFun_comp_forget B F hF) = F := by
+  simp only [equivFun, equivInv]
+  apply (isPullback _).hom_ext
+  · rw [Functor.IsPullback.fac_left, Functor.IsPullback.fac_left, lam_inversion]
+  · rw! [Functor.IsPullback.fac_right, hF]
+
+lemma equivFun_equivInv (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) :
+    equivFun B (equivInv B G hG) (equivInv_comp_forget B G hG) = G := by
+  simp only [equivFun, equivInv]
+  apply (isPullback B).hom_ext
+  · have : pre A σ ⋙ B = (G ⋙ toPGrpd B) ⋙ PGrpd.forgetToGrpd := by
+      rw [Functor.assoc, toPGrpd_forgetToGrpd, ← Functor.assoc, hG]
+    rw! [Functor.IsPullback.fac_left, Functor.IsPullback.fac_left, this, inversion_lam]
+  · rw [Functor.IsPullback.fac_right, hG]
+
+lemma equivFun_comp {Δ' : Type u} [Groupoid.{v} Δ'] {σ' : Δ' ⥤ Γ} (τ : Δ' ⥤ Δ) (hτ : τ ⋙ σ = σ')
+    (F : Δ ⥤ ∫ pi A B) (hF : F ⋙ forget = σ) :
+    equivFun B (τ ⋙ F) (by rw [Functor.assoc, hF, hτ]) =
+    map (eqToHom (by aesop_cat)) ⋙ pre _ τ ⋙ equivFun B F hF := by
+  cases hτ
+  simp only [equivFun, pre_comp, eqToHom_refl, map_id_eq, Cat.of_α, Functor.id_comp]
+  symm
+  apply (isPullback B).lift_uniq
+  · simp only [Functor.assoc, Functor.IsPullback.fac_left]
+    rw [inversion_comp]
+  · simp [Functor.assoc, Functor.IsPullback.fac_right]
+
+lemma equivInv_comp {Δ' : Type u} [Groupoid.{v} Δ'] {σ' : Δ' ⥤ Γ} (τ : Δ' ⥤ Δ) (hτ : τ ⋙ σ = σ')
+    (G : ∫ σ ⋙ A ⥤ ∫ B) (hG : G ⋙ forget = pre A σ) :
+    equivInv B (map (eqToHom (Functor.assoc ..)) ⋙ pre _ τ ⋙ G)
+    (by simp [map_id_eq, Functor.assoc, hG]) =
+    τ ⋙ equivInv B G hG := by
+  cases hτ
+  simp [map_id_eq, equivInv]
+  symm
+  apply (isPullback (pi A B)).lift_uniq
+  · simp only [Functor.assoc, Functor.IsPullback.fac_left]
+    rw [lam_comp]
+  · simp [Functor.assoc, Functor.IsPullback.fac_right]
+
+end Over
 
 end pi
 
@@ -1535,7 +1621,7 @@ def lam {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (b : U.ext A ⟶ U.{v}.Tm) : Γ ⟶ U.{
 lemma lam_comp {Γ Δ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} {σA : Δ ⟶ U.Ty}
     (eq : σ ≫ A = σA) (b : U.ext A ⟶ U.{v}.Tm) :
     lam (U.substWk σ A σA eq ≫ b) = σ ≫ lam b :=
-  USig.SigAux_comp pi.lam (by intros; rw [pi.lam_naturality]) σ eq b
+  USig.SigAux_comp pi.lam (by intros; rw [pi.lam_comp]) σ eq b
 
 lemma lam_tp {Γ : Ctx} {A : Γ ⟶ U.{v}.Ty} (B : U.ext A ⟶ U.Ty) (b : U.ext A ⟶ U.{v}.Tm)
     (b_tp : b ≫ U.tp = B) : UPi.lam b ≫ U.tp = Pi B := by
