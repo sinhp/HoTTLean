@@ -696,7 +696,7 @@ lemma pushforward.strictify_comp_grothendieckClassifierIso_hom :
   simp [strictify, Functor.assoc]
 
 variable {G} (IG : ClovenIsofibration G) [IsSplit IG]
-
+#check (ClovenIsofibration.pushforward.strictify IF G)
 def pushforward.strictifyClovenIsofibration : (strictify IF G).ClovenIsofibration :=
   ClovenIsofibration.comp IG (Functor.ClovenIsofibration.iso_inv ..)
 
@@ -738,7 +738,7 @@ def pushforward.homEquivAux2 {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
       N ⋙ G = pre IF.classifier σ ⋙ IF.grothendieckClassifierIso.hom } where
   toFun M := ⟨(M.1 ⋙ ((strictifyClovenIsofibration IF IG)).grothendieckClassifierIso.hom),
     by
-      slice_lhs 2 3 => rw [← strictify_comp_grothendieckClassifierIso_hom IF G]
+      conv => lhs ; rhs ; rw [← strictify_comp_grothendieckClassifierIso_hom IF G]
       rw [Functor.assoc]
       slice_lhs 2 3 => rw [← Functor.assoc, grothendieckClassifierIso.hom_comp_self]
       slice_rhs 1 2 => rw [← M.2]
@@ -748,9 +748,15 @@ def pushforward.homEquivAux2 {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
       dsimp [strictify]
       rw [Functor.assoc, grothendieckClassifierIso.inv_comp_forget, ← Functor.assoc, N.2,
         Functor.assoc, Iso.hom_inv_id', Functor.comp_id] ⟩
-  left_inv :=
-    sorry
-  right_inv := sorry
+  left_inv := by
+    simp only [Function.LeftInverse, Subtype.forall, Subtype.mk.injEq]
+    intro a h
+    simp[Functor.assoc]
+  right_inv := by
+    simp[Function.RightInverse]
+    intro a
+    simp[Functor.assoc]
+
 
 open GroupoidModel.FunctorOperation.pi in
 /-- The universal property of the pushforward, expressed as a (natural) bijection of hom sets. -/
