@@ -583,4 +583,32 @@ theorem comp_heq_of_heq_id {A B : Type u} {C : Type*} [Category.{v} A] [Category
 
 end Functor
 
+section
+variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D] (P Q : ObjectProperty D)
+  (F : C ⥤ D) (hF : ∀ X, P (F.obj X))
+
+theorem ObjectProperty.lift_comp_inclusion_eq :
+    P.lift F hF ⋙ P.ι = F :=
+  rfl
+
+end
+
+lemma eqToHom_heq_eqToHom {C : Type*} [Category C] (x y x' y' : C) (hx : x = x')
+    (h : x = y) (h' : x' = y') : eqToHom h ≍ eqToHom h' := by aesop
+
+lemma eqToHom_heq_id {C : Type*} [Category C] (x y z : C) (h : x = y)
+    (hz : z = x) : eqToHom h ≍ 𝟙 z := by cat_disch
+
+
 end CategoryTheory
+
+lemma hcongr_fun {α α' : Type u} (hα : α ≍ α') (β : α → Type v) (β' : α' → Type v) (hβ : β ≍ β')
+    (f : (x : α) → β x) (f' : (x : α') → β' x) (hf : f ≍ f')
+    {x : α} {x' : α'} (hx : x ≍ x') : f x ≍ f' x' := by
+  subst hα hβ hf hx
+  rfl
+
+lemma fun_hext {α α' : Type u} (hα : α ≍ α') (β : α → Type v) (β' : α' → Type v) (hβ : β ≍ β')
+    (f : (x : α) → β x) (f' : (x : α') → β' x)
+    (hf : {x : α} → {x' : α'} → (hx : x ≍ x') → f x ≍ f' x') : f ≍ f' := by
+  aesop
