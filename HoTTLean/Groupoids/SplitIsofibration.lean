@@ -129,6 +129,7 @@ lemma grothendieckIsoPullback_comp_forget {B A} {F : B ⟶ A} (hF : SplitIsofibr
 
 open GroupoidModel.FunctorOperation.pi Functor in
 /-- The universal property of the pushforward, expressed as a (natural) bijection of hom sets. -/
+--@[simps!]
 def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
     (hG : SplitIsofibration G) (σ : Over A) :
     (σ ⟶ pushforward hF hG) ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) :=
@@ -143,10 +144,35 @@ def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C 
     pushforward.homEquiv ..
   _ ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) :=
     { toFun N := Over.homMk ((grothendieckIsoPullback hF σ).inv ≫ N.1) (by
+        simp[Functor.assoc,N.2]
+        have e1:
+         (grothendieckIsoPullback hF σ).inv ⋙
+          pre hF.splitIsofibration.classifier σ.hom =
+         Limits.pullback.snd σ.hom F ⋙ hF.splitIsofibration.grothendieckClassifierIso.inv := by
+
+         sorry
+        have e:
+         (grothendieckIsoPullback hF σ).inv ⋙
+          pre hF.splitIsofibration.classifier σ.hom ⋙ hF.splitIsofibration.grothendieckClassifierIso.hom ⋙
+          hF.splitIsofibration.grothendieckClassifierIso.inv =
+         Limits.pullback.snd σ.hom F ⋙ hF.splitIsofibration.grothendieckClassifierIso.inv := by
+         sorry
+
         sorry)
       invFun N := ⟨(grothendieckIsoPullback hF σ).hom ⋙ N.left, sorry⟩
-      left_inv := sorry
-      right_inv := sorry }
+      left_inv := by
+       intro a
+       simp only [Functor.id_obj, Functor.const_obj_obj, Over.pullback_obj_left, Over.mk_left,
+         comp_eq_comp, coe_of, Over.homMk_left, ← Functor.assoc]
+       rw![← comp_eq_comp]
+       simp[Iso.hom_inv_id]
+      right_inv := by
+       intro a
+       simp[← Functor.assoc]
+       rw![← comp_eq_comp] -- I do not need this, it attacks the outmost ⋙ first, maybe can use conv to get rid of
+       rw![← comp_eq_comp]
+       simp[Iso.inv_hom_id]
+        }
 
 /-- Naturality in the universal property of the pushforward. -/
 lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
@@ -154,6 +180,8 @@ lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) 
     {X X' : Over A} (f : X ⟶ X') (g : X' ⟶ pushforward hF hG) :
     (pushforwardHomEquiv hF hG X) (f ≫ g) =
     (Over.pullback F).map f ≫ (pushforwardHomEquiv hF hG X') g := by
+  ext
+  simp[pushforwardHomEquiv]
   sorry
 
 def pushforward_isPushforward  {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}

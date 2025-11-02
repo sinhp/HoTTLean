@@ -671,7 +671,7 @@ def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoi
     Functor.IsPullback.isoIsPullback isPullback q1
   have e : F' = j.hom ⋙ (Groupoidal.forget (F := bot ⋙ IF.classifier)) :=
     (IsPullback.isoIsPullback.homCompRight' isPullback q1 (hom := j.hom) (by simp[j])).symm
-  isoComp j (Functor.ClovenIsofibration.forget ..) _ e
+  isoComp (i:=j) (Functor.ClovenIsofibration.forget ..) _ e
 
 instance {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A']
     [Groupoid.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
