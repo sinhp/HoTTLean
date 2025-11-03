@@ -57,7 +57,7 @@ instance : SplitIsofibration.RespectsIso :=
     inferInstance⟩)
 
 instance : SplitIsofibration.HasObjects where
-  obj_mem F G := sorry
+  obj_mem {X Y} F G := sorry
 
 section
 
@@ -121,11 +121,20 @@ def grothendieckIsoPullback {B A} {F : B ⟶ A} (hF : SplitIsofibration F) (σ :
     Grpd.of (∫ σ.hom ⋙ hF.splitIsofibration.classifier) ≅ Limits.pullback σ.hom F :=
   (pre_classifier_isPullback hF σ).isoIsPullback _ _ (pullback_isPullback hF σ)
 
-lemma grothendieckIsoPullback_comp_forget {B A} {F : B ⟶ A} (hF : SplitIsofibration F)
+lemma grothendieckIsoPullback_inv_comp_forget {B A} {F : B ⟶ A} (hF : SplitIsofibration F)
     (σ : Over A) : (grothendieckIsoPullback hF σ).inv ⋙ Functor.Groupoidal.forget =
     Limits.pullback.fst σ.hom F := by
   exact (pre_classifier_isPullback hF σ).isoIsPullback_inv_snd _ _
     (pullback_isPullback hF σ)
+
+lemma grothendiecIsoPullback_comp_hom_comp_snd {B A} {F : B ⟶ A} (hF : SplitIsofibration F)
+    (σ : Over A) : (grothendieckIsoPullback hF σ).hom ⋙ Limits.pullback.snd σ.hom F =
+    pre hF.splitIsofibration.classifier σ.hom ⋙ hF.grothendieckClassifierIso.hom := by
+  have := (pre_classifier_isPullback hF σ).isoIsPullback_hom_fst _ _
+    (pullback_isPullback hF σ)
+  simp only [Functor.id_obj, Grpd.homOf, ← Category.assoc, Iso.comp_inv_eq] at this
+  assumption
+
 
 open GroupoidModel.FunctorOperation.pi Functor in
 /-- The universal property of the pushforward, expressed as a (natural) bijection of hom sets. -/
@@ -144,22 +153,21 @@ def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C 
     pushforward.homEquiv ..
   _ ≃ ((Over.pullback F).obj σ ⟶ Over.mk G) :=
     { toFun N := Over.homMk ((grothendieckIsoPullback hF σ).inv ≫ N.1) (by
-        simp[Functor.assoc,N.2]
-        have e1:
-         (grothendieckIsoPullback hF σ).inv ⋙
-          pre hF.splitIsofibration.classifier σ.hom =
-         Limits.pullback.snd σ.hom F ⋙ hF.splitIsofibration.grothendieckClassifierIso.inv := by
-
-         sorry
-        have e:
-         (grothendieckIsoPullback hF σ).inv ⋙
-          pre hF.splitIsofibration.classifier σ.hom ⋙ hF.splitIsofibration.grothendieckClassifierIso.hom ⋙
-          hF.splitIsofibration.grothendieckClassifierIso.inv =
-         Limits.pullback.snd σ.hom F ⋙ hF.splitIsofibration.grothendieckClassifierIso.inv := by
-         sorry
-
-        sorry)
-      invFun N := ⟨(grothendieckIsoPullback hF σ).hom ⋙ N.left, sorry⟩
+        simp only [Over.pullback_obj_left, Functor.const_obj_obj, Over.mk_left, Functor.id_obj,
+          grothendieckIsoPullback, comp_eq_comp, coe_of, Over.mk_hom, Functor.assoc, N.2,
+          Over.pullback_obj_hom]
+        rw[← Grpd.comp_eq_comp,Iso.inv_comp_eq]
+        apply (Grpd.grothendiecIsoPullback_comp_hom_comp_snd ..).symm
+        )
+      invFun N := ⟨(grothendieckIsoPullback hF σ).hom ⋙ N.left, by
+       have e := N.w
+       simp only [Over.pullback_obj_left, Functor.id_obj, Functor.const_obj_obj, Over.mk_left,
+         Functor.id_map, Over.mk_hom, comp_eq_comp, Over.pullback_obj_hom,
+         CostructuredArrow.right_eq_id, Discrete.functor_map_id, id_eq_id, simpCompId] at e
+       simp only [Functor.id_obj, Functor.const_obj_obj, Functor.assoc, e]
+       rw[Grpd.grothendiecIsoPullback_comp_hom_comp_snd]
+       rfl
+    ⟩
       left_inv := by
        intro a
        simp only [Functor.id_obj, Functor.const_obj_obj, Over.pullback_obj_left, Over.mk_left,
