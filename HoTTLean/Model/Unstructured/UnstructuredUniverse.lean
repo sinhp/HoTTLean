@@ -420,7 +420,7 @@ def etaExpand {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
   P.lam B
     (P.app (A := U0.disp A ≫ A) (U0.substWk .. ≫ B)
       (U0.disp A ≫ f) (by simp [Pi_comp, f_tp])
-      (U0.var A) (by simp))
+      (U0.var A) (U0.var_tp A))
     (by
       rw [app_tp, substWk, reassoc_of% comp_substCons]
       simp [substCons])

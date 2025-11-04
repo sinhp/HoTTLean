@@ -1170,16 +1170,23 @@ theorem EqTmIH.lam_app {Γ A B f l l'} :
     I.EqTmIH Γ (max l l') (.pi l l' A B) f
       (.lam l l' A (.app l l' (.subst (.up .wk) B) (.subst .wk f) (.bvar 0)))
   | ⟨_, hΓ, _, _, hF, _, hf, ftp⟩ => by
-    obtain ⟨_, _, hA, _, hB, eq⟩ := I.mem_ofType_pi.1 hF; simp at eq; subst eq
-    -- refine
-    --   have sB := (I.mem_ofType_ofTerm_subst _ (.up (.wk _ _) _ _ _ rfl) (CSb.up_toSb _)).1 hB
-    --   have hv := I.ofTerm_bvar ▸ CObj.mem_var_zero.2 ⟨rfl, by simp⟩
-    --   have hl := I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _,
-    --     I.mem_ofTerm_app.2 ⟨_, _, I.mem_ofTerm_wk _ hf, _, hv, _, by simp, _, sB, ?_, rfl⟩,
-    --     (s.etaExpand_eq (f_tp := ftp) ..).symm⟩
-    --   ⟨_, hΓ, _, _, hF, _, hf, hl, ftp⟩
-    -- simp [ftp, comp_mkPi]
-    sorry
+    obtain ⟨_, sA, hA, sB, hB, eq⟩ := I.mem_ofType_pi.1 hF
+    dsimp at eq; subst eq
+    refine ⟨_, hΓ, by omega, _, hF, _, hf, ?_, ftp⟩
+    refine I.mem_ofTerm_lam.2 ⟨rfl, _, hA, ?_⟩
+    have sB' := (I.mem_ofType_ofTerm_subst _ (.up (.wk _ sA) _ sA _ rfl) (CSb.up_toSb _)).1 hB
+    have hv := I.ofTerm_bvar ▸ CObj.mem_var_zero (A := sA) |>.2 ⟨rfl, rfl⟩
+    refine ⟨
+      _, I.mem_ofTerm_app.2
+        ⟨_, _, I.mem_ofTerm_wk _ hf, _, hv, _, by simp, _, sB', by simp [ftp, ← Pi_comp], rfl⟩,
+      ?_⟩
+    . dsimp
+      conv_lhs => rw [← (s.polyPi l l' _ _).etaExpand_eq _ _ ftp, etaExpand]
+      congr 1
+      simp only [app_tp, ← Category.assoc]
+      conv_lhs => rw [← Category.id_comp sB]
+      congr 1
+      apply (s[l].disp_pullback _).hom_ext <;> simp
 
 theorem EqTmIH.pair_fst_snd {Γ A B p l l'} :
     I.WfTmIH Γ (max l l') (Expr.sigma l l' A B) p →

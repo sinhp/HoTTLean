@@ -327,7 +327,8 @@ abbrev polySig := @SigSeq.polySig
 /-- `Id` and `refl` formers at any universe,
 together with identity elimination into any other universe. -/
 class IdSeq (s : UHomSeq Ctx) where
-  idIntro (s) (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) : PolymorphicIdIntro s[i] s[i]
+  idIntro (s) (i : Nat) (ilen : i < s.length + 1 := by get_elem_tactic) :
+    PolymorphicIdIntro s[i] s[i]
   idElim (s) (i j : Nat)
     (ilen : i < s.length + 1 := by get_elem_tactic)
     (jlen : j < s.length + 1 := by get_elem_tactic) :
