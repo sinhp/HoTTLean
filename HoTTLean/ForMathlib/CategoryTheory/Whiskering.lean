@@ -77,4 +77,14 @@ lemma id_whiskerRight {A B : Type*} [Category A] [Category B]
     {H0 H1 : B ⥤ A} (α : H0 ⟶ H1) : whiskerRight α (𝟭 A) = α :=
   rfl
 
+lemma associator_eq {C D E E' : Type*} [Category C] [Category D] [Category E] [Category E']
+    (F : C ⥤ D) (G : D ⥤ E) (H : E ⥤ E') : associator F G H = CategoryTheory.Iso.refl _ :=
+  rfl
+
+@[reassoc]
+lemma leftUnitor_hom_comp_rightUnitor_inv
+    {C : Type u₁} [Category.{v₁, u₁} C] {D : Type u₂}
+    [Category.{v₂, u₂} D] (F : C ⥤ D) : F.leftUnitor.hom ≫ F.rightUnitor.inv = 𝟙 _ := by
+  aesop_cat
+
 end CategoryTheory.Functor

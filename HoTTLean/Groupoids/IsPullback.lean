@@ -167,6 +167,20 @@ def isPullbackCoreAsSmall :
   Core.isPullback_map'_self _
 
 /--
+coreAsSmall PGrpd ----> PGrpd
+     |                   |
+     |                   |
+     |                   |
+     V                   V
+coreAsSmall Grpd -----> Grpd
+-/
+def isPullbackCoreAsSmall' :
+    Functor.IsPullback (Core.inclusion _ ⋙ AsSmall.down)
+    (Ctx.coreAsSmallFunctor PGrpd.forgetToGrpd)
+    (PGrpd.forgetToGrpd) (Core.inclusion _ ⋙ AsSmall.down) :=
+  Functor.IsPullback.Paste.horiz rfl rfl isPullbackAsSmall isPullbackCoreAsSmall
+
+/--
 ∫ toCo...iv A ----> coreAsSmall PGrpd
      |                  |
      |                  |

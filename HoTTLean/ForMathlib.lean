@@ -583,4 +583,89 @@ theorem comp_heq_of_heq_id {A B : Type u} {C : Type*} [Category.{v} A] [Category
 
 end Functor
 
+lemma eqToHom_heq_id {C : Type*} [Category C] (x y z : C) (h : x = y)
+    (hz : z = x) : eqToHom h ≍ 𝟙 z := by cat_disch
+
+lemma Cat.inv_heq_inv {C C' : Cat} (hC : C ≍ C') {X Y : C} {X' Y' : C'}
+    (hX : X ≍ X') (hY : Y ≍ Y') {f : X ⟶ Y} {f' : X' ⟶ Y'} (hf : f ≍ f') [IsIso f] :
+    have : IsIso f' := by aesop
+    inv f ≍ inv f' := by
+  subst hC hX hY hf
+  rfl
+
+lemma inv_heq_of_heq_inv {C : Grpd} {X Y X' Y' : C}
+    (hX : X = X') (hY : Y = Y') {f : X ⟶ Y} {g : Y' ⟶ X'} (hf : f ≍ inv g) :
+    inv f ≍ g := by
+  aesop_cat
+
+lemma inv_heq_inv {C : Type*} [Category C] {X Y : C} {X' Y' : C}
+    (hX : X = X') (hY : Y = Y') {f : X ⟶ Y} {f' : X' ⟶ Y'} (hf : f ≍ f') [IsIso f] :
+    have : IsIso f' := by aesop
+    inv f ≍ inv f' := by
+  subst hX hY hf
+  rfl
+
+lemma Discrete.as_heq_as {α α' : Type u} (hα : α ≍ α') (x : Discrete α) (x' : Discrete α')
+    (hx : x ≍ x') : x.as ≍ x'.as := by
+  aesop_cat
+
+lemma Discrete.functor_ext' {X C : Type*} [Category C] {F G : X → C} (h : ∀ x : X, F x = G x) :
+    Discrete.functor F = Discrete.functor G := by
+  have : F = G := by aesop
+  subst this
+  rfl
+
+lemma Discrete.functor_eq {X C : Type*} [Category C] {F : Discrete X ⥤ C} :
+    F = Discrete.functor fun x ↦ F.obj ⟨x⟩ := by
+  fapply CategoryTheory.Functor.ext
+  · aesop
+  · intro x y f
+    cases x ; rcases f with ⟨⟨h⟩⟩
+    cases h
+    simp
+
+lemma Discrete.hext {X Y : Type u} (a : Discrete X) (b : Discrete Y) (hXY : X ≍ Y)
+    (hab : a.1 ≍ b.1) : a ≍ b := by
+  aesop_cat
+
+lemma Discrete.Hom.hext {α β : Type u} {x y : Discrete α} (x' y' : Discrete β) (hαβ : α ≍ β)
+    (hx : x ≍ x') (hy : y ≍ y') (f : x ⟶ y) (f' : x' ⟶ y') : f ≍ f' := by
+  aesop_cat
+
+open Prod in
+lemma Prod.sectR_comp_snd {C : Type u₁} [Category.{v₁} C] (Z : C)
+    (D : Type u₂) [Category.{v₂} D] : sectR Z D ⋙ snd C D = 𝟭 D :=
+  rfl
+
+section
+variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D] (P Q : ObjectProperty D)
+  (F : C ⥤ D) (hF : ∀ X, P (F.obj X))
+
+theorem ObjectProperty.lift_comp_inclusion_eq :
+    P.lift F hF ⋙ P.ι = F :=
+  rfl
+
+end
+
+lemma eqToHom_heq_eqToHom {C : Type*} [Category C] (x y x' y' : C) (hx : x = x')
+    (h : x = y) (h' : x' = y') : eqToHom h ≍ eqToHom h' := by aesop
+
 end CategoryTheory
+
+lemma hcongr_fun {α α' : Type u} (hα : α ≍ α') (β : α → Type v) (β' : α' → Type v) (hβ : β ≍ β')
+    (f : (x : α) → β x) (f' : (x : α') → β' x) (hf : f ≍ f')
+    {x : α} {x' : α'} (hx : x ≍ x') : f x ≍ f' x' := by
+  subst hα hβ hf hx
+  rfl
+
+lemma fun_hext {α α' : Type u} (hα : α ≍ α') (β : α → Type v) (β' : α' → Type v) (hβ : β ≍ β')
+    (f : (x : α) → β x) (f' : (x : α') → β' x)
+    (hf : {x : α} → {x' : α'} → (hx : x ≍ x') → f x ≍ f' x') : f ≍ f' := by
+  aesop
+
+lemma Subtype.hext {α α' : Sort u} (hα : α ≍ α') {p : α → Prop} {p' : α' → Prop}
+    (hp : p ≍ p') {a : { x // p x }} {a' : { x // p' x }} (ha : a.1 ≍ a'.1) : a ≍ a' := by
+  subst hα hp
+  simp only [heq_eq_eq]
+  ext
+  simpa [← heq_eq_eq]
