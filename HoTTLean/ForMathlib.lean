@@ -624,14 +624,6 @@ lemma Discrete.functor_eq {X C : Type*} [Category C] {F : Discrete X ⥤ C} :
     cases h
     simp
 
-lemma Discrete.functor_ext {X C : Type*} [Category C] (F G : Discrete X ⥤ C)
-    (h : ∀ x : X, F.obj ⟨x⟩ = G.obj ⟨x⟩) :
-    F = G :=
-  calc F
-    _ = Discrete.functor (fun x => F.obj ⟨x⟩) := Discrete.functor_eq
-    _ = Discrete.functor (fun x => G.obj ⟨x⟩) := Discrete.functor_ext' h
-    _ = G := Discrete.functor_eq.symm
-
 lemma Discrete.hext {X Y : Type u} (a : Discrete X) (b : Discrete Y) (hXY : X ≍ Y)
     (hab : a.1 ≍ b.1) : a ≍ b := by
   aesop_cat

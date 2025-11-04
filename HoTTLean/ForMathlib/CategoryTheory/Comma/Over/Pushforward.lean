@@ -18,7 +18,7 @@ open Category Limits Comonad
 variable {C : Type u} [Category.{v} C] (X : C)
 variable {D : Type u₂} [Category.{v₂} D]
 
-variable {S S' : C} (f : S ⟶ S') [∀ {W} (h : W ⟶ S'), HasPullback h f]
+variable {S S' : C} (f : S ⟶ S') [inst_hasPullback : ∀ {W} (h : W ⟶ S'), HasPullback h f]
 
 /-- `Y` is the pushforward of `X` along `f` when it represents the presheaf
 `Hom(pullback f (-), X)`. This expresses the universal property of the right adjoint to

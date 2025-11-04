@@ -12,6 +12,8 @@ import HoTTLean.ForMathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
 import Mathlib.CategoryTheory.Limits.Constructions.Over.Basic
 import HoTTLean.ForMathlib
 import HoTTLean.ForMathlib.CategoryTheory.NatTrans
+import Mathlib.Tactic.DepRewrite
+import Poly.ForMathlib.CategoryTheory.NatTrans
 
 universe v u v₁ u₁
 
@@ -28,7 +30,7 @@ namespace MorphismProperty
 instance : (⊤ : MorphismProperty C).HasOfPostcompProperty ⊤ where
   of_postcomp := by simp
 
-instance (P : MorphismProperty C) {X} : P.HasPullback (𝟙 X) where
+instance (P : MorphismProperty C) {X} : P.HasPullbacksAlong (𝟙 X) where
   hasPullback g hg :=
   have : IsPullback (𝟙 _) g g (𝟙 X) := IsPullback.of_horiz_isIso (by simp)
   IsPullback.hasPullback this
@@ -69,11 +71,11 @@ def pullbackMapTwoSquare {T : Type u} [Category.{v} T] (R : MorphismProperty T)
     [R.IsStableUnderBaseChange] [R.IsStableUnderComposition]
     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
     (rk : R k) (rh : R h)
-    [R.HasPullback h] [R.HasPullback f] [R.HasPullback g] [R.HasPullback k]
+    [R.HasPullbacksAlong h] [R.HasPullbacksAlong f] [R.HasPullbacksAlong g] [R.HasPullbacksAlong k]
     (sq : f ≫ k = h ≫ g) :
-    TwoSquare (MorphismProperty.Over.pullback R ⊤ f)
-      (MorphismProperty.Over.map ⊤ rk) (MorphismProperty.Over.map ⊤ rh)
-      (MorphismProperty.Over.pullback R ⊤ g) :=
+    TwoSquare (MorphismProperty.Over.pullback R ⊤ f) (MorphismProperty.Over.map ⊤ rk)
+    (MorphismProperty.Over.map ⊤ rh)
+    (MorphismProperty.Over.pullback R ⊤ g) :=
   (mateEquiv (MorphismProperty.Over.mapPullbackAdj R ⊤ k rk trivial)
     (MorphismProperty.Over.mapPullbackAdj R ⊤ h rh trivial)).symm <|
     ((MorphismProperty.Over.pullbackComp _ _).inv ≫
@@ -111,7 +113,7 @@ theorem pullbackMapTwoSquare_isIso {T : Type u} [Category.{v} T] (R : MorphismPr
     [R.IsStableUnderBaseChange] [R.IsStableUnderComposition]
     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
     (rk : R k) (rh : R h)
-    [R.HasPullback h] [R.HasPullback f] [R.HasPullback g] [R.HasPullback k]
+    [R.HasPullbacksAlong h] [R.HasPullbacksAlong f] [R.HasPullbacksAlong g] [R.HasPullbacksAlong k]
     (pb : IsPullback f h k g) :
     NatTrans.IsCartesian <| pullbackMapTwoSquare R h f g k rk rh pb.w :=
   sorry
@@ -140,16 +142,17 @@ It is the mate of the square of pullback functors
 def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProperty T}
     [R.HasPullbacks] [R.IsStableUnderBaseChange] {Q : MorphismProperty T} [Q.HasPullbacks]
     [R.HasPushforwards Q] [R.IsStableUnderPushforward Q] {X Y Z W : T}
-    (h : X ⟶ Z) (f : X ⟶(Q) Y) (g : Z ⟶(Q) W) (k : Y ⟶ W) (sq : h ≫ g.1 = f.1 ≫ k) :
-    TwoSquare (pushforward (P := R) g) (Over.pullback R ⊤ h) (Over.pullback R ⊤ k)
-    (pushforward (P := R) f) :=
-  let pullbackTwoSquare : TwoSquare (Over.pullback R ⊤ k) (Over.pullback R ⊤ g.fst)
-      (Over.pullback R ⊤ f.fst) (Over.pullback R ⊤ h) :=
+    (h : X ⟶ Z) {f : X ⟶ Y} {g : Z ⟶ W} (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+    (hf : Q f) (hg : Q g) :
+    TwoSquare (pushforward (P := R) hg) (Over.pullback R ⊤ h) (Over.pullback R ⊤ k)
+    (pushforward (P := R) hf) :=
+  let pullbackTwoSquare : TwoSquare (Over.pullback R ⊤ k) (Over.pullback R ⊤ g)
+      (Over.pullback R ⊤ f) (Over.pullback R ⊤ h) :=
     ((Over.pullbackComp _ _).inv ≫
     eqToHom (by rw! [sq]) ≫
     (Over.pullbackComp _ _).hom)
-  mateEquiv (pullbackPushforwardAdjunction R Q g)
-  (pullbackPushforwardAdjunction R Q f)
+  mateEquiv (pullbackPushforwardAdjunction R hg)
+  (pullbackPushforwardAdjunction R hf)
   pullbackTwoSquare
 
 /--
@@ -178,8 +181,9 @@ NOTE: we also know it holds in a category with pullbacks with `R = ⊤` and `Q =
 theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{v} T] (R : MorphismProperty T)
     [R.HasPullbacks] [R.IsStableUnderBaseChange] {Q : MorphismProperty T} [Q.HasPullbacks]
     [R.HasPushforwards Q] [R.IsStableUnderPushforward Q]
-    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶(Q) Y) (g : Z ⟶(Q) W) (k : Y ⟶ W)
-    (pb : IsPullback h f.1 g.1 k) : IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) :=
+    {X Y Z W : T} (h : X ⟶ Z) {f : X ⟶ Y} {g : Z ⟶ W} (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+    (hf : Q f) (hg : Q g) (pb : IsPullback h f g k) :
+    IsIso (pushforwardPullbackTwoSquare (R := R) h k pb.w hf hg) :=
   sorry
 
 /-
@@ -222,13 +226,13 @@ open NatTrans MorphismProperty.Over in
 since it is the pullback computed by `P.Over.pullback`. -/
 lemma isCartesian_mapPullbackAdj_counit {P : MorphismProperty C} {X Y : C} {f : X ⟶ Y}
     [P.IsStableUnderComposition] [P.IsStableUnderBaseChange]
-    [P.HasPullback f] (hPf : P f) : IsCartesian (mapPullbackAdj P ⊤ f hPf trivial).counit := by
+    [P.HasPullbacksAlong f] (hPf : P f) : IsCartesian (mapPullbackAdj P ⊤ f hPf trivial).counit := by
   intro A B U
   apply (MorphismProperty.Over.forget P ⊤ Y).reflect_isPullback
   apply (CategoryTheory.Over.forget Y).reflect_isPullback
   apply IsPullback.flip
   simp only [Functor.comp_obj, Comma.forget_obj, Over.forget_obj, map_obj_left, pullback_obj_left,
-    Functor.id_obj, mapPullbackAdj, Adjunction.mkOfHomEquiv, morphismProperty_fst,
+    Functor.id_obj, mapPullbackAdj, Adjunction.mkOfHomEquiv,
     Functor.const_obj_obj, map_obj_hom, Equiv.coe_fn_mk, Comma.id_hom, CategoryTheory.Comma.id_left,
     id_comp, Adjunction.mk'_counit, Comma.forget_map, homMk_hom, Over.forget_map, Over.homMk_left,
     Functor.comp_map, map_map_left, pullback_map_left, Functor.id_map]
@@ -243,13 +247,15 @@ variable {T : Type u} [Category.{v} T] {R : MorphismProperty T}
   [R.HasPullbacks] [R.IsStableUnderBaseChange]
   {Q : MorphismProperty T} [Q.HasPullbacks] [R.HasPushforwards Q]
   [R.IsStableUnderPushforward Q]
-  {E I B : T} (i : E ⟶ I) (p : E ⟶(Q) B)
+  {E I B : T} (i : E ⟶ I) {p : E ⟶ B} (hp : Q p)
+
+abbrev pullback := @CategoryTheory.Over.pullback _ _ _ _ p (hasPullbacksAlong_of_hasPullbacks hp)
 
 /-- The partial right adjoint representing a multivariate polynomial. -/
-abbrev partialRightAdjoint := Over.pullback R ⊤ i ⋙ pushforward R p
+abbrev partialRightAdjoint := Over.pullback R ⊤ i ⋙ pushforward R hp
 
 /-- The left adjoint in the partial adjunction. -/
-abbrev leftAdjoint := CategoryTheory.Over.pullback p.1 ⋙ CategoryTheory.Over.map i
+abbrev leftAdjoint := pullback hp ⋙ CategoryTheory.Over.map i
 
 /-- `pullback R ⊤ i ⋙ pushforward R p` is a partial right adjoint to
 `CategoryTheory.Over.pullback p.1 ⋙ CategoryTheory.Over.map i`
@@ -267,46 +273,46 @@ abbrev leftAdjoint := CategoryTheory.Over.pullback p.1 ⋙ CategoryTheory.Over.m
 On paper this is written `C/B (X, p⁎ (i* Y)) ≃ C/I (i! (p* X), Y)`.
 -/
 def homEquiv {X : Over B} {Y : R.Over ⊤ I} :
-    (X ⟶ ((partialRightAdjoint i p).obj Y).toComma) ≃
-    ((leftAdjoint i p).obj X ⟶ Y.toComma) :=
-  calc (X ⟶ ((R.pushforward p).obj ((Over.pullback R ⊤ i).obj Y)).toComma)
-  _ ≃ ((CategoryTheory.Over.pullback p.1).obj X ⟶ ((Over.pullback R ⊤ i).obj Y).toComma) :=
-    pushforward.homEquiv ..
+    (X ⟶ ((partialRightAdjoint i hp).obj Y).toComma) ≃
+    ((leftAdjoint i hp).obj X ⟶ Y.toComma) :=
+  calc (X ⟶ ((R.pushforward hp).obj ((Over.pullback R ⊤ i).obj Y)).toComma)
+  _ ≃ ((pullback hp).obj X ⟶ ((Over.pullback R ⊤ i).obj Y).toComma) :=
+    pushforward.homEquiv _
   _ ≃ ((CategoryTheory.Over.map i).obj
-      ((CategoryTheory.Over.pullback p.fst).obj X) ⟶ Y.toComma) :=
-    pullback.homEquiv ..
+      ((pullback hp).obj X) ⟶ Y.toComma) :=
+    pullback.homEquiv _
 
 lemma homEquiv_comp {X X' : Over B} {Y : R.Over ⊤ I}
-    (f : X' ⟶ ((partialRightAdjoint i p).obj Y).toComma) (g : X ⟶ X') :
-    homEquiv i p (g ≫ f) =
-    (leftAdjoint i p).map g ≫ homEquiv i p f := by
+    (f : X' ⟶ ((partialRightAdjoint i hp).obj Y).toComma) (g : X ⟶ X') :
+    homEquiv i hp (g ≫ f) =
+    (leftAdjoint i hp).map g ≫ homEquiv i hp f := by
   unfold homEquiv
   simp only [Functor.comp_obj, Equiv.trans_def, Equiv.trans_apply]
   erw [pushforward.homEquiv_comp, pullback.homEquiv_comp]
   rfl
 
 lemma homEquiv_map_comp {X : Over B} {Y Y' : R.Over ⊤ I}
-    (f : X ⟶ ((partialRightAdjoint i p).obj Y).toComma) (g : Y ⟶ Y') :
-    homEquiv i p (f ≫ Comma.Hom.hom ((partialRightAdjoint i p).map g)) =
-    homEquiv i p f ≫ Comma.Hom.hom g := by
+    (f : X ⟶ ((partialRightAdjoint i hp).obj Y).toComma) (g : Y ⟶ Y') :
+    homEquiv i hp (f ≫ Comma.Hom.hom ((partialRightAdjoint i hp).map g)) =
+    homEquiv i hp f ≫ Comma.Hom.hom g := by
   unfold homEquiv
   simp only [Functor.comp_obj, Equiv.trans_def, Equiv.trans_apply]
   erw [pushforward.homEquiv_map_comp, pullback.homEquiv_map_comp]
   rfl
 
 lemma homEquiv_symm_comp {X : Over B} {Y Y' : R.Over ⊤ I}
-    (f : (leftAdjoint i p).obj X ⟶ Y.toComma) (g : Y ⟶ Y') :
-    (homEquiv i p).symm f ≫ Comma.Hom.hom ((partialRightAdjoint i p).map g) =
-    (homEquiv i p).symm (f ≫ Comma.Hom.hom g) := by
+    (f : (leftAdjoint i hp).obj X ⟶ Y.toComma) (g : Y ⟶ Y') :
+    (homEquiv i hp).symm f ≫ Comma.Hom.hom ((partialRightAdjoint i hp).map g) =
+    (homEquiv i hp).symm (f ≫ Comma.Hom.hom g) := by
   unfold homEquiv
   simp
   erw [pushforward.homEquiv_symm_comp, pullback.homEquiv_symm_comp]
   rfl
 
 lemma homEquiv_comp_symm {X X' : Over B} {Y : R.Over ⊤ I}
-    (f : (leftAdjoint i p).obj X' ⟶ Y.toComma) (g : X ⟶ X') :
-    g ≫ (homEquiv i p).symm f =
-    (homEquiv i p).symm ((leftAdjoint i p).map g ≫ f) := by
+    (f : (leftAdjoint i hp).obj X' ⟶ Y.toComma) (g : X ⟶ X') :
+    g ≫ (homEquiv i hp).symm f =
+    (homEquiv i hp).symm ((leftAdjoint i hp).map g ≫ f) := by
   unfold homEquiv
   simp
   erw [pushforward.homEquiv_comp_symm, pullback.homEquiv_comp_symm]
@@ -317,10 +323,10 @@ hom-sets at the identity.
 On paper we write this as `counit : i! p* p∗ i* => Over.forget : R.Over ⊤ I ⥤ Over I`
 -/
 def counit :
-    partialRightAdjoint i p ⋙ Over.forget R ⊤ B ⋙ leftAdjoint i p ⟶ Over.forget R ⊤ I where
-  app _ := homEquiv i p (𝟙 _)
+    partialRightAdjoint i hp ⋙ Over.forget R ⊤ B ⋙ leftAdjoint i hp ⟶ Over.forget R ⊤ I where
+  app _ := homEquiv i hp (𝟙 _)
   naturality X Y f := by
-    apply (homEquiv i p).symm.injective
+    apply (homEquiv i hp).symm.injective
     conv => left; erw [← homEquiv_comp_symm]
     conv => right; erw [← homEquiv_symm_comp]
     simp
@@ -351,15 +357,15 @@ R.Over ⊤ I ---->  R.Over ⊤ E  ----> R.Over ⊤ B
         pullback i         pushforward p
 ```
 -/
-def partialRightAdjointMap {E' : T} (i' : E' ⟶ I) (p' : E' ⟶(Q) B) (ρ)
-    (hi : i = ρ ≫ i') (hp : p.1 = ρ ≫ p'.1) :
-    partialRightAdjoint (R := R) i' p' ⟶ partialRightAdjoint i p :=
+def partialRightAdjointMap {E' : T} (i' : E' ⟶ I) {p' : E' ⟶ B} (hp' : Q p') (ρ)
+    (hi : i = ρ ≫ i') (hρ : p = ρ ≫ p') :
+    partialRightAdjoint (R := R) i' hp' ⟶ partialRightAdjoint i hp :=
   let cellLeftIso : Over.pullback R ⊤ i' ⋙ Over.pullback R ⊤ ρ ≅ Over.pullback R ⊤ i :=
     (Over.pullbackComp ρ i').symm ≪≫ eqToIso (by rw [hi])
   let cellLeft : TwoSquare (Over.pullback R ⊤ i') (𝟭 _) (Over.pullback R ⊤ ρ) (Over.pullback R ⊤ i) :=
     ((Over.pullbackComp ρ i').symm ≪≫ eqToIso (by simp [hi, Functor.id_comp])).hom
-  let cellRight := pushforwardPullbackTwoSquare (R := R) (Q := Q) ρ p p' (𝟙 _) (by simp [← hp])
-  Functor.whiskerLeft (partialRightAdjoint i' p') (Over.pullbackId R ⊤ B).inv ≫
+  let cellRight := pushforwardPullbackTwoSquare (R := R) (Q := Q) ρ (𝟙 _) (by simp [← hρ]) hp hp'
+  Functor.whiskerLeft (partialRightAdjoint i' hp') (Over.pullbackId R ⊤ B).inv ≫
   cellLeft.hComp cellRight
 
 end PolynomialPartialAdjunction
@@ -385,11 +391,11 @@ def equivalenceOfHasObjects (R : MorphismProperty C) [R.HasObjects]
 variable {P : MorphismProperty C} {E B : C}
 
 @[simps]
-def ofMorphismProperty (p : E ⟶(P) B) : P.Over ⊤ B where
+def ofMorphismProperty {p : E ⟶ B} (hp : P p) : P.Over ⊤ B where
   left := E
   right := ⟨⟨⟩⟩
-  hom := p.1
-  prop := p.2
+  hom := p
+  prop := hp
 
 @[simps]
 def homMkTop {p q : P.Over ⊤ B} (left : p.left ⟶ q.left) (hleft : left ≫ q.hom = p.hom) :
@@ -411,8 +417,8 @@ Convert an object `p` in `R.Over ⊤ B` to a morphism in `R.Over ⊤ O` by compo
      O
 -/
 @[simp]
-def homOfMorphismProperty [P.IsStableUnderComposition] {O} (p : P.Over ⊤ B) (o : B ⟶(P) O) :
-    (map ⊤ o.2).obj p ⟶ Over.ofMorphismProperty o :=
+def homOfMorphismProperty [P.IsStableUnderComposition] {O} (p : P.Over ⊤ B) {o : B ⟶ O} (ho : P o) :
+    (map ⊤ ho).obj p ⟶ Over.ofMorphismProperty ho :=
   Over.homMk p.hom (by simp)
 
 end Over
@@ -468,25 +474,27 @@ This will typically be used with the following instances
   `(pullback : R.Over B ⥤ R.Over E) ⊣ (pushforward : R.Over E ⥤ R.Over B)`.
 -/
 structure MvPoly (R : MorphismProperty C) (H : MorphismProperty C) (I O E B : C) where
-  (i : E ⟶(R) I)
-  (p : E ⟶(H) B)
-  (o : B ⟶(R) O)
+  (i : E ⟶ I)
+  (hi : R i)
+  (p : E ⟶ B)
+  (hp : H p)
+  (o : B ⟶ O)
+  (ho : R o)
 
 namespace MvPoly
 
 variable {R : MorphismProperty C} {H : MorphismProperty C}
 
-instance {B O : C} (i : B ⟶(R) O) [R.HasPullbacks] [R.IsStableUnderBaseChange]
-    [R.IsStableUnderComposition] : (pullback R ⊤ i.1).IsRightAdjoint :=
-  (mapPullbackAdj R ⊤ i.1 i.2 ⟨⟩).isRightAdjoint
+instance {B O : C} {i : B ⟶ O} (hi : R i) [R.HasPullbacks] [R.IsStableUnderBaseChange]
+    [R.IsStableUnderComposition] : (pullback R ⊤ i).IsRightAdjoint :=
+  (mapPullbackAdj R ⊤ i hi ⟨⟩).isRightAdjoint
 
-instance [R.IsStableUnderComposition] {X Y} (f : X ⟶ Y) (hf : R f) :
+instance [R.IsStableUnderComposition] {X Y} {f : X ⟶ Y} (hf : R f) :
     Limits.PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.map ⊤ hf) :=
   sorry
 
 variable {I O E B : C} (P : MvPoly R H I O E B) [R.HasPullbacks] [R.IsStableUnderBaseChange]
-    [H.HasPullbacks] [R.HasPushforwards H]
-    [R.IsStableUnderPushforward H]
+    [H.HasPullbacks] [R.HasPushforwards H] [R.IsStableUnderPushforward H]
 
 open PolynomialPartialAdjunction
 
@@ -494,7 +502,7 @@ open PolynomialPartialAdjunction
 This is the first projection morphism from `P @ X = ∑ b : B, X ^ (E b)` to `B`,
 as an object in the `P`-restricted slice over `B`. -/
 abbrev fstProj (P : MvPoly R H I O E B) (X : R.Over ⊤ I) : R.Over ⊤ B :=
-  (partialRightAdjoint P.i.1 P.p).obj X
+  (partialRightAdjoint P.i P.hp).obj X
 
 /-- The counit of the adjunction `pullback p ⋙ map i ⊣ pullback i ⋙ pushforward p` evaluated at `X`.
 Ignoring the indexing from `i` and `o`,
@@ -521,8 +529,8 @@ to `X^ (E b)`.
 ```
 -/
 def sndProj (P : MvPoly R H I O E B) (X : R.Over ⊤ I) :
-    (leftAdjoint P.i.1 P.p).obj (fstProj P X).toComma ⟶ X.toComma :=
-  (counit P.i.1 P.p).app X
+    (leftAdjoint P.i P.hp).obj (fstProj P X).toComma ⟶ X.toComma :=
+  (counit P.i P.hp).app X
 
 section
 
@@ -530,17 +538,17 @@ variable (P : MvPoly R H I O E B) {X Y : R.Over ⊤ I} (f : X ⟶ Y)
 
 @[reassoc (attr := simp)]
 lemma map_fstProj :
-    ((partialRightAdjoint P.i.1 P.p).map f).left ≫ (fstProj P Y).hom = (fstProj P X).hom := by
+    ((partialRightAdjoint P.i P.hp).map f).left ≫ (fstProj P Y).hom = (fstProj P X).hom := by
   simp
 
-lemma sndProj_comp_hom : (sndProj P X).left ≫ X.hom = pullback.snd _ _ ≫ P.i.1 := by
+lemma sndProj_comp_hom : (sndProj P X).left ≫ X.hom = pullback.snd _ _ ≫ P.i := by
   simp [sndProj]
 
 lemma sndProj_comp : (sndProj P X).left ≫ f.left =
     pullback.map _ _ _ _
-      ((partialRightAdjoint P.i.1 P.p).map f).left (𝟙 _) (𝟙 _) (by simp) (by simp) ≫
+      ((partialRightAdjoint P.i P.hp).map f).left (𝟙 _) (𝟙 _) (by simp) (by simp) ≫
       (sndProj P Y).left := by
-  have := congr_arg CommaMorphism.left <| (counit P.i.1 P.p).naturality f
+  have := congr_arg CommaMorphism.left <| (counit P.i P.hp).naturality f
   simpa [pullback.map] using this.symm
 
 end
@@ -564,7 +572,7 @@ gives rise to a functor
 ```
 -/
 def functor : R.Over ⊤ I ⥤ R.Over ⊤ O :=
-  pullback R ⊤ P.i.1 ⋙ MorphismProperty.pushforward R P.p ⋙ map ⊤ P.o.2
+  pullback R ⊤ P.i ⋙ MorphismProperty.pushforward R P.hp ⋙ map ⊤ P.ho
 
 /-- The action of a univariate polynomial on objects. -/
 def apply (P : MvPoly R H I O E B) : R.Over ⊤ I → R.Over ⊤ O := (functor P).obj
@@ -578,30 +586,30 @@ variable {P : MvPoly R H I O E B} {Γ : Over O} {X : R.Over ⊤ I}
 
 def fst (pair : Γ ⟶ (P @ X).toComma) : Over B := Over.mk (pair.left ≫ (fstProj P X).hom)
 
-abbrev sndDom (pair : Γ ⟶ (P @ X).toComma) : Over I := (leftAdjoint P.i.1 P.p).obj (fst pair)
+abbrev sndDom (pair : Γ ⟶ (P @ X).toComma) : Over I := (leftAdjoint P.i P.hp).obj (fst pair)
 
 def snd (pair : Γ ⟶ (P @ X).toComma) : sndDom pair ⟶ X.toComma :=
-  homEquiv P.i.1 P.p (Over.homMk (pair.left))
+  homEquiv P.i P.hp (Over.homMk (pair.left))
 
 lemma snd_eq (pair : Γ ⟶ (P @ X).toComma) : snd pair =
-    (leftAdjoint P.i.1 P.p).map (Over.homMk (pair.left)) ≫ sndProj P X := by
+    (leftAdjoint P.i P.hp).map (Over.homMk (pair.left)) ≫ sndProj P X := by
   erw [Equiv.apply_eq_iff_eq_symm_apply, ← homEquiv_comp_symm]
   simp [sndProj, counit]
 
-def mk (f : Over B) (hf : Γ = (Over.map P.o.1).obj f)
-    (s : (leftAdjoint P.i.1 P.p).obj f ⟶ X.toComma) :
+def mk (f : Over B) (hf : Γ = (Over.map P.o).obj f)
+    (s : (leftAdjoint P.i P.hp).obj f ⟶ X.toComma) :
     Γ ⟶ (P @ X).toComma :=
-  eqToHom hf ≫ (Over.map P.o.fst).map ((homEquiv P.i.1 P.p).symm s)
+  eqToHom hf ≫ (Over.map P.o).map ((homEquiv P.i P.hp).symm s)
 
 @[simp]
-lemma fst_mk (f : Over B) (hf : Γ = (Over.map P.o.1).obj f)
-    (s : (leftAdjoint P.i.1 P.p).obj f ⟶ X.toComma) : fst (mk f hf s) = f := by
+lemma fst_mk (f : Over B) (hf : Γ = (Over.map P.o).obj f)
+    (s : (leftAdjoint P.i P.hp).obj f ⟶ X.toComma) : fst (mk f hf s) = f := by
   subst hf; simp [fst, mk]; rfl
 
-lemma snd_mk (f : Over B) (hf : Γ = (Over.map P.o.1).obj f)
-    (s : (leftAdjoint P.i.1 P.p).obj f ⟶ X.toComma) : snd (mk f hf s) =
+lemma snd_mk (f : Over B) (hf : Γ = (Over.map P.o).obj f)
+    (s : (leftAdjoint P.i P.hp).obj f ⟶ X.toComma) : snd (mk f hf s) =
     eqToHom (by simp) ≫ s := calc snd (mk f hf s)
-  _ = (leftAdjoint P.i.1 P.p).map (eqToHom (fst_mk f hf s)) ≫ s := by
+  _ = (leftAdjoint P.i P.hp).map (eqToHom (fst_mk f hf s)) ≫ s := by
     erw [Equiv.apply_eq_iff_eq_symm_apply, ← homEquiv_comp_symm]
     ext
     simp [mk]
@@ -609,7 +617,7 @@ lemma snd_mk (f : Over B) (hf : Γ = (Over.map P.o.1).obj f)
     simp only [eqToHom_map]
 
 @[simp]
-lemma map_fst (pair : Γ ⟶ (P @ X).toComma) : (Over.map P.o.fst).obj (fst pair) = Γ := by
+lemma map_fst (pair : Γ ⟶ (P @ X).toComma) : (Over.map P.o).obj (fst pair) = Γ := by
   have := pair.w
   simp only [Functor.id_obj, Functor.const_obj_obj, Functor.id_map,
     CostructuredArrow.right_eq_id, Functor.const_obj_map, comp_id] at this
@@ -623,13 +631,18 @@ lemma eta (pair : Γ ⟶ (P @ X).toComma) : mk (fst pair) (by simp) (snd pair) =
 
 end Equiv
 
-instance (X Y) (δ : X ⟶ Y) (rδ : R δ) : (MorphismProperty.Over.pullback R ⊤ δ).IsRightAdjoint :=
-    Adjunction.isRightAdjoint (MorphismProperty.Over.mapPullbackAdj R ⊤ δ rδ trivial)
-
--- (MorphismProperty.Over.pullback R ⊤ δ ⋙ MorphismProperty.Over.map ⊤ ⋯)
+-- NOTE: please leave the commented out subgoals, it makes debugging this easier
 instance (P : MvPoly R H I O E B) : PreservesLimitsOfShape WalkingCospan
-    (MorphismProperty.Over.pullback R ⊤ P.i.fst ⋙ R.pushforward P.p ⋙
-    MorphismProperty.Over.map ⊤ P.o.2) :=
+    (MorphismProperty.Over.pullback R ⊤ P.i ⋙ R.pushforward P.hp ⋙
+    MorphismProperty.Over.map ⊤ P.ho) :=
+  have : (MorphismProperty.Over.pullback R ⊤ P.i).IsRightAdjoint :=
+    Adjunction.isRightAdjoint (MorphismProperty.Over.mapPullbackAdj R ⊤ P.i P.hi trivial)
+  -- have : PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.pullback R ⊤ P.i) :=
+  --   inferInstance
+  -- have : PreservesLimitsOfShape WalkingCospan (R.pushforward P.hp) :=
+  --   inferInstance
+  -- have : PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.map ⊤ P.ho) :=
+  --   inferInstance
   inferInstance
 
 instance (P : MvPoly R H I O E B) :
@@ -660,21 +673,21 @@ R.Over ⊤ I ---->  R.Over ⊤ F ----> R.Over ⊤ B -----> R.Over ⊤ O
     ‖                 |                  ‖                ‖
     ‖                 V                  ‖                ‖
 R.Over ⊤ I ---->  R.Over ⊤ E ----> R.Over ⊤ B -----> R.Over ⊤ O
-        pullback P.i     pushforward P.p.1     map P.o.1
+        pullback P.i     pushforward P.p.1     map P.o
 ```
 -/
 def verticalNatTrans {F : C} (P : MvPoly R H I O E B) (Q : MvPoly R H I O F B) (ρ : E ⟶ F)
-    (hi : P.i.1 = ρ ≫ Q.i.1) (hp : P.p.1 = ρ ≫ Q.p.1) (ho : P.o.1 = Q.o.1) :
+    (hi : P.i = ρ ≫ Q.i) (hp : P.p = ρ ≫ Q.p) (ho : P.o = Q.o) :
     Q.functor ⟶ P.functor :=
   (Functor.associator _ _ _).inv ≫
-  ((PolynomialPartialAdjunction.partialRightAdjointMap P.i.1 P.p Q.i.1 Q.p ρ hi hp) ◫
+  ((PolynomialPartialAdjunction.partialRightAdjointMap P.i P.hp Q.i Q.hp ρ hi hp) ◫
   (eqToHom (by rw! [ho]))) ≫
   (Functor.associator _ _ _).hom
 
 section
 
-variable {F} (Q : MvPoly R H I O F B) (ρ : E ⟶ F) (hi : P.i.1 = ρ ≫ Q.i.1)
-    (hp : P.p.1 = ρ ≫ Q.p.1) (ho : P.o.1 = Q.o.1)
+variable {F} (Q : MvPoly R H I O F B) (ρ : E ⟶ F) (hi : P.i = ρ ≫ Q.i)
+    (hp : P.p = ρ ≫ Q.p) (ho : P.o = Q.o)
 
 lemma fst_verticalNatTrans_app {Γ} {X} (pair : Γ ⟶ (Q @ X).toComma) :
     Equiv.fst (pair ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom) = Equiv.fst pair := by
@@ -726,32 +739,32 @@ R.Over I ------ >  R.Over E  --------> R.Over B  --------> R.Over O
 ```
 -/
 def cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O E' B')
-    (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i.1 = φ ≫ P'.i.1) (pb : IsPullback φ P.p.1 P'.p.1 δ)
-    (hδ : δ ≫ P'.o.1 = P.o.1) :
+    (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i = φ ≫ P'.i) (pb : IsPullback φ P.p P'.p δ)
+    (hδ : δ ≫ P'.o = P.o) :
     P.functor ⟶ P'.functor :=
-  let cellLeft : TwoSquare (𝟭 (R.Over ⊤ I)) (MorphismProperty.Over.pullback R ⊤ P'.i.1)
-      (MorphismProperty.Over.pullback R ⊤ P.i.1) (MorphismProperty.Over.pullback R ⊤ φ) :=
-    (eqToIso (by simp [hφ, Functor.id_comp]) ≪≫ (MorphismProperty.Over.pullbackComp φ P'.i.1)).hom
-  have : IsIso (pushforwardPullbackTwoSquare (R := R) φ P.p P'.p δ pb.w) :=
-    pushforwardPullbackTwoSquare_isIso R φ P.p P'.p δ pb
+  let cellLeft : TwoSquare (𝟭 (R.Over ⊤ I)) (MorphismProperty.Over.pullback R ⊤ P'.i)
+      (MorphismProperty.Over.pullback R ⊤ P.i) (MorphismProperty.Over.pullback R ⊤ φ) :=
+    (eqToIso (by simp [hφ, Functor.id_comp]) ≪≫ (MorphismProperty.Over.pullbackComp φ P'.i)).hom
+  have : IsIso (pushforwardPullbackTwoSquare (R := R) φ δ pb.w P.hp P'.hp) :=
+    pushforwardPullbackTwoSquare_isIso R φ δ pb.w P.hp P'.hp pb
   let cellMid : TwoSquare (MorphismProperty.Over.pullback R ⊤ φ)
-    (R.pushforward P'.p) (R.pushforward P.p) (MorphismProperty.Over.pullback R ⊤ δ) :=
-    CategoryTheory.inv (pushforwardPullbackTwoSquare φ P.p P'.p δ pb.w)
+    (R.pushforward P'.hp) (R.pushforward P.hp) (MorphismProperty.Over.pullback R ⊤ δ) :=
+    CategoryTheory.inv (pushforwardPullbackTwoSquare φ δ pb.w P.hp P'.hp)
   let cellRight : TwoSquare (MorphismProperty.Over.pullback R ⊤ δ)
-      (MorphismProperty.Over.map ⊤ P'.o.2) (MorphismProperty.Over.map ⊤ P.o.2) (𝟭 _) :=
-    (pullbackMapTwoSquare R P.o.1 δ (𝟙 _) P'.o.1 P'.o.2 P.o.2 (by simp [hδ])) ≫
+      (MorphismProperty.Over.map ⊤ P'.ho) (MorphismProperty.Over.map ⊤ P.ho) (𝟭 _) :=
+    (pullbackMapTwoSquare R P.o δ (𝟙 _) P'.o P'.ho P.ho (by simp [hδ])) ≫
     Functor.whiskerLeft _ (MorphismProperty.Over.pullbackId R ⊤ O).hom
   cellLeft ≫ᵥ cellMid ≫ᵥ cellRight
 
 open NatTrans in
 theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O E' B')
-    (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i.1 = φ ≫ P'.i.1) (pb : IsPullback φ P.p.1 P'.p.1 δ)
-    (hδ : δ ≫ P'.o.1 = P.o.1) :
+    (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i = φ ≫ P'.i) (pb : IsPullback φ P.p P'.p δ)
+    (hδ : δ ≫ P'.o = P.o) :
     (cartesianNatTrans P P' δ φ hφ pb hδ).IsCartesian := by
   dsimp [cartesianNatTrans]
   -- NOTE: this lemma could be extracted, but `repeat' apply IsCartesian.comp` will unfold past it.
   -- have : NatTrans.IsCartesian
-  --     (pullbackMapTwoSquare R P.o.1 δ (𝟙 _) P'.o.1 P'.o.2 P.o.2 (by simp [hδ])) := by
+  --     (pullbackMapTwoSquare R P.o δ (𝟙 _) P'.o.1 P'.o.2 P.ho (by simp [hδ])) := by
   --   -- unfold pullbackMapTwoSquare
   --   -- simp only [mateEquiv_symm_apply]
   --   repeat' apply IsCartesian.comp
@@ -759,7 +772,7 @@ theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' :
   --   -- PreservesLimit
   --   --   (cospan ((mapPullbackAdj R ⊤ P'.o.fst P'.o.snd trivial).unit.app i)
   --   --     ((MorphismProperty.Over.map ⊤ P'.o.2 ⋙ MorphismProperty.Over.pullback R ⊤ P'.o.fst).map f))
-  --   --   (MorphismProperty.Over.pullback R ⊤ δ ⋙ MorphismProperty.Over.map ⊤ P.o.2) := sorry
+  --   --   (MorphismProperty.Over.pullback R ⊤ δ ⋙ MorphismProperty.Over.map ⊤ P.ho) := sorry
   --   any_goals apply isCartesian_of_isIso
   --   · sorry --refine IsCartesian.whiskerRight _ _
   --   · apply IsCartesian.whiskerLeft
@@ -829,17 +842,19 @@ open ChosenTerminal
 variable [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderBaseChange] [R.HasObjects]
   [R.IsStableUnderPushforward R] [R.HasPushforwards R]
 
-abbrev morphismProperty' (P : UvPoly R E B) : E ⟶(R) B := ⟨ P.p, P.morphismProperty ⟩
+-- abbrev morphismProperty' (P : UvPoly R E B) : E ⟶(R) B := ⟨ P.p, P.morphismProperty ⟩
 
-instance (P : UvPoly R E B) {Γ : C} (A : Γ ⟶ B) : HasPullback A P.p := by
-  convert_to HasPullback A (morphismProperty' P).1
-  apply MorphismProperty.instHasPullbackFstHomOfHasPullbacks
+instance (P : UvPoly R E B) : HasPullbacksAlong P.p :=
+  hasPullbacksAlong_of_hasPullbacks P.morphismProperty
 
 instance (P : UvPoly R E B) {Γ : C} (A : Γ ⟶ B) : HasPullback P.p A :=
   hasPullback_symmetry _ _
 
-def object (X : C) : X ⟶(R) (𝟭_ C) :=
-  ⟨ isTerminal.from X, HasObjects.obj_mem _ ChosenTerminal.isTerminal⟩
+lemma isTerminal_from (X : C) : R (isTerminal.from X) :=
+  HasObjects.obj_mem _ ChosenTerminal.isTerminal
+
+-- def object (X : C) : X ⟶(R) (𝟭_ C) :=
+--   ⟨ isTerminal.from X, HasObjects.obj_mem _ ChosenTerminal.isTerminal⟩
 
 @[simp]
 abbrev toOverTerminal : C ⥤ R.Over ⊤ (𝟭_ C) :=
@@ -851,9 +866,12 @@ abbrev fromOverTerminal : R.Over ⊤ (𝟭_ C) ⥤ C :=
 
 @[simps]
 def mvPoly (P : UvPoly R E B) : MvPoly R R (𝟭_ C) (𝟭_ C) E B where
-  i := object E
-  p := morphismProperty' P
-  o := object B
+  i := isTerminal.from _
+  hi := isTerminal_from _
+  p := P.p
+  hp := P.morphismProperty
+  o := isTerminal.from _
+  ho := isTerminal_from _
 
 def functor (P : UvPoly R E B) : C ⥤ C :=
   toOverTerminal ⋙
@@ -1085,7 +1103,7 @@ theorem snd_eq_snd' (pair : Γ ⟶ P @ X) : snd pair = snd' pair (.of_hasPullbac
 /-- Convert the morphism `x` into a morphism in the over category `Over (𝟭_ C)` -/
 @[simp]
 abbrev mkAux (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
-    (PolynomialPartialAdjunction.leftAdjoint P.mvPoly.i.fst P.mvPoly.p).obj (Over.mk b) ⟶
+    (PolynomialPartialAdjunction.leftAdjoint P.mvPoly.i P.mvPoly.hp).obj (Over.mk b) ⟶
     ((toOverTerminal (R := R)).obj X).toComma :=
   Over.homMk x (isTerminal.hom_ext ..)
 
@@ -1479,7 +1497,6 @@ lemma mk'_comp_verticalNatTrans_app {Γ : C} (X : C) (b : Γ ⟶ B) {R f g}
   sorry
 
 end
-
 
 instance preservesPullbacks (P : UvPoly R E B) {Pb X Y Z : C} (fst : Pb ⟶ X) (snd : Pb ⟶ Y)
     (f : X ⟶ Z) (g : Y ⟶ Z) (h: IsPullback fst snd f g) :
