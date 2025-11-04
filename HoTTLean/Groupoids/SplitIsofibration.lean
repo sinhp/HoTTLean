@@ -1,5 +1,6 @@
 import HoTTLean.ForMathlib.CategoryTheory.ClovenIsofibration
 import HoTTLean.Groupoids.Pi
+import HoTTLean.ForMathlib.CategoryTheory.MorphismProperty.OverAdjunction
 
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 
@@ -56,8 +57,8 @@ instance : SplitIsofibration.RespectsIso :=
     inv_hom_id := by simp [← Grpd.comp_eq_comp] },
     inferInstance⟩)
 
--- instance : SplitIsofibration.HasObjects where
---   obj_mem {X Y} F G := sorry
+instance : SplitIsofibration.HasObjects where
+  obj_mem {X Y} F G := sorry
 
 section
 
@@ -156,18 +157,17 @@ def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C 
         simp only [Over.pullback_obj_left, Functor.const_obj_obj, Over.mk_left, Functor.id_obj,
           grothendieckIsoPullback, comp_eq_comp, coe_of, Over.mk_hom, Functor.assoc, N.2,
           Over.pullback_obj_hom]
-        rw[← Grpd.comp_eq_comp,Iso.inv_comp_eq]
+        rw [← Grpd.comp_eq_comp,Iso.inv_comp_eq]
         apply (Grpd.grothendiecIsoPullback_comp_hom_comp_snd ..).symm
         )
       invFun N := ⟨(grothendieckIsoPullback hF σ).hom ⋙ N.left, by
-       have e := N.w
-       simp only [Over.pullback_obj_left, Functor.id_obj, Functor.const_obj_obj, Over.mk_left,
-         Functor.id_map, Over.mk_hom, comp_eq_comp, Over.pullback_obj_hom,
-         CostructuredArrow.right_eq_id, Discrete.functor_map_id, id_eq_id, simpCompId] at e
-       simp only [Functor.id_obj, Functor.const_obj_obj, Functor.assoc, e]
-       rw[Grpd.grothendiecIsoPullback_comp_hom_comp_snd]
-       rfl
-    ⟩
+        have := N.w
+        simp only [Over.pullback_obj_left, Functor.id_obj, Functor.const_obj_obj, Over.mk_left,
+          Functor.id_map, Over.mk_hom, comp_eq_comp, Over.pullback_obj_hom,
+          CostructuredArrow.right_eq_id, Discrete.functor_map_id, id_eq_id, simpCompId] at this
+        simp only [Functor.id_obj, Functor.const_obj_obj, Functor.assoc, this]
+        rw [Grpd.grothendiecIsoPullback_comp_hom_comp_snd]
+        rfl ⟩
       left_inv := by
        intro a
        simp only [Functor.id_obj, Functor.const_obj_obj, Over.pullback_obj_left, Over.mk_left,
@@ -192,15 +192,14 @@ lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) 
   simp[pushforwardHomEquiv]
   sorry
 
-#exit
 def pushforward_isPushforward  {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
     (hG : SplitIsofibration G) : IsPushforward F (Over.mk G) (pushforward hF hG) where
   homEquiv := pushforwardHomEquiv ..
   homEquiv_comp f g := pushforwardHomEquiv_comp hF hG f g
 
-instance : SplitIsofibration.HasPushforwards SplitIsofibration :=
-  fun F _ G => {
-    has_representation := ⟨pushforward F.2 G.2, ⟨pushforward_isPushforward F.2 G.2⟩⟩ }
+instance : SplitIsofibration.HasPushforwards SplitIsofibration where
+  hasPushforwardsAlong _ hF := { hasPushforward _ hG :=
+    ⟨pushforward hF hG, ⟨pushforward_isPushforward hF hG⟩⟩ }
 
 def isoPushforwardOfIsPushforward  {B A} {F : B ⟶ A} (hF : SplitIsofibration F)
  (G: Over B) (hG : SplitIsofibration G.hom) (G': Over A)
@@ -208,53 +207,39 @@ def isoPushforwardOfIsPushforward  {B A} {F : B ⟶ A} (hF : SplitIsofibration F
   CategoryTheory.Functor.RepresentableBy.uniqueUpToIso
   (F := (Over.pullback F).op ⋙ yoneda.obj G)
   (by simp[IsPushforward] at h; assumption)
-  ({
-    homEquiv := pushforwardHomEquiv ..
-    homEquiv_comp f g := by apply pushforwardHomEquiv_comp ..
-  } )
+  ({ homEquiv := pushforwardHomEquiv ..
+     homEquiv_comp f g := by apply pushforwardHomEquiv_comp .. } )
 
--- This should follow from `Groupoidal.forget` being an splitIsofibration.
--- (If we manage to directly define the pushforward
--- as a grothendieck construction)
 theorem splitIsofibration_pushforward {C B A} {F : B ⟶ A} (hF : SplitIsofibration F)
     {G : C ⟶ B} (hG : SplitIsofibration G) :
     SplitIsofibration (pushforwardHom hF hG) := by
-  unfold Grpd.pushforwardHom homOf --SplitIsofibration
+  unfold Grpd.pushforwardHom homOf
   exact ⟨ Functor.ClovenIsofibration.forget _ ,
-          CategoryTheory.Functor.ClovenIsofibration.instIsSplitGroupoidalForget
-          ⟩
-
-  ---simp[Grpd.pushforwardHom,SplitIsofibration,homOf]
-  --apply (Functor.ClovenIsofibration.IsSplit )
-
+          CategoryTheory.Functor.ClovenIsofibration.instIsSplitGroupoidalForget ⟩
 
 -- FIXME. For some reason needed in the proof
 -- `SplitIsofibration.IsStableUnderPushforward SplitIsofibration`
 instance SplitIsofibration.RespectsIso : SplitIsofibration.RespectsIso := inferInstance
 
-/-  TODO: following instance can be proven like so
-  1. any pushforward is isomorphic to a chosen pushforward
-     This should be proven in general for pushforwards,
-     and even more generally for partial right adjoint objects) :
-     `(F.op ⋙ yoneda.obj X).IsRepresentable` and
-     `(F.op ⋙ yoneda.obj Y).IsRepresentable` implies
-     `X ≅ Y`.
-  2. SplitIsofibrations are stable under isomorphism (this is in mathlib, for any `rlp`)
-    `MorphismProperty.rlp_isMultiplicative`
-    `MorphismProperty.respectsIso_of_isStableUnderComposition`
-  3. The chosen pushforward is an splitIsofibration `splitIsofibration_pushforward` -/
-
+/--
+1. any pushforward is isomorphic to a chosen pushforward
+   This is proven in general for pushforwards,
+   and holds even more generally for partial right adjoint objects:
+   `(F.op ⋙ yoneda.obj X).IsRepresentable` and
+   `(F.op ⋙ yoneda.obj Y).IsRepresentable` implies `X ≅ Y`.
+2. SplitIsofibrations are stable under isomorphism
+3. The chosen pushforward is an splitIsofibration `splitIsofibration_pushforward`.
+  This is because under the hood, it is a Grothendieck construction. -/
 instance : SplitIsofibration.IsStableUnderPushforward SplitIsofibration where
-  of_isPushforward F G P := by
-    intro h
-    have p : (Over.mk P) ≅ Grpd.pushforward (F.snd) (G.snd) :=
-      isoPushforwardOfIsPushforward F.snd (Over.mk G.fst) G.snd (Over.mk P) h
-    have i1 : SplitIsofibration (pushforwardHom (F.snd) (G.snd)) := by
-     apply splitIsofibration_pushforward
-    have e : P = (p.hom).left ≫ (pushforwardHom (F.snd) (G.snd)) := by
-     have ee := Over.w p.hom
-     simp at ee
-     simp [ee]
+  of_isPushforward F hF G hG P hP := by
+    have p : (Over.mk P) ≅ Grpd.pushforward (hF) (hG) :=
+      isoPushforwardOfIsPushforward hF (Over.mk G) hG (Over.mk P) hP
+    have i1 : SplitIsofibration (pushforwardHom (hF) (hG)) := by
+      apply splitIsofibration_pushforward
+    have e : P = (p.hom).left ≫ (pushforwardHom (hF) (hG)) := by
+      have ee := Over.w p.hom
+      simp at ee
+      simp [ee]
     simp only[e]
     apply (SplitIsofibration.RespectsIso).precomp
     assumption
