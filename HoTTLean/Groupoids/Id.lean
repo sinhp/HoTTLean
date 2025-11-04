@@ -1,6 +1,6 @@
 import HoTTLean.Groupoids.UnstructuredModel
 import HoTTLean.Model.Unstructured.Hurewicz
-import HoTTLean.ForMathlib.CategoryTheory.ClovenIsofibration
+import HoTTLean.Groupoids.ClovenIsofibration
 
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 
