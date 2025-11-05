@@ -57,7 +57,9 @@ instance : SplitIsofibration.RespectsIso :=
     inferInstance⟩)
 
 instance : SplitIsofibration.HasObjects where
-  obj_mem {X Y} F G := sorry
+  obj_mem {X Y} F G := by
+
+   sorry
 
 section
 
@@ -182,6 +184,27 @@ def pushforwardHomEquiv {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C 
        simp[Iso.inv_hom_id]
         }
 
+lemma pushforwardHomEquiv_left {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
+    (hG : SplitIsofibration G)
+    {X : Over A} (g : X ⟶ pushforward hF hG) :
+    ((pushforwardHomEquiv hF hG X) g).left =
+    (grothendieckIsoPullback hF X).inv ⋙
+    GroupoidModel.FunctorOperation.pi.equivFun
+        (pushforward.strictifyClovenIsofibration hF.splitIsofibration hG.splitIsofibration).classifier g.left sorry ⋙
+      (pushforward.strictifyClovenIsofibration hF.splitIsofibration
+            hG.splitIsofibration).grothendieckClassifierIso.hom
+     := by
+  simp[pushforwardHomEquiv,Trans.trans]
+  simp only[pushforward.homEquiv_apply_coe]
+ -- simp[pushforward.strictifyClovenIsofibration]
+  -- fapply Functor.ext
+  -- · sorry
+  -- simp[pushforward.homEquiv]
+  -- simp[pushforward.homEquiv,Trans.trans,pushforward.homEquivAux2,pushforward.homEquivAux1,grothendieckIsoPullback ]
+ --sorry
+
+
+
 /-- Naturality in the universal property of the pushforward. -/
 lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
     (hG : SplitIsofibration G)
@@ -189,7 +212,27 @@ lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) 
     (pushforwardHomEquiv hF hG X) (f ≫ g) =
     (Over.pullback F).map f ≫ (pushforwardHomEquiv hF hG X') g := by
   ext
-  simp[pushforwardHomEquiv]
+  simp[pushforwardHomEquiv_left]
+  simp[← Functor.assoc]
+  congr 1
+  have e1 :f.left ⋙ X'.hom = X.hom := sorry
+  have e2 : g.left ⋙ Functor.Groupoidal.forget = X'.hom := sorry
+  rw![GroupoidModel.FunctorOperation.pi.equivFun_comp
+      (τ := f.left) (F := g.left) (σ := X'.hom) _ e1 e2]
+  simp[← Functor.assoc]
+  congr 1
+  conv => rhs ; simp[← Grpd.comp_eq_comp]; rw[← Grpd.comp_eq_comp]
+  --apply CategoryTheory.Iso.eq_comp_inv
+  simp[← Grpd.comp_eq_comp]
+  have e := CategoryTheory.Iso.eq_comp_inv
+           (α := (grothendieckIsoPullback hF X'))
+           (g := ((grothendieckIsoPullback hF X).inv ⋙ map (eqToHom sorry)) ⋙ pre (X'.hom ⋙ hF.splitIsofibration.classifier) f.left)
+          (f :=  Limits.pullback.lift (Limits.pullback.fst X.hom F ≫ f.left) (Limits.pullback.snd X.hom F) sorry)
+  rw[e]
+  ext
+  · simp
+    sorry
+  simp
   sorry
 
 def pushforward_isPushforward  {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) {G : C ⟶ B}
