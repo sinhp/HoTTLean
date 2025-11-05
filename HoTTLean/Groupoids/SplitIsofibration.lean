@@ -129,6 +129,20 @@ lemma grothendieckIsoPullback_inv_comp_forget {B A} {F : B ⟶ A} (hF : SplitIso
   exact (pre_classifier_isPullback hF σ).isoIsPullback_inv_snd _ _
     (pullback_isPullback hF σ)
 
+
+lemma grothendiecIsoPullback_comp_hom_comp_fst {B A} {F : B ⟶ A} (hF : SplitIsofibration F)
+    (σ : Over A) : (grothendieckIsoPullback hF σ).hom ⋙ Limits.pullback.fst σ.hom F =
+    Functor.Groupoidal.forget := by
+  have := (pre_classifier_isPullback hF σ).isoIsPullback_hom_snd _ _
+    (pullback_isPullback hF σ)
+  simp only [Functor.id_obj, Grpd.homOf, ← Category.assoc, ← CategoryTheory.Iso.eq_inv_comp] at this
+  rw[this]
+  rw[← Grpd.comp_eq_comp]
+  rw[← Category.assoc]
+  simp[grothendieckIsoPullback]
+
+
+
 lemma grothendiecIsoPullback_comp_hom_comp_snd {B A} {F : B ⟶ A} (hF : SplitIsofibration F)
     (σ : Over A) : (grothendieckIsoPullback hF σ).hom ⋙ Limits.pullback.snd σ.hom F =
     pre hF.splitIsofibration.classifier σ.hom ⋙ hF.grothendieckClassifierIso.hom := by
@@ -231,6 +245,7 @@ lemma pushforwardHomEquiv_comp {C B A} {F : B ⟶ A} (hF : SplitIsofibration F) 
   rw[e]
   ext
   · simp
+    simp[Grpd.grothendiecIsoPullback_comp_hom_comp_snd,Functor.assoc]
     sorry
   simp
   sorry
