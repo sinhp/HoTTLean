@@ -14,6 +14,9 @@ namespace Grpd
 def SplitIsofibration : MorphismProperty Grpd :=
   fun _ _ F => ∃ I : F.ClovenIsofibration, I.IsSplit
 
+
+
+
 namespace SplitIsofibration
 
 variable {B A : Grpd} {F : B ⟶ A} (hF : SplitIsofibration F)
@@ -56,38 +59,22 @@ instance : SplitIsofibration.RespectsIso :=
     inv_hom_id := by simp [← Grpd.comp_eq_comp] },
     inferInstance⟩)
 
---#check CategoryTheory.Cat.instHasTerminal
-instance IsTerminal.ClovenIsofibration {X Y : Grpd} (F : X ⟶ Y) (t : Limits.IsTerminal Y) : Functor.ClovenIsofibration F where
-  liftObj {y1 y2} g i x e := x
-  liftIso {y1 y2} g i x e := 𝟙 x
-  isHomLift {y1 y2} g i x e := by
-   have e0 : y1 = y2 := sorry
-   subst e0
-   have e1 : g = 𝟙 y1 := by
-    apply Limits.IsTerminal.hom_ext
-    sorry
-   apply IsHomLift.of_fac _ _ _  e e
-   simp
-   assumption
-  liftIso_IsIso {y1 y2} g i x e := CategoryTheory.IsIso.id ..
+def IsTerminal.SplitIsofibration {X Y : Grpd.{v,v}} (F : X ⟶ Y) (t : Limits.IsTerminal Y) :
+  SplitIsofibration F
+  := by
+   have i := @Limits.IsTerminal.uniqueUpToIso Grpd.{v,v} _ Y chosenTerminal.{v} t chosenTerminalIsTerminal
+   have e : F = F ≫ i.hom ≫ i.inv := by simp[]
+   rw[e]
+   simp only[← Category.assoc]
+   apply MorphismProperty.RespectsIso.postcomp (P:= CategoryTheory.Grpd.SplitIsofibration)
+   exact ⟨Functor.ClovenIsofibration.toDiscretePUnit .., Functor.ClovenIsofibration.toDiscretePUnit.IsSplit ..⟩
 
 
-instance toTerminal.IsSplit  {X Y : Grpd} (F : X ⟶ Y) (t : Limits.IsTerminal Y)  :
-  Functor.ClovenIsofibration.IsSplit (IsTerminal.ClovenIsofibration F t) where
-    liftObj_id {y x} hX' := by simp[IsTerminal.ClovenIsofibration]
-    liftIso_id {y x} hX' := by simp[IsTerminal.ClovenIsofibration]
-    liftObj_comp {y1 y2 y3} f hf g hg x1 hx1 x2 hx2 := by
-     subst hx2
-     simp only [IsTerminal.ClovenIsofibration]
-    liftIso_comp {y1 y2 y3} f hf g hg x1 hx1 x2 hx2 := by
-     subst hx2
-     simp only [IsTerminal.ClovenIsofibration, eqToHom_refl, Category.comp_id]
 
-
-instance : SplitIsofibration.HasObjects where
+instance : SplitIsofibration.HasObjects.{v, v} where
   obj_mem {X Y} F G := by
-   simp only [SplitIsofibration]
-   exact ⟨(IsTerminal.ClovenIsofibration F G), toTerminal.IsSplit ..⟩
+   exact (Grpd.IsTerminal.SplitIsofibration F G)
+
 
 
 section

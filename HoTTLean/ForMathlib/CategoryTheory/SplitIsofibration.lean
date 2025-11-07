@@ -812,6 +812,51 @@ lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D
 
 
 end pushforward
+@[simp]
+lemma discrete_pUnit_ext (x y: Discrete.{u} PUnit):  x = y := by
+  cases x
+  cases y
+  simp
+
+
+def toDiscretePUnit
+  {X : Type*} [Category X] (F : X ⥤ Discrete.{u} PUnit) : Functor.ClovenIsofibration F where
+  liftObj {y1 y2} g i x e := x
+  liftIso {y1 y2} g i x e := 𝟙 x
+  isHomLift {y1 y2} g i x e := by
+   apply IsHomLift.of_fac _ _ _
+   any_goals apply discrete_pUnit_ext
+   rfl
+  liftIso_IsIso {y1 y2} g i x e := CategoryTheory.IsIso.id ..
+
+
+/-
+
+
+instance toTerminal.IsSplit  {X Y : Grpd} (F : X ⟶ Y) (t : Limits.IsTerminal Y)  :
+  Functor.ClovenIsofibration.IsSplit (IsTerminal.ClovenIsofibration F t) where
+    liftObj_id {y x} hX' := by simp[IsTerminal.ClovenIsofibration]
+    liftIso_id {y x} hX' := by simp[IsTerminal.ClovenIsofibration]
+    liftObj_comp {y1 y2 y3} f hf g hg x1 hx1 x2 hx2 := by
+     subst hx2
+     simp only [IsTerminal.ClovenIsofibration]
+    liftIso_comp {y1 y2 y3} f hf g hg x1 hx1 x2 hx2 := by
+     subst hx2
+     simp only [IsTerminal.ClovenIsofibration, eqToHom_refl, Category.comp_id]
+
+-/
+
+instance toDiscretePUnit.IsSplit   {X : Type*} [Category X]  (F : X ⥤ Discrete.{u} PUnit)  :
+  Functor.ClovenIsofibration.IsSplit (toDiscretePUnit F) where
+    liftObj_id := by simp[toDiscretePUnit]
+    liftIso_id := by simp[toDiscretePUnit]
+    liftObj_comp {y1 y2 y3} f hf g hg x1 hx1 x2 hx2 := by
+      subst hx2
+      simp[toDiscretePUnit]
+    liftIso_comp {y1 y2 y3} f hf g hg x1 hx1 x2 hx2 := by
+      subst hx2
+      simp[toDiscretePUnit]
+
 
 end ClovenIsofibration
 end
