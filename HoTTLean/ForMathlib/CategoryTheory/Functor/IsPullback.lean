@@ -469,78 +469,47 @@ end
 
 def isoIsPullback {P P' X Y Z : Type*} [Category P] [Category P']
     [Category X] [Category Y] [Category Z]
-    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
-    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g) :
-    P ≅≅ P' where
+    {fst : P ⥤ X} {snd : P ⥤ Y} {f : X ⥤ Z} {g : Y ⥤ Z}
+    {fst' : P' ⥤ X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g) : P ≅≅ P' where
   hom := h.toChosen ⋙ h'.fromChosen
   inv := h'.toChosen ⋙ h.fromChosen
   hom_inv_id := by
-    fapply Functor.ext
-    · intro A
-      have e : ((h.toChosen ⋙ h'.fromChosen) ⋙ h'.toChosen ⋙ h.fromChosen) =
-        (h.toChosen ⋙ (h'.fromChosen ⋙ h'.toChosen) ⋙ h.fromChosen) := by
-        simp [comp]
-      simp only[e,from_to_id,Functor.id_comp,to_from_id]
-    · intro A B t
-      have e : ((h.toChosen ⋙ h'.fromChosen) ⋙ h'.toChosen ⋙ h.fromChosen) =
-        (h.toChosen ⋙ (h'.fromChosen ⋙ h'.toChosen) ⋙ h.fromChosen) := by
-        simp[comp]
-      rw! [e]
-      simp only [← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
-      rw [from_to_id,Functor.id_comp,to_from_id]
+    conv => lhs; rw [Functor.assoc]; rhs; rw [← Functor.assoc]; rw [from_to_id]
+    simp [Functor.id_comp, to_from_id]
   inv_hom_id := by
-    fapply Functor.ext
-    · intro A
-      have e : ((h'.toChosen ⋙ h.fromChosen) ⋙ h.toChosen ⋙ h'.fromChosen) =
-        (h'.toChosen ⋙ (h.fromChosen ⋙ h.toChosen) ⋙ h'.fromChosen) := by
-        simp[comp]
-      simp only [e,from_to_id,Functor.id_comp,to_from_id]
-    · intro A B t
-      have e : ((h'.toChosen ⋙ h.fromChosen) ⋙ h.toChosen ⋙ h'.fromChosen) =
-        (h'.toChosen ⋙ (h.fromChosen ⋙ h.toChosen) ⋙ h'.fromChosen) := by
-        simp [comp]
-      rw! [e]
-      simp only[← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
-      rw [from_to_id,Functor.id_comp,to_from_id]
+    conv => lhs; rw [Functor.assoc]; rhs; rw [← Functor.assoc]; rw [from_to_id]
+    simp [Functor.id_comp, to_from_id]
 
 lemma isoIsPullback.inv_comp_left {P P' X Y Z : Type*} [Category P] [Category P']
     [Category X] [Category Y] [Category Z]
-    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
-    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g):
+    {fst : P ⥤ X} {snd : P ⥤ Y} {f : X ⥤ Z} {g : Y ⥤ Z}
+    {fst' : P' ⥤ X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g) :
     (isoIsPullback h h').inv ⋙ fst = fst' := by
-  dsimp [isoIsPullback]
-  fapply Functor.ext
-  · intro A
-    simp only [Functor.assoc,h.from_north]
-    rw [toChosen_north]
-  · intros A B t
-    simp only [← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
-    rw! [Functor.assoc,h.from_north]
-    rw [toChosen_north]
+  simp [isoIsPullback, Functor.assoc, from_north, toChosen_north]
 
-lemma isoIsPullback.hom_comp_left {P P' X Y Z : Type*} [Category P] [Category P']
+lemma isoIsPullback.inv_comp_right {P P' X Y Z : Type*} [Category P] [Category P']
     [Category X] [Category Y] [Category Z]
     {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
     {fst' : P' ⥤ X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g):
+    (h' : Functor.IsPullback fst' snd' f g) :
+    (isoIsPullback h h').inv ⋙ snd = snd' := by
+  simp [isoIsPullback, Functor.assoc, from_west, toChosen_west]
+
+lemma isoIsPullback.hom_comp_left {P P' X Y Z : Type*} [Category P] [Category P']
+    [Category X] [Category Y] [Category Z]
+    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤ Z} {g : Y ⥤ Z}
+    {fst' : P' ⥤ X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g) :
     (isoIsPullback h h').hom ⋙ fst' = fst := by
-  dsimp [isoIsPullback]
-  fapply Functor.ext
-  · intro A
-    simp only [Functor.assoc,h'.from_north]
-    rw [toChosen_north]
-  · intros A B t
-    simp only [← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
-    rw! [Functor.assoc,h'.from_north]
-    rw [toChosen_north]
+  simp [isoIsPullback, Functor.assoc, from_north, toChosen_north]
 
 lemma isoIsPullback.hom_comp_left' {P P' X Y Z : Type*} [Category P] [Category P']
     [Category X] [Category Y] [Category Z]
     {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤  Z} {g : Y ⥤  Z}
     {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g) {hom } (e: hom = (isoIsPullback h h').hom):
+    (h' : Functor.IsPullback fst' snd' f g) {hom} (e: hom = (isoIsPullback h h').hom) :
     hom ⋙ fst' = fst := by
   rw [e]
   apply isoIsPullback.hom_comp_left
@@ -549,18 +518,18 @@ lemma isoIsPullback.hom_comp_right {P P' X Y Z : Type*} [Category P] [Category P
     [Category X] [Category Y] [Category Z]
     {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤ Z} {g : Y ⥤  Z}
     {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
-    (h' : Functor.IsPullback fst' snd' f g) {hom } (e: hom =  (isoIsPullback h h').hom):
+    (h' : Functor.IsPullback fst' snd' f g) :
+    (isoIsPullback h h').hom ⋙ snd' = snd := by
+  simp [isoIsPullback, Functor.assoc, from_west, toChosen_west]
+
+lemma isoIsPullback.hom_comp_right' {P P' X Y Z : Type*} [Category P] [Category P']
+    [Category X] [Category Y] [Category Z]
+    {fst : P ⥤ X} {snd : P ⥤  Y} {f : X ⥤ Z} {g : Y ⥤  Z}
+    {fst' : P' ⥤  X} {snd' : P' ⥤ Y} (h : Functor.IsPullback fst snd f g)
+    (h' : Functor.IsPullback fst' snd' f g) {hom} (e: hom = (isoIsPullback h h').hom) :
     hom ⋙ snd' = snd := by
   rw[e]
-  unfold isoIsPullback
-  fapply Functor.ext
-  · intro A
-    simp only [Functor.assoc,h'.from_west]
-    rw[toChosen_west]
-  · intros A B t
-    simp only [← heq_eq_eq,heq_eqToHom_comp_iff,heq_comp_eqToHom_iff]
-    rw! [Functor.assoc,h'.from_west]
-    rw [toChosen_west]
+  apply isoIsPullback.hom_comp_right
 
 def ofBotId {A A' B : Type*} [Category A] [Category A']
     [Category B]
@@ -607,7 +576,7 @@ theorem outer_comm_sq : no ⋙ rth ⋙ east = west ⋙ so ⋙ uth := by
 
 section horiz
 
-variable (esah_pb : IsPullback rth sah east uth) (wsah_pb : IsPullback no west sah so)
+variable (wsah_pb : IsPullback no west sah so) (esah_pb : IsPullback rth sah east uth)
 
 namespace horiz
 
@@ -622,7 +591,7 @@ def universal : (lift : C ⥤ Algeria) ×'
     lift ⋙ west = Cw ∧
     ∀ {l0 l1 : C ⥤ Algeria}, l0 ⋙ no ⋙ rth = l1 ⋙ no ⋙ rth →
     l0 ⋙ west = l1 ⋙ west → l0 = l1 :=
-  ⟨ lift esah_pb wsah_pb Cn Cw hC,
+  ⟨ lift wsah_pb esah_pb Cn Cw hC,
     by rw [lift, ← Functor.assoc, wsah_pb.fac_left, esah_pb.fac_left],
     wsah_pb.fac_right _ _ _,
     by
@@ -653,8 +622,8 @@ are both pullbacks.
 def horiz : IsPullback (no ⋙ rth) west east (so ⋙ uth) :=
   IsPullback.ofUniversal (no ⋙ rth) west east (so ⋙ uth)
     (outer_comm_sq wsah esah)
-    (fun _ _ hC => horiz.universal wsah esah_pb wsah_pb _ _ hC)
-    (fun _ _ hC => horiz.universal wsah esah_pb wsah_pb _ _ hC)
+    (fun _ _ hC => horiz.universal wsah wsah_pb esah_pb _ _ hC)
+    (fun _ _ hC => horiz.universal wsah wsah_pb esah_pb _ _ hC)
 
 end horiz
 

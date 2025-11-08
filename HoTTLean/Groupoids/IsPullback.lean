@@ -37,28 +37,95 @@ theorem liftTm'_tp' : Cat.homOf liftTm'.{v,u} ≫ Cat.homOf tp'.{v+1, max u (v+2
 /--
 The following square is a meta-theoretic pullback
 
-PGrpd.{v} ------- asSmallFunctor ------> PGrpd.{v+1}
+PGrpd.{v} ------- asSmallFunctor ------> PGrpd.{max w (v+1)}
     |                                     |
     |                                     |
 forgetToGrpd                        forgetToGrpd
     |                                     |
     |                                     |
     v                                     v
-Grpd.{v}  ------- asSmallFunctor ----->  Grpd.{v+1}
+Grpd.{v}  ------- asSmallFunctor ----->  Grpd.{max w (v+1)}
 
 -/
 def isPullback_forgetToGrpd_forgetToGrpd :
-  Functor.IsPullback
-    PGrpd.asSmallFunctor.{v+1}
+    Functor.IsPullback
+    PGrpd.asSmallFunctor.{max w v}
     PGrpd.forgetToGrpd.{v}
-    PGrpd.forgetToGrpd.{v+1}
-    Grpd.asSmallFunctor.{v+1} :=
-  Functor.IsPullback.ofIso (toPGrpd _) forget PGrpd.forgetToGrpd.{v+1}
-  Grpd.asSmallFunctor.{v+1} (isPullback _)
+    PGrpd.forgetToGrpd.{max w v}
+    Grpd.asSmallFunctor.{max w v} :=
+  Functor.IsPullback.ofIso (toPGrpd _) forget PGrpd.forgetToGrpd.{max w v}
+  Grpd.asSmallFunctor.{max w v} (isPullback _)
   PGrpd.pGrpdToGroupoidalAsSmallFunctor
   PGrpd.groupoidalAsSmallFunctorToPGrpd
   PGrpd.groupoidalAsSmallFunctorToPGrpd_pGrpdToGroupoidalAsSmallFunctor
   PGrpd.pGrpdToGroupoidalAsSmallFunctor_groupoidalAsSmallFunctorToPGrpd
+
+def _root_.CategoryTheory.Functor.Groupoidal.compAsSmallFunctorIso
+    {C : Type*} [Category C] (A : C ⥤ Grpd.{v,v}) :
+    ∫ A ⋙ Grpd.asSmallFunctor.{max w v} ≅≅ ∫ A :=
+  Functor.IsPullback.isoIsPullback (Functor.Groupoidal.isPullback (A ⋙ Grpd.asSmallFunctor))
+  (Functor.IsPullback.Paste.horiz (toPGrpd_forgetToGrpd _) rfl (Functor.Groupoidal.isPullback A)
+    isPullback_forgetToGrpd_forgetToGrpd)
+
+theorem _root_.CategoryTheory.Functor.Groupoidal.compAsSmallFunctorIso_hom_comp_forget
+    {C : Type*} [Category C] (A : C ⥤ Grpd) :
+    (compAsSmallFunctorIso A).hom ⋙ Functor.Groupoidal.forget = Functor.Groupoidal.forget :=
+  Functor.IsPullback.isoIsPullback.hom_comp_right ..
+
+theorem _root_.CategoryTheory.Functor.Groupoidal.compAsSmallFunctorIso_inv_comp_forget
+    {C : Type*} [Category C] (A : C ⥤ Grpd) :
+    (compAsSmallFunctorIso A).inv ⋙ Functor.Groupoidal.forget = Functor.Groupoidal.forget :=
+  Functor.IsPullback.isoIsPullback.inv_comp_right ..
+
+theorem _root_.CategoryTheory.Functor.Groupoidal.compAsSmallFunctorIso_hom_comp_toPGrpd_comp_asSmallFunctor
+    {C : Type*} [Category C] (A : C ⥤ Grpd) :
+    (compAsSmallFunctorIso A).hom ⋙ toPGrpd _ ⋙ PGrpd.asSmallFunctor = toPGrpd _ :=
+  Functor.IsPullback.isoIsPullback.hom_comp_left ..
+
+theorem _root_.CategoryTheory.Functor.Groupoidal.compAsSmallFunctorIso_inv_comp_toPGrpd
+    {C : Type*} [Category C] (A : C ⥤ Grpd) :
+    (compAsSmallFunctorIso A).inv ⋙ toPGrpd _ = toPGrpd _ ⋙ PGrpd.asSmallFunctor :=
+  Functor.IsPullback.isoIsPullback.inv_comp_left ..
+
+lemma _root_.CategoryTheory.Functor.Groupoidal.compAsSmallFunctorIso_inv_obj_base
+    {C : Type*} [Category C] (A : C ⥤ Grpd.{v,v}) (x) :
+    ((compAsSmallFunctorIso A).inv.obj x).base = x.base :=
+  Functor.congr_obj (compAsSmallFunctorIso_inv_comp_forget A) x
+
+lemma _root_.CategoryTheory.Functor.Groupoidal.compAsSmallFunctorIso_inv_obj_fiber
+    {C : Type*} [Category C] (A : C ⥤ Grpd.{v,v}) (x) :
+    ((compAsSmallFunctorIso A).inv.obj x).fiber.1 =
+    (A.map (eqToHom (compAsSmallFunctorIso_inv_obj_base _ _).symm)).obj x.fiber := by
+  -- have h := Functor.congr_obj (compAsSmallFunctorIso_inv_comp_toPGrpd A) x
+  -- have h' := Grothendieck.base_eqToHom h
+  -- simp at h
+  sorry
+
+-- /--
+-- The following square is a meta-theoretic pullback
+
+-- PGrpd.{v} ------- asSmallFunctor ------> PGrpd.{v+1}
+--     |                                     |
+--     |                                     |
+-- forgetToGrpd                        forgetToGrpd
+--     |                                     |
+--     |                                     |
+--     v                                     v
+-- Grpd.{v}  ------- asSmallFunctor ----->  Grpd.{v+1}
+
+-- -/
+-- def isPullback_forgetToGrpd_forgetToGrpd :
+--     Functor.IsPullback
+--     PGrpd.asSmallFunctor.{v+1}
+--     PGrpd.forgetToGrpd.{v}
+--     PGrpd.forgetToGrpd.{v+1}
+--     Grpd.asSmallFunctor.{v+1} :=
+--   Functor.IsPullback.ofIso (toPGrpd _) forget PGrpd.forgetToGrpd.{v+1}
+--   Grpd.asSmallFunctor.{v+1} (isPullback _)
+--   PGrpd.pGrpdToGroupoidalAsSmallFunctor
+--   PGrpd.groupoidalAsSmallFunctorToPGrpd
+--   PGrpd.groupoidalAsSmallFunctorToPGrpd_pGrpdToGroupoidalAsSmallFunctor
+--   PGrpd.pGrpdToGroupoidalAsSmallFunctor_groupoidalAsSmallFunctorToPGrpd
 
 /--
 The following square is a pullback
@@ -82,7 +149,7 @@ def isPullback_liftTm' : Functor.IsPullback
     tp'.{v+1,max u (v+2)}
     liftTy'.{v,max u (v+2)} :=
   Functor.IsPullback.ofIso' PGrpd.asSmallFunctor.{v+1} PGrpd.forgetToGrpd.{v}
-    PGrpd.forgetToGrpd.{v+1} Grpd.asSmallFunctor.{v+1} isPullback_forgetToGrpd_forgetToGrpd
+    PGrpd.forgetToGrpd.{v+1} Grpd.asSmallFunctor.{v+1} isPullback_forgetToGrpd_forgetToGrpd.{v+1}
     liftTm'.{v,max u (v+2)} tp'.{_,max u (v+2)} tp'.{v+1,max u (v+2)} liftTy'.{v,max u (v+2)}
     AsSmall.downIso AsSmall.downIso AsSmall.downIso AsSmall.downIso rfl rfl rfl rfl
 
@@ -178,7 +245,7 @@ def isPullbackCoreAsSmall' :
     Functor.IsPullback (Core.inclusion _ ⋙ AsSmall.down)
     (Ctx.coreAsSmallFunctor PGrpd.forgetToGrpd)
     (PGrpd.forgetToGrpd) (Core.inclusion _ ⋙ AsSmall.down) :=
-  Functor.IsPullback.Paste.horiz rfl rfl isPullbackAsSmall isPullbackCoreAsSmall
+  Functor.IsPullback.Paste.horiz rfl rfl isPullbackCoreAsSmall isPullbackAsSmall
 
 /--
 ∫ toCo...iv A ----> coreAsSmall PGrpd
