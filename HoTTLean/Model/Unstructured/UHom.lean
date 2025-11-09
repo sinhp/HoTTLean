@@ -1,6 +1,6 @@
 import Mathlib.CategoryTheory.Limits.Shapes.StrictInitial
 import HoTTLean.ForMathlib
-import HoTTLean.Model.Unstructured.UnstructuredUniverse
+import HoTTLean.Model.Unstructured.UnstructuredModel
 
 /-! Morphisms of unstructured models, and Russell-universe embeddings. -/
 

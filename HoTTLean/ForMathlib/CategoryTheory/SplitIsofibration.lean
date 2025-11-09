@@ -1,3 +1,4 @@
+import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
 import Mathlib.CategoryTheory.FiberedCategory.HomLift
 import Mathlib.CategoryTheory.FiberedCategory.Fiber
 import HoTTLean.Grothendieck.Groupoidal.IsPullback
@@ -10,6 +11,16 @@ noncomputable section
 
 namespace CategoryTheory
 
+lemma eqToHom_heq_id {C : Type*} [Category C] (x y z : C) (h : x = y)
+    (hz : z = x) : eqToHom h ≍ 𝟙 z := by cat_disch
+
+lemma _root_.Subtype.hext {α α' : Sort u} (hα : α ≍ α') {p : α → Prop} {p' : α' → Prop}
+    (hp : p ≍ p') {a : { x // p x }} {a' : { x // p' x }} (ha : a.1 ≍ a'.1) : a ≍ a' := by
+  subst hα hp
+  simp only [heq_eq_eq]
+  ext
+  simpa [← heq_eq_eq]
+
 namespace Functor
 
 namespace Fiber
@@ -20,8 +31,8 @@ variable {p : 𝒳 ⥤ 𝒮} {S : 𝒮}
 
 @[simp]
 lemma functor_obj_fiberInclusion_obj (a : Fiber p S) :
-    p.obj (Fiber.fiberInclusion.obj a) = S :=
-  a.2
+    p.obj (Fiber.fiberInclusion.obj a) = S := by
+  exact a.2
 
 lemma functor_map_fiberInclusion_map {a b : Fiber p S}
     (f : a ⟶ b) :
@@ -368,7 +379,7 @@ lemma grothendieckClassifierIso.hom_comp_self :
 end
 
 @[simps!]
-def iso {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B] (F : A ≅≅ B) :
+def iso {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
     ClovenIsofibration F.hom where
   liftObj {b0 b1} f hf x hF := F.inv.obj b1
   liftIso {b0 b1} f hf x hF := eqToHom (by simp [← hF, ← Functor.comp_obj]) ≫ F.inv.map f
@@ -382,16 +393,15 @@ def iso {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B] (F : A
    intro X Y f i X' hX'
    apply IsIso.comp_isIso
 
-instance {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B] (F : A ≅≅ B) :
-    IsSplit (iso F) where
+
+def iso_inv {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
+    ClovenIsofibration F.inv := iso (F.symm)
+
+instance {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) : IsSplit (iso F) where
   liftObj_id h := by simp [← h, ← Functor.comp_obj]
   liftIso_id := by simp
   liftObj_comp := by simp
   liftIso_comp := by simp
-
-@[simp]
-abbrev iso_inv {A B : Type u} [Category.{v} A] [Category.{v} B] (F : A ≅≅ B) :
-    ClovenIsofibration F.inv := iso (F.symm)
 
 section
 
@@ -486,7 +496,7 @@ instance (A : Type u) [Category.{v} A] : IsSplit (id A) :=
 
 section
 
-variable {A B C : Type*} [Category A] [Category B] [Category C] {F : A ⥤ B}
+variable {A B C : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} C] {F : A ⥤ B}
   (IF : ClovenIsofibration F) {G : B ⥤ C} (IG : ClovenIsofibration G)
 
 def comp.liftObj {X Y: C} (f: X ⟶ Y) [IsIso f] {X': A} (hX': (F ⋙ G).obj X' = X) : A :=
@@ -552,7 +562,7 @@ lemma comp.liftObj_comp {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [IsIso
   congr!
   simp
 
-lemma comp.liftIso_comp {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [IsIso g] {X' : A}
+lemma comp.liftIso_comp {X Y Z : C} (f : X ⟶ Y) [IsIso f] (g : Y ⟶ Z) [ IsIso g] {X' : A}
     (hX' : (F ⋙ G).obj X' = X) (Y' : A)
     (hY' : comp.liftObj IF IG f hX' = Y') :
     comp.liftIso IF IG (f ≫ g) hX' = comp.liftIso IF IG f hX' ≫ eqToHom hY' ≫
@@ -600,18 +610,47 @@ instance (F' : A ⥤ B) (hF' : F = F') : (ofEq IF F' hF').IsSplit := by
   subst hF'
   exact inferInstanceAs IF.IsSplit
 
-variable {A' : Type u₁} [Category.{v₁} A']
+variable {A' : Type u} [Category.{v} A']
     (i : A' ≅≅ A) (F' : A' ⥤ B) (hF' : F' = i.hom ⋙ F)
 
+@[simps!]
 def isoComp : ClovenIsofibration F' :=
   ofEq (comp (iso ..) IF) F' hF'.symm
 
+-- by
+--   subst hF'
+--   apply comp (iso ..) IF
+
+  -- let := i -- TODO: remove once defined
+  -- let := IF -- TODO: remove once defined
+  -- let := hF' -- TODO: remove once defined
+  -- sorry
+
+-- def isoComp : ClovenIsofibration F' :=
+--   let := i -- TODO: remove once defined
+--   let := IF -- TODO: remove once defined
+--   let := hF' -- TODO: remove once defined
+--   sorry
+-- #check eqToHom
 instance : IsSplit (isoComp IF i F' hF') :=
   inferInstanceAs (ofEq ..).IsSplit
+  --rw![congrArg_cast_hom_right]
 
 end isoComp
 
 end
+
+-- def toTerminal {A : Type u} [Category.{v} A] [Category.{v} B] [Category.{v} A']
+--     [Category.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
+--     (isPullback : Functor.IsPullback top F' F bot) (IF : SplitIsofibration F) :
+--     SplitIsofibration F' where
+--   liftObj := sorry
+--   liftIso := sorry
+--   isHomLift := sorry
+--   liftObj_id := sorry
+--   liftIso_id := sorry
+--   liftObj_comp := sorry
+--   liftIsoComp := sorry
 
 def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A']
     [Groupoid.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
@@ -626,13 +665,13 @@ def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoi
   have q1 : Functor.IsPullback (Groupoidal.pre IF.classifier bot ⋙ i.hom)
       (Groupoidal.forget (F := (bot ⋙ IF.classifier))) F bot :=
     Functor.IsPullback.Paste.horiz eq1 (by simp [i_comp_F])
-    (Functor.IsPullback.ofBotId i_comp_F.symm)
-    (Groupoidal.pre_isPullback ..)
+    (IsPullback.IsPullback.botDegenerate i_comp_F.symm)
+    (Groupoidal.compGrothendieck.isPullback ..)
   let j : A' ≅≅ Functor.Groupoidal (F := bot ⋙ IF.classifier) :=
     Functor.IsPullback.isoIsPullback isPullback q1
   have e : F' = j.hom ⋙ (Groupoidal.forget (F := bot ⋙ IF.classifier)) :=
-    (IsPullback.isoIsPullback.hom_comp_right isPullback q1 (hom := j.hom) (by simp[j])).symm
-  isoComp (Functor.ClovenIsofibration.forget ..) j _ e
+    (IsPullback.isoIsPullback.homCompRight' isPullback q1 (hom := j.hom) (by simp[j])).symm
+  isoComp (i:=j) (Functor.ClovenIsofibration.forget ..) _ e
 
 instance {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A']
     [Groupoid.{v} B'] (top : A' ⥤ A) (F' : A' ⥤ B') (F : A ⥤ B) (bot : B' ⥤ B)
@@ -643,7 +682,7 @@ instance {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A'
 
 section pushforward
 
-open CategoryTheory.Functor.Groupoidal GroupoidModel.FunctorOperation.pi.Over
+open CategoryTheory.Functor.Groupoidal GroupoidModel.FunctorOperation.pi
 
 variable {C B A : Type u} [Groupoid.{u} C] [Groupoid.{u} B] [Groupoid.{u} A] {F : B ⥤ A}
   (IF : ClovenIsofibration F) [IsSplit IF] (G : C ⥤ B)
@@ -657,15 +696,21 @@ lemma pushforward.strictify_comp_grothendieckClassifierIso_hom :
   simp [strictify, Functor.assoc]
 
 variable {G} (IG : ClovenIsofibration G) [IsSplit IG]
-
+#check (ClovenIsofibration.pushforward.strictify IF G)
 def pushforward.strictifyClovenIsofibration : (strictify IF G).ClovenIsofibration :=
   ClovenIsofibration.comp IG (Functor.ClovenIsofibration.iso_inv ..)
+
+
+-- def pushforward.strictifyClovenIsofibration : (strictify IF G).ClovenIsofibration :=
+--   let := IG -- TODO: remove
+--   sorry
 
 instance : (pushforward.strictifyClovenIsofibration IF IG).IsSplit := by
   simp[pushforward.strictifyClovenIsofibration]
   have h: (iso_inv IF.grothendieckClassifierIso).IsSplit := by
     apply Functor.ClovenIsofibration.instIsSplitIso
   apply CategoryTheory.Functor.ClovenIsofibration.instIsSplitComp
+
 
 /-- The object part (a groupoid) of the pushforward along `F`, of `G`,
 defined as the Grothendieck construction applied to (unstructured) Pi-type construction
@@ -718,8 +763,10 @@ def pushforward.homEquivAux2 {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
     intro a
     simp[Functor.assoc]
 
+
 open GroupoidModel.FunctorOperation.pi in
 /-- The universal property of the pushforward, expressed as a (natural) bijection of hom sets. -/
+@[simps?]
 def pushforward.homEquiv {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
     {M : D ⥤ pushforward IF IG // M ⋙ Groupoidal.forget = σ} ≃
     {N : ∫ σ ⋙ IF.classifier ⥤ C //
@@ -732,6 +779,9 @@ def pushforward.homEquiv {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A) :
       N ⋙ G = pre IF.classifier σ ⋙ IF.grothendieckClassifierIso.hom } :=
     pushforward.homEquivAux2 ..
 
+
+
+
 lemma pushforward.homEquiv_apply_coe {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A)
       (M : {M : D ⥤ pushforward IF IG // M ⋙ Groupoidal.forget = σ}) :
      ((pushforward.homEquiv IF IG σ) M).1 =
@@ -742,6 +792,7 @@ lemma pushforward.homEquiv_apply_coe {D : Type u} [Groupoid.{u} D] (σ : D ⥤ A
      simp[Trans.trans]
      simp[homEquivAux2]
 
+
 /-- Naturality in the universal property of the pushforward. -/
 lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D']
     (σ : D ⥤ A) (σ' : D' ⥤ A) (s : D' ⥤ D) (eq : σ' = s ⋙ σ)
@@ -750,11 +801,17 @@ lemma pushforward.homEquiv_comp {D D' : Type u} [Groupoid.{u} D] [Groupoid.{u} D
     Groupoidal.map (eqToHom (by rw [eq, Functor.assoc])) ⋙
     pre _ s ⋙ (pushforward.homEquiv IF IG σ ⟨M, hM⟩).1 := by
   subst eq
-  rw [pushforward.homEquiv_apply_coe, pushforward.homEquiv_apply_coe]
-  simp [← Functor.assoc, Functor.simpIdComp, equivFun_comp (hF:= hM), Groupoidal.map_id_eq]
+  rw[pushforward.homEquiv_apply_coe]
+  rw[pushforward.homEquiv_apply_coe]
+  simp only [← Functor.assoc, eqToHom_refl, Iso.cancel_iso_hom_right,map_id_eq, Cat.of_α,
+             Functor.simpIdComp]
+  rw[GroupoidModel.FunctorOperation.pi.equivFun_comp
+            (τ := s) (F := M) (σ' := s ⋙ σ) (σ := σ) (hF:= hM) (hτ := rfl)]
+  simp[Groupoidal.map_id_eq]
+
+
 
 end pushforward
-
 @[simp]
 lemma discrete_pUnit_ext (x y: Discrete.{u} PUnit):  x = y := by
   cases x
@@ -772,6 +829,22 @@ def toDiscretePUnit
    rfl
   liftIso_IsIso {y1 y2} g i x e := CategoryTheory.IsIso.id ..
 
+
+/-
+
+
+instance toTerminal.IsSplit  {X Y : Grpd} (F : X ⟶ Y) (t : Limits.IsTerminal Y)  :
+  Functor.ClovenIsofibration.IsSplit (IsTerminal.ClovenIsofibration F t) where
+    liftObj_id {y x} hX' := by simp[IsTerminal.ClovenIsofibration]
+    liftIso_id {y x} hX' := by simp[IsTerminal.ClovenIsofibration]
+    liftObj_comp {y1 y2 y3} f hf g hg x1 hx1 x2 hx2 := by
+     subst hx2
+     simp only [IsTerminal.ClovenIsofibration]
+    liftIso_comp {y1 y2 y3} f hf g hg x1 hx1 x2 hx2 := by
+     subst hx2
+     simp only [IsTerminal.ClovenIsofibration, eqToHom_refl, Category.comp_id]
+
+-/
 
 instance toDiscretePUnit.IsSplit   {X : Type*} [Category X]  (F : X ⥤ Discrete.{u} PUnit)  :
   Functor.ClovenIsofibration.IsSplit (toDiscretePUnit F) where
@@ -789,38 +862,3 @@ end ClovenIsofibration
 end
 end Functor
 end CategoryTheory
-
-namespace GroupoidModel
-
-open CategoryTheory Functor.ClovenIsofibration
-
-def tpClovenIsofibration : (GroupoidModel.U.{u}.tp).ClovenIsofibration :=
-  let i : U.{u}.Tm ≅≅ Functor.Groupoidal (F := Core.inclusion _ ⋙ AsSmall.down) :=
-    Functor.IsPullback.isoIsPullback IsPullback.isPullbackCoreAsSmall'
-      (Functor.Groupoidal.isPullback (Core.inclusion _ ⋙ AsSmall.down))
-  isoComp (Functor.ClovenIsofibration.forget _) i
-  _ (Functor.IsPullback.isoIsPullback.hom_comp_right _ _ rfl).symm
-
-instance : IsSplit tpClovenIsofibration := by
-  dsimp [tpClovenIsofibration]
-  infer_instance
-
-
-@[simp]
-lemma discrete_pUnit_ext (x y: Discrete.{u} PUnit):  x = y := by
-  cases x
-  cases y
-  simp
-
-
-def toDiscretePUnit
-  {X : Type*} [Category X] (F : X ⥤ Discrete.{u} PUnit) : Functor.ClovenIsofibration F where
-  liftObj {y1 y2} g i x e := x
-  liftIso {y1 y2} g i x e := 𝟙 x
-  isHomLift {y1 y2} g i x e := by
-   apply IsHomLift.of_fac _ _ _
-   any_goals apply discrete_pUnit_ext
-   rfl
-  liftIso_IsIso {y1 y2} g i x e := CategoryTheory.IsIso.id ..
-
-end GroupoidModel
