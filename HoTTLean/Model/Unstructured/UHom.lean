@@ -126,6 +126,65 @@ def UHom.ofTarskiU (M : UnstructuredUniverse Ctx) (U : (𝟭_ Ctx) ⟶ M.Ty) (El
       (by simp) (isTerminal.hom_ext ..)
       (by simp) (by simp)
 
+section
+
+variable {M N : UnstructuredUniverse Ctx} (α : UHom M N) {Γ Δ : Ctx} {σ : Δ ⟶ Γ} (A : Γ ⟶ M.Ty)
+  {σA : Δ ⟶ M.Ty} (eq : σ ≫ A = σA)
+
+def UHom.extCompMapTyIsoExt : N.ext (A ≫ α.mapTy) ≅ M.ext A :=
+  (N.disp_pullback (A ≫ α.mapTy)).isoIsPullback _ _
+  (IsPullback.paste_horiz (M.disp_pullback A) α.pb)
+
+lemma UHom.extCompMapTyIsoExt_hom_comp_substWk  :
+    (α.extCompMapTyIsoExt σA).hom ≫ M.substWk σ A σA eq =
+    N.substWk σ (A ≫ α.mapTy) (σA ≫ α.mapTy) (by simp [← eq]) ≫ (α.extCompMapTyIsoExt A).hom := by
+  apply (disp_pullback ..).hom_ext
+  · apply α.pb.hom_ext
+    · simp [extCompMapTyIsoExt]
+    · simp [eq, extCompMapTyIsoExt]
+  · simp [extCompMapTyIsoExt]
+
+end
+
+namespace PolymorphicPi.ofMonomorphic
+
+variable {U0 U1 U2 : UnstructuredUniverse Ctx} (P : PolymorphicPi U2 U2 U2)
+    (l0 : UHom U0 U2) (l1 : UHom U1 U2) {Γ : Ctx} {A : Γ ⟶ U0.Ty}
+    (B : U0.ext A ⟶ U1.Ty)
+
+abbrev B2 := (l0.extCompMapTyIsoExt A).hom ≫ B ≫ l1.mapTy
+
+def Pi : Γ ⟶ U2.Ty := P.Pi (B2 l0 l1 B)
+
+def lam (b : U0.ext A ⟶ U1.Tm) (b_tp : b ≫ U1.tp = B) : Γ ⟶ U2.Tm :=
+  P.lam ((l0.extCompMapTyIsoExt A).hom ≫ B ≫ l1.mapTy)
+  ((l0.extCompMapTyIsoExt A).hom ≫ b ≫ l1.mapTm) (by simp [← b_tp, l1.pb.w])
+
+def unLam (f : Γ ⟶ U2.Tm) (hf : f ≫ U2.tp = ofMonomorphic.Pi P l0 l1 B) : U0.ext A ⟶ U1.Tm :=
+  l1.pb.lift ((UHom.extCompMapTyIsoExt l0 A).inv ≫ P.unLam (B2 l0 l1 B) f (by simp [hf, Pi])) B
+  (by simp [P.unLam_tp])
+
+end PolymorphicPi.ofMonomorphic
+
+def PolymorphicPi.ofMonomorphic {U0 U1 U2 : UnstructuredUniverse Ctx} (P : PolymorphicPi U2 U2 U2)
+    (l0 : UHom U0 U2) (l1 : UHom U1 U2) : PolymorphicPi U0 U1 U2 where
+  Pi := ofMonomorphic.Pi P l0 l1
+  Pi_comp σ A σA eq B := by
+    dsimp [ofMonomorphic.Pi]
+    rw [← P.Pi_comp _ _ (σA := σA ≫ l0.mapTy) (by simp [← eq])]
+    simp only [← Category.assoc, UHom.extCompMapTyIsoExt_hom_comp_substWk]
+  lam := ofMonomorphic.lam P l0 l1
+  lam_comp σ A σA eq B b b_tp := by
+    dsimp [ofMonomorphic.lam]
+    rw [← P.lam_comp _ (σA := σA ≫ l0.mapTy) (by simp [← eq])]
+    simp only [← Category.assoc, UHom.extCompMapTyIsoExt_hom_comp_substWk]
+  lam_tp _ _ _ := P.lam_tp ..
+  unLam := ofMonomorphic.unLam  P l0 l1
+  unLam_tp B f f_tp := by simp [ofMonomorphic.unLam]
+  unLam_lam B b b_tp := by
+    apply l1.pb.hom_ext <;> simp [ofMonomorphic.unLam, ofMonomorphic.lam, P.unLam_lam, b_tp]
+  lam_unLam := by simp [ofMonomorphic.unLam, ofMonomorphic.lam, P.lam_unLam]
+
 /-! ## Universe embeddings -/
 
 variable (Ctx) in
