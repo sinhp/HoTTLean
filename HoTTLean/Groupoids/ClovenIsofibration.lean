@@ -621,12 +621,12 @@ def ofIsPullback {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoi
   have q1 : Functor.IsPullback (Groupoidal.pre IF.classifier bot ⋙ i.hom)
       (Groupoidal.forget (F := (bot ⋙ IF.classifier))) F bot :=
     Functor.IsPullback.Paste.horiz eq1 (by simp [i_comp_F])
-    (Functor.IsPullback.ofBotId i_comp_F.symm)
     (Groupoidal.pre_isPullback ..)
+    (Functor.IsPullback.ofBotId i_comp_F.symm)
   let j : A' ≅≅ Functor.Groupoidal (F := bot ⋙ IF.classifier) :=
     Functor.IsPullback.isoIsPullback isPullback q1
   have e : F' = j.hom ⋙ (Groupoidal.forget (F := bot ⋙ IF.classifier)) :=
-    (IsPullback.isoIsPullback.hom_comp_right isPullback q1 (hom := j.hom) (by simp[j])).symm
+    (IsPullback.isoIsPullback.hom_comp_right' isPullback q1 (hom := j.hom) (by simp[j])).symm
   isoComp (Functor.ClovenIsofibration.forget ..) j _ e
 
 instance {A B A' B' : Type u} [Groupoid.{v} A] [Groupoid.{v} B] [Groupoid.{v} A']
@@ -650,7 +650,7 @@ def tpClovenIsofibration : (GroupoidModel.U.{u}.tp).ClovenIsofibration :=
     Functor.IsPullback.isoIsPullback IsPullback.isPullbackCoreAsSmall'
       (Functor.Groupoidal.isPullback (Core.inclusion _ ⋙ AsSmall.down))
   isoComp (Functor.ClovenIsofibration.forget _) i
-  _ (Functor.IsPullback.isoIsPullback.hom_comp_right _ _ rfl).symm
+  _ (Functor.IsPullback.isoIsPullback.hom_comp_right ..).symm
 
 instance : IsSplit tpClovenIsofibration := by
   dsimp [tpClovenIsofibration]

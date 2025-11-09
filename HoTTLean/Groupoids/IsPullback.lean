@@ -37,24 +37,24 @@ theorem liftTm'_tp' : Cat.homOf liftTm'.{v,u} ≫ Cat.homOf tp'.{v+1, max u (v+2
 /--
 The following square is a meta-theoretic pullback
 
-PGrpd.{v} ------- asSmallFunctor ------> PGrpd.{v+1}
+PGrpd.{v} ------- asSmallFunctor ------> PGrpd.{max w (v+1)}
     |                                     |
     |                                     |
 forgetToGrpd                        forgetToGrpd
     |                                     |
     |                                     |
     v                                     v
-Grpd.{v}  ------- asSmallFunctor ----->  Grpd.{v+1}
+Grpd.{v}  ------- asSmallFunctor ----->  Grpd.{max w (v+1)}
 
 -/
 def isPullback_forgetToGrpd_forgetToGrpd :
-  Functor.IsPullback
-    PGrpd.asSmallFunctor.{v+1}
+    Functor.IsPullback
+    PGrpd.asSmallFunctor.{max w v}
     PGrpd.forgetToGrpd.{v}
-    PGrpd.forgetToGrpd.{v+1}
-    Grpd.asSmallFunctor.{v+1} :=
-  Functor.IsPullback.ofIso (toPGrpd _) forget PGrpd.forgetToGrpd.{v+1}
-  Grpd.asSmallFunctor.{v+1} (isPullback _)
+    PGrpd.forgetToGrpd.{max w v}
+    Grpd.asSmallFunctor.{max w v} :=
+  Functor.IsPullback.ofIso (toPGrpd _) forget PGrpd.forgetToGrpd.{max w v}
+  Grpd.asSmallFunctor.{max w v} (isPullback _)
   PGrpd.pGrpdToGroupoidalAsSmallFunctor
   PGrpd.groupoidalAsSmallFunctorToPGrpd
   PGrpd.groupoidalAsSmallFunctorToPGrpd_pGrpdToGroupoidalAsSmallFunctor
@@ -82,7 +82,7 @@ def isPullback_liftTm' : Functor.IsPullback
     tp'.{v+1,max u (v+2)}
     liftTy'.{v,max u (v+2)} :=
   Functor.IsPullback.ofIso' PGrpd.asSmallFunctor.{v+1} PGrpd.forgetToGrpd.{v}
-    PGrpd.forgetToGrpd.{v+1} Grpd.asSmallFunctor.{v+1} isPullback_forgetToGrpd_forgetToGrpd
+    PGrpd.forgetToGrpd.{v+1} Grpd.asSmallFunctor.{v+1} isPullback_forgetToGrpd_forgetToGrpd.{v+1}
     liftTm'.{v,max u (v+2)} tp'.{_,max u (v+2)} tp'.{v+1,max u (v+2)} liftTy'.{v,max u (v+2)}
     AsSmall.downIso AsSmall.downIso AsSmall.downIso AsSmall.downIso rfl rfl rfl rfl
 
@@ -178,7 +178,7 @@ def isPullbackCoreAsSmall' :
     Functor.IsPullback (Core.inclusion _ ⋙ AsSmall.down)
     (Ctx.coreAsSmallFunctor PGrpd.forgetToGrpd)
     (PGrpd.forgetToGrpd) (Core.inclusion _ ⋙ AsSmall.down) :=
-  Functor.IsPullback.Paste.horiz rfl rfl isPullbackAsSmall isPullbackCoreAsSmall
+  Functor.IsPullback.Paste.horiz rfl rfl isPullbackCoreAsSmall isPullbackAsSmall
 
 /--
 ∫ toCo...iv A ----> coreAsSmall PGrpd

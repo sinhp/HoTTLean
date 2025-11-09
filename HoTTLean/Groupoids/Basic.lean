@@ -19,17 +19,17 @@ open CategoryTheory ULift Functor Groupoidal
 
 namespace CategoryTheory.PGrpd
 def pGrpdToGroupoidalAsSmallFunctor : PGrpd.{v, v} ⥤
-    ∫(Grpd.asSmallFunctor.{max w (v+1), v, v}) :=
+    ∫(Grpd.asSmallFunctor.{w, v, v}) :=
   Grothendieck.functorTo PGrpd.forgetToGrpd
-  (fun x => AsSmall.up.obj.{v, v, max w (v + 1)} x.fiber)
+  (fun x => AsSmall.up.obj.{v, v, w} x.fiber)
   (fun f => AsSmall.up.map f.fiber)
   (by aesop_cat)
   (by aesop_cat)
 
 def groupoidalAsSmallFunctorToPGrpd :
-    ∫(Grpd.asSmallFunctor.{max w (v+1), v, v}) ⥤ PGrpd.{v,v} :=
+    ∫(Grpd.asSmallFunctor.{w, v, v}) ⥤ PGrpd.{v,v} :=
   PGrpd.functorTo Groupoidal.forget
-  (fun x => AsSmall.down.obj.{v, v, max w (v + 1)} x.fiber)
+  (fun x => AsSmall.down.obj.{v, v, w} x.fiber)
   (fun f => AsSmall.down.map f.fiber)
   (by aesop_cat)
   (by aesop_cat)
@@ -46,9 +46,9 @@ def groupoidalAsSmallFunctorToPGrpd :
     ⋙ Groupoidal.forget = PGrpd.forgetToGrpd :=
   rfl
 
-def asSmallFunctor : PGrpd.{v, v} ⥤ PGrpd.{max w (v+1), max w (v+1)} :=
+def asSmallFunctor : PGrpd.{v, v} ⥤ PGrpd.{max w v, max w v} :=
   pGrpdToGroupoidalAsSmallFunctor ⋙
-  toPGrpd Grpd.asSmallFunctor.{max w (v+1), v, v}
+  toPGrpd Grpd.asSmallFunctor.{w, v, v}
 
 end CategoryTheory.PGrpd
 
