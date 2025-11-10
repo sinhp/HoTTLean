@@ -80,7 +80,7 @@ def isoExtAsSmallClosedType :
 
 end U
 
-def liftSeqObjs (i : Nat) (h : i < 4) : UnstructuredUniverse Grpd.{4} :=
+def uHomSeqObjs (i : Nat) (h : i < 4) : UnstructuredUniverse Grpd.{4} :=
   match i with
   | 0 => U.{0,4}
   | 1 => U.{1,4}
