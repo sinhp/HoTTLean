@@ -490,7 +490,7 @@ abbrev reflInst : Γ ⟶ i.motiveCtx a a_tp :=
 this is the substitution `Δ.(y : σ ≫ A).Id(σ ≫ a, y) ⊢ (↑²≫σ).v₁.v₀ : Γ.(y : A).Id(a, y)`. -/
 abbrev motiveSubst {σA} (σA_eq : σA = σ ≫ A := by rfl) :
     i.motiveCtx (A := σA) (σ ≫ a) (by simp [*]) ⟶ i.motiveCtx a a_tp :=
-  substWk _ (substWk _ σ _ _ (by simp [*])) _ _ (by
+  U1.substWk (U0.substWk σ A σA (by simp [*])) _ _ (by
     simp [← Id_comp, substWk_disp_assoc, σA_eq])
 
 @[reassoc]
@@ -572,7 +572,15 @@ theorem idRec_comp (σA) (σA_eq : σ ≫ A = σA)
       (σ ≫ b) (by simp [*])
       (σ ≫ h) (by simp [*, ← Id_comp]) =
     σ ≫ e.idRec a a_tp I I_eq M r r_tp b b_tp h h_tp := by
-  sorry
+  unfold idRec
+  slice_rhs 1 2 => rw [← motiveInst_comp_motiveSubst]
+  slice_rhs 2 3 => rw [← jElim_comp]
+  cases I_eq
+  have : σI =
+      i.Id (A := U0.disp σA ≫ σA) (U0.disp σA ≫ σ ≫ a) (U0.var σA) (by simp [*]) (by simp) := by
+    cases σI_eq; simp [← Id_comp, *]
+  cases this; cases σA_eq
+  simp
 
 @[simp]
 theorem idRec_tp :
