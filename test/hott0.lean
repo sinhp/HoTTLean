@@ -36,6 +36,11 @@ hott0 def isEquiv₁₀ {A : Type 1} {B : Type} (f : A → B) : Type 1 :=
       Σ (_ : isSection₁₀ f g),
         isSection₀₁ h f
 
+hott0 def isEquiv₁₀_grpd {A : Type 1} {B : Type} (f : A → B) : Type 1 :=
+  Σ (g : B → A),
+    Σ (_ : isSection₁₀ f g),
+      isSection₀₁ g f
+
 hott0 def transport₀ {A B : Type} (h : Identity A B) (a : A) : B :=
   h.rec a
 

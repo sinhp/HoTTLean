@@ -20,8 +20,7 @@ namespace Model.UnstructuredUniverse
 
 open SynthLean
 
-variable {𝒞 : Type u} [Category 𝒞]
-  {R : MorphismProperty 𝒞} (M : UnstructuredUniverse 𝒞)
+variable {𝒞 : Type u} [Category 𝒞] (M : UnstructuredUniverse 𝒞)
 variable [ChosenTerminal 𝒞]
 
 open ChosenTerminal
@@ -108,7 +107,7 @@ def substWk {Δ Γ Γ' : 𝒞} (σ : Δ ⟶ Γ) : s.ExtSeq Γ Γ' → Σ (Δ' : 
   | .nil => ⟨Δ, .nil, σ⟩
   | snoc (l := l) d llen A =>
     let ⟨Δ, d, σ⟩ := d.substWk σ
-    ⟨s[l].ext ((σ) ≫ A), d.snoc llen ((σ) ≫ A), s[l].substWk σ A⟩
+    ⟨s[l].ext (σ ≫ A), d.snoc llen (σ ≫ A), s[l].substWk σ A⟩
 
 @[simp]
 theorem substWk_length {Δ Γ Γ' : 𝒞} (σ : Δ ⟶ Γ) (d : s.ExtSeq Γ Γ') :
@@ -169,13 +168,13 @@ theorem var_eq_of_lt_length {l i} {llen : l < s.length + 1} {sΓ sΓ' sΓ'' : �
 
 theorem var_append_add_length {l i} {llen : l < s.length + 1} {sΓ sΓ' sΓ'' : 𝒞}
     (d : s.ExtSeq sΓ sΓ') (e : s.ExtSeq sΓ' sΓ'') :
-    (d.append e).var llen (i + e.length) = (d.var llen i).map ((e.disp) ≫ ·) := by
+    (d.append e).var llen (i + e.length) = (d.var llen i).map (e.disp ≫ ·) := by
   induction e <;> (simp [ExtSeq.var, Part.bind_some_eq_map, Part.map_map, *]; rfl)
 
 theorem var_substWk_add_length {l i} {llen : l < s.length + 1} {sΔ sΔ' sΓ sΓ' : 𝒞}
     (d : s.ExtSeq sΔ sΔ') (σ : sΔ' ⟶ sΓ) (e : s.ExtSeq sΓ sΓ') :
     let ⟨_, d', _⟩ := e.substWk σ
-    (d.append d').var llen (i + e.length) = (d.var llen i).map ((d'.disp) ≫ ·) := by
+    (d.append d').var llen (i + e.length) = (d.var llen i).map (d'.disp ≫ ·) := by
   rw [← e.substWk_length σ]
   apply var_append_add_length
 
@@ -231,7 +230,7 @@ theorem append_nil (Γ : s.CObj) : Γ.append .nil = Γ := rfl
 
 @[simp]
 theorem append_snoc {sΓ' : 𝒞} {l} (Γ : s.CObj) (d : s.ExtSeq Γ.1 sΓ')
-    (llen : l < s.length + 1) (A : (sΓ') ⟶ s[l].Ty) :
+    (llen : l < s.length + 1) (A : sΓ' ⟶ s[l].Ty) :
     Γ.append (d.snoc llen A) = (Γ.append d).snoc llen A := rfl
 
 def substWk {sΓ sΓ' : 𝒞} (Δ : s.CObj) (σ : Δ.1 ⟶ sΓ) (d : s.ExtSeq sΓ sΓ') :
@@ -244,10 +243,10 @@ theorem substWk_nil {sΓ : 𝒞} (Δ : s.CObj) (σ : Δ.1 ⟶ sΓ) :
     Δ.substWk σ .nil = ⟨Δ, σ⟩ := rfl
 
 theorem substWk_snoc {sΓ sΓ' : 𝒞} {l} (Δ : s.CObj) (σ : Δ.1 ⟶ sΓ) (d : s.ExtSeq sΓ sΓ')
-    (llen : l < s.length + 1) (A : (sΓ') ⟶ s[l].Ty) :
+    (llen : l < s.length + 1) (A : sΓ' ⟶ s[l].Ty) :
     Δ.substWk σ (d.snoc llen A) =
       let ⟨Δ', σ'⟩ := Δ.substWk σ d
-     ⟨Δ'.snoc llen ((σ') ≫ A), s[l].substWk σ' A⟩ := rfl
+     ⟨Δ'.snoc llen (σ' ≫ A), s[l].substWk σ' A⟩ := rfl
 
 protected def var {l : Nat} (Γ : s.CObj) (llen : l < s.length + 1) (i : ℕ) :
     Part (Γ.1 ⟶ s[l].Tm) :=
@@ -290,8 +289,8 @@ structure Interpretation (χ : Type*) (s : UHomSeq 𝒞) where
 namespace Interpretation
 
 variable {s : UHomSeq 𝒞} {χ : Type*} (I : Interpretation χ s)
-#exit
 variable [s.PiSeq] [s.SigSeq] [s.IdSeq]
+open UHomSeq PiSeq SigSeq IdSeq
 
 mutual
 /- Recall: cannot have `ofCtx` appearing in the output types
@@ -305,21 +304,21 @@ def ofType (Γ : s.CObj) (l : Nat) :
     have jlen : j < s.length + 1 := by omega
     let A ← ofType Γ i A
     let B ← ofType (Γ.snoc ilen A) j B
-    return lij ▸ (s.polymorphicPi ilen jlen).mkPi A B
+    return lij ▸ (s.polyPi i j ilen jlen).Pi B
   | .sigma i j A B, _ =>
     Part.assert (l = max i j) fun lij => do
     have ilen : i < s.length + 1 := by omega
     have jlen : j < s.length + 1 := by omega
     let A ← ofType Γ i A
     let B ← ofType (Γ.snoc ilen A) j B
-    return lij ▸ (s.polymorphicSigma ilen jlen).mkSig A B
+    return lij ▸ (s.polySig i j ilen jlen).Sig B
   | .Id _ A a0 a1, llen => do
     let A ← ofType Γ l A
     let a0 ← ofTerm Γ l a0
     let a1 ← ofTerm Γ l a1
     Part.assert (a0 ≫ s[l].tp = A) fun eq0 => do
     Part.assert (a1 ≫ s[l].tp = A) fun eq1 => do
-    return s.mkId llen A a0 a1 eq0 eq1
+    return (s.idIntro l llen).Id a0 a1 eq0 eq1
   | .univ i, _ =>
     Part.assert (l = i + 1) fun li => do
     return li ▸ (s.homSucc i).wkU Γ.1
@@ -342,14 +341,14 @@ def ofTerm (Γ : s.CObj) (l : Nat) :
     have jlen : j < s.length + 1 := by omega
     let A ← ofType Γ i A
     let e ← ofTerm (Γ.snoc ilen A) j e
-    return lij ▸ (s.polymorphicPi ilen jlen).mkLam A e
+    return lij ▸ (s.polyPi i j ilen jlen).lam (A := A) (e ≫ s[j].tp) e rfl
   | .app i _ B f a, llen => do
     Part.assert (i < s.length + 1) fun ilen => do
     let f ← ofTerm Γ (max i l) f
     let a ← ofTerm Γ i a
     let B ← ofType (Γ.snoc ilen (a ≫ s[i].tp)) l B
-    Part.assert (f ≫ s[max i l].tp = (s.polymorphicPi ilen llen).mkPi (a ≫ s[i].tp) B) fun h =>
-    return (s.polymorphicPi ilen llen).mkApp _ B f h a rfl
+    Part.assert (f ≫ s[max i l].tp = (s.polyPi i l ilen llen).Pi B) fun h =>
+    return (s.polyPi i l ilen llen).app B f h a rfl
   | .pair i j B t u, _ => do
     Part.assert (l = max i j) fun lij => do
     have ilen : i < s.length + 1 := by omega
@@ -358,25 +357,25 @@ def ofTerm (Γ : s.CObj) (l : Nat) :
     let B ← ofType (Γ.snoc ilen (t ≫ s[i].tp)) j B
     let u ← ofTerm Γ j u
     Part.assert (u ≫ s[j].tp = (s[i].sec _ t rfl) ≫ B) fun u_tp =>
-    return lij ▸ (s.polymorphicSigma ilen jlen).mkPair (t ≫ s[i].tp) B t rfl u u_tp
+    return lij ▸ (s.polySig i j ilen jlen).pair B t rfl u u_tp
   | .fst _ j A B p, llen => do
     Part.assert (j < s.length + 1) fun jlen => do
     -- RB was so right
     let A ← ofType Γ l A
     let B ← ofType (Γ.snoc llen A) j B
     let p ← ofTerm Γ (max l j) p
-    Part.assert (p ≫ s[max l j].tp = (s.polymorphicSigma llen jlen).mkSig A B) fun p_tp =>
-    return (s.polymorphicSigma llen jlen).mkFst A B p p_tp
+    Part.assert (p ≫ s[max l j].tp = (s.polySig l j llen jlen).Sig B) fun p_tp =>
+    return (s.polySig l j llen jlen).fst B p p_tp
   | .snd i _ A B p, llen => do
     Part.assert (i < s.length + 1) fun ilen => do
     let A ← ofType Γ i A
     let B ← ofType (Γ.snoc ilen A) l B
     let p ← ofTerm Γ (max i l) p
-    Part.assert (p ≫ s[max i l].tp = (s.polymorphicSigma ilen llen).mkSig A B) fun p_tp =>
-    return (s.polymorphicSigma ilen llen).mkSnd A B p p_tp
+    Part.assert (p ≫ s[max i l].tp = (s.polySig i l ilen llen).Sig B) fun p_tp =>
+    return (s.polySig i l ilen llen).snd B p p_tp
   | .refl _ t, llen => do
     let t ← ofTerm Γ l t
-    return s.mkRefl llen t
+    return (s.idIntro l llen).refl t rfl
   | .idRec i _ t M r u h, llen => do
     Part.assert (i < s.length + 1) fun ilen => do
     let t ← ofTerm Γ i t
@@ -387,12 +386,12 @@ def ofTerm (Γ : s.CObj) (l : Nat) :
     let u ← ofTerm Γ i u
     Part.assert (u ≫ s[i].tp = A) fun u_tp => do
     let h ← ofTerm Γ i h
-    Part.assert (h ≫ s[i].tp = s.mkId ilen A t u rfl u_tp) fun h_tp => do
-    return s.mkIdRec ilen llen A t rfl _ rfl M r r_tp u u_tp h h_tp
+    Part.assert (h ≫ s[i].tp = (s.idIntro i ilen).Id t u rfl u_tp) fun h_tp => do
+    return (s.idElim i l ilen llen).idRec t rfl _ rfl M r r_tp u u_tp h h_tp
   | .code t, _ =>
     Part.assert (0 < l) fun lpos => do
     let A ← ofType Γ (l-1) t
-    return cast (by congr 3; sorry) <| s.code (by omega) A
+    return cast (by congr 3; omega) <| s.code (by omega) A
   | _, _ => .none
 
 end
@@ -413,7 +412,7 @@ theorem mem_ofType_pi {Γ l i j A B} {llen : l < s.length + 1} {x} :
     have jlen : j < s.length + 1 := by> omega
     ∃ (A' : Γ.fst ⟶ s[i].Ty), A' ∈ I.ofType Γ i A ∧
     ∃ (B' : ((Γ.snoc ilen A').fst) ⟶ s[j].Ty), B' ∈ I.ofType (Γ.snoc ilen A') j B ∧
-    x = lij ▸ (s.polymorphicPi ilen jlen).mkPi A' B' := by
+    x = lij ▸ (s.polyPi i j ilen jlen).Pi B' := by
   dsimp only [ofType]; simp_part; exact exists_congr fun _ => by subst l; simp_part
 
 @[simp]
@@ -424,25 +423,25 @@ theorem mem_ofType_sigma {Γ l i j A B} {llen : l < s.length + 1} {x} :
     have jlen : j < s.length + 1 := by> omega
     ∃ (A' : Γ.fst ⟶ s[i].Ty), A' ∈ I.ofType Γ i A ∧
     ∃ (B' : ((Γ.snoc ilen A').fst) ⟶ s[j].Ty), B' ∈ I.ofType (Γ.snoc ilen A') j B ∧
-    x = lij ▸ (s.polymorphicSigma ilen jlen).mkSig A' B' := by
+    x = lij ▸ (s.polySig i j ilen jlen).Sig B' := by
   dsimp only [ofType]; simp_part; exact exists_congr fun _ => by subst l; simp_part
 
 @[simp]
 theorem mem_ofType_Id {Γ l i A a b} {llen : l < s.length + 1} {x} :
     x ∈ I.ofType Γ l (.Id i A a b) llen ↔
-    ∃ (A' : (Γ.fst) ⟶ s[l].Ty), A' ∈ I.ofType Γ l A ∧
-    ∃ (a' : (Γ.fst) ⟶ s[l].Tm), a' ∈ I.ofTerm Γ l a ∧
-    ∃ (b' : (Γ.fst) ⟶ s[l].Tm), b' ∈ I.ofTerm Γ l b ∧
+    ∃ (A' : Γ.fst ⟶ s[l].Ty), A' ∈ I.ofType Γ l A ∧
+    ∃ (a' : Γ.fst ⟶ s[l].Tm), a' ∈ I.ofTerm Γ l a ∧
+    ∃ (b' : Γ.fst ⟶ s[l].Tm), b' ∈ I.ofTerm Γ l b ∧
     ∃ eq : a' ≫ s[l].tp = A',
     ∃ eq' : b' ≫ s[l].tp = A',
-    x = s.mkId llen A' a' b' eq eq' := by
+    x = (s.idIntro l llen).Id a' b' eq eq' := by
   dsimp only [ofType]; simp_part
 
 @[simp]
 theorem mem_ofType_el {Γ l t} {llen : l < s.length + 1} {x} :
     x ∈ I.ofType Γ l (.el t) llen ↔
     ∃ llen : l < s.length,
-    ∃ A : (Γ.1) ⟶ s[l+1].Tm, A ∈ I.ofTerm Γ (l+1) t ∧
+    ∃ A : Γ.1 ⟶ s[l+1].Tm, A ∈ I.ofTerm Γ (l+1) t ∧
     ∃ A_tp : A ≫ s[l+1].tp = (s.homSucc l).wkU Γ.1,
     x = s.el llen A A_tp := by
   dsimp only [ofType]; simp_part
@@ -455,7 +454,7 @@ theorem ofTerm_bvar {Γ l i} {llen : l < s.length + 1} :
 theorem mem_ofTerm_ax {Γ c A l} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.ax c A) llen ↔
     ∃ sc, I.ax c l = some sc ∧
-    x = isTerminal.from (Γ.1) ≫ sc := by
+    x = isTerminal.from Γ.1 ≫ sc := by
   dsimp only [ofTerm]
   cases I.ax c l <;> simp
 
@@ -465,21 +464,21 @@ theorem mem_ofTerm_lam {Γ l i j A e} {llen : l < s.length + 1} {x} :
     ∃ lij : l = max i j,
     have ilen : i < s.length + 1 := by> omega
     have jlen : j < s.length + 1 := by> omega
-    ∃ (A' : (Γ.1) ⟶ s[i].Ty), A' ∈ I.ofType Γ i A ∧
+    ∃ (A' : Γ.1 ⟶ s[i].Ty), A' ∈ I.ofType Γ i A ∧
     ∃ (e' : ((Γ.snoc ilen A').1) ⟶ s[j].Tm), e' ∈ I.ofTerm (Γ.snoc ilen A') j e ∧
-    x = lij ▸ (s.polymorphicPi ilen jlen).mkLam A' e' := by
+    x = lij ▸ (s.polyPi i j ilen jlen).lam (e' ≫ s[j].tp) e' rfl := by
   dsimp only [ofTerm]; simp_part; exact exists_congr fun _ => by subst l; simp_part
 
 @[simp]
 theorem mem_ofTerm_app {Γ l i j B f a} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.app i j B f a) llen ↔
     ∃ ilen : i < s.length + 1,
-    ∃ f' : (Γ.1) ⟶ s[max i l].Tm, f' ∈ I.ofTerm Γ (max i l) f ∧
-    ∃ a' : (Γ.1) ⟶ s[i].Tm, a' ∈ I.ofTerm Γ i a ∧
+    ∃ f' : Γ.1 ⟶ s[max i l].Tm, f' ∈ I.ofTerm Γ (max i l) f ∧
+    ∃ a' : Γ.1 ⟶ s[i].Tm, a' ∈ I.ofTerm Γ i a ∧
     ∃ A', ∃ eq : a' ≫ s[i].tp = A',
     ∃ B' : ((Γ.snoc ilen A').1) ⟶ s[l].Ty,
       B' ∈ I.ofType (Γ.snoc ilen A') l B ∧
-    ∃ h, x = (s.polymorphicPi ilen llen).mkApp _ B' f' h a' eq := by
+    ∃ h, x = (s.polyPi i l ilen llen).app B' f' h a' eq := by
   dsimp only [ofTerm]; simp_part; simp only [exists_prop_eq']
 
 @[simp]
@@ -488,13 +487,13 @@ theorem mem_ofTerm_pair {Γ l i j B t u} {llen : l < s.length + 1} {x} :
     ∃ lij : l = max i j,
     have ilen : i < s.length + 1 := by> omega
     have jlen : j < s.length + 1 := by> omega
-    ∃ t' : (Γ.1) ⟶ s[i].Tm, t' ∈ I.ofTerm Γ i t ∧
+    ∃ t' : Γ.1 ⟶ s[i].Tm, t' ∈ I.ofTerm Γ i t ∧
     ∃ A', ∃ eq : t' ≫ s[i].tp = A',
     ∃ B' : ((Γ.snoc ilen A').1) ⟶ s[j].Ty,
       B' ∈ I.ofType (Γ.snoc ilen A') j B ∧
-    ∃ u' : (Γ.1) ⟶ s[j].Tm, u' ∈ I.ofTerm Γ j u ∧
+    ∃ u' : Γ.1 ⟶ s[j].Tm, u' ∈ I.ofTerm Γ j u ∧
     ∃ u_tp : u' ≫ s[j].tp = (s[i].sec _ t' eq) ≫ B',
-    x = lij ▸ (s.polymorphicSigma ilen jlen).mkPair A' B' t' eq u' u_tp := by
+    x = lij ▸ (s.polySig i j ilen jlen).pair B' t' eq u' u_tp := by
   dsimp only [ofTerm]; simp only [exists_prop_eq']; simp_part
   exact exists_congr fun _ => by subst l; simp_part
 
@@ -503,12 +502,12 @@ theorem mem_ofTerm_fst {Γ l i j A B p} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.fst i j A B p) llen ↔
     have ilen : l < s.length + 1 := by> omega
     ∃ jlen : j < s.length + 1,
-    ∃ (A' : (Γ.fst) ⟶ s[l].Ty), A' ∈ I.ofType Γ l A ∧
+    ∃ (A' : Γ.fst ⟶ s[l].Ty), A' ∈ I.ofType Γ l A ∧
     ∃ B' : ((Γ.snoc llen A').1) ⟶ s[j].Ty,
       B' ∈ I.ofType (Γ.snoc llen A') j B ∧
-    ∃ p' : (Γ.1) ⟶ s[max l j].Tm, p' ∈ I.ofTerm Γ (max l j) p ∧
-    ∃ p_tp : p' ≫ s[max l j].tp = (s.polymorphicSigma llen jlen).mkSig A' B',
-    x = (s.polymorphicSigma llen jlen).mkFst A' B' p' p_tp := by
+    ∃ p' : Γ.1 ⟶ s[max l j].Tm, p' ∈ I.ofTerm Γ (max l j) p ∧
+    ∃ p_tp : p' ≫ s[max l j].tp = (s.polySig l j llen jlen).Sig B',
+    x = (s.polySig l j llen jlen).fst B' p' p_tp := by
   dsimp only [ofTerm]; simp_part
 
 @[simp]
@@ -516,43 +515,43 @@ theorem mem_ofTerm_snd {Γ l i j A B p} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.snd i j A B p) llen ↔
     have llen : l < s.length + 1 := by> omega
     ∃ ilen : i < s.length + 1,
-    ∃ (A' : (Γ.fst) ⟶ s[i].Ty), A' ∈ I.ofType Γ i A ∧
+    ∃ (A' : Γ.fst ⟶ s[i].Ty), A' ∈ I.ofType Γ i A ∧
     ∃ B' : ((Γ.snoc ilen A').1) ⟶ s[l].Ty,
       B' ∈ I.ofType (Γ.snoc ilen A') l B ∧
-    ∃ p' : (Γ.1) ⟶ s[max i l].Tm, p' ∈ I.ofTerm Γ (max i l) p ∧
-    ∃ p_tp : p' ≫ s[max i l].tp = (s.polymorphicSigma ilen llen).mkSig A' B',
-    x = (s.polymorphicSigma ilen llen).mkSnd A' B' p' p_tp := by
+    ∃ p' : Γ.1 ⟶ s[max i l].Tm, p' ∈ I.ofTerm Γ (max i l) p ∧
+    ∃ p_tp : p' ≫ s[max i l].tp = (s.polySig i l ilen llen).Sig B',
+    x = (s.polySig i l ilen llen).snd B' p' p_tp := by
   dsimp only [ofTerm]; simp_part
 
 @[simp]
 theorem mem_ofTerm_refl {Γ l i t} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.refl i t) llen ↔
-    ∃ t' ∈ I.ofTerm Γ l t llen, x = s.mkRefl llen t' := by
+    ∃ t' ∈ I.ofTerm Γ l t llen, x = (s.idIntro l llen).refl t' rfl := by
   dsimp only [ofTerm]; simp_part
 
 @[simp]
 theorem mem_ofTerm_idRec {Γ l i j t M r u h} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.idRec i j t M r u h) llen ↔
     ∃ ilen : i < s.length + 1,
-    ∃ t' : (Γ.1) ⟶ s[i].Tm, t' ∈ I.ofTerm Γ i t ∧
-    ∃ A', ∃ t_tp : t' ≫ s[i].tp = A',
-    ∃ B' B_eq,
-    ∃ M' : (((Γ.snoc ilen A').snoc ilen B').1) ⟶ s[l].Ty,
-      M' ∈ I.ofType ((Γ.snoc ilen A').snoc ilen B') l M ∧
-    ∃ r' : (Γ.1) ⟶ s[l].Tm, r' ∈ I.ofTerm Γ l r ∧
+    ∃ t' : Γ.1 ⟶ s[i].Tm, t' ∈ I.ofTerm Γ i t ∧
+    ∃ A' : Γ.1 ⟶ s[i].Ty, ∃ t_tp : t' ≫ s[i].tp = A',
+    ∃ I', ∃ I_eq : I' = (s.idIntro i ilen).weakenId t' t_tp,
+    ∃ M' : ((Γ.snoc ilen A').snoc ilen I').1 ⟶ s[l].Ty,
+      M' ∈ I.ofType ((Γ.snoc ilen A').snoc ilen I') l M ∧
+    ∃ r' : Γ.1 ⟶ s[l].Tm, r' ∈ I.ofTerm Γ l r ∧
     ∃ r_tp,
-    ∃ u' : (Γ.1) ⟶ s[i].Tm, u' ∈ I.ofTerm Γ i u ∧
+    ∃ u' : Γ.1 ⟶ s[i].Tm, u' ∈ I.ofTerm Γ i u ∧
     ∃ u_tp : u' ≫ s[i].tp = A',
-    ∃ h' : (Γ.1) ⟶ s[i].Tm, h' ∈ I.ofTerm Γ i h ∧
-    ∃ h_tp : h' ≫ s[i].tp = s.mkId ilen A' t' u' t_tp u_tp,
-    x = s.mkIdRec ilen llen A' t' t_tp B' B_eq M' r' r_tp u' u_tp h' h_tp := by
-  dsimp only [ofTerm]; simp_part; simp only [exists_prop_eq']
+    ∃ h' : Γ.1 ⟶ s[i].Tm, h' ∈ I.ofTerm Γ i h ∧
+    ∃ h_tp : h' ≫ s[i].tp = (s.idIntro i ilen).Id t' u' t_tp u_tp,
+    x = (s.idElim i l ilen llen).idRec t' t_tp I' I_eq M' r' r_tp u' u_tp h' h_tp := by
+  dsimp only [ofTerm]; simp_part; simp [exists_prop_eq']
 
 @[simp]
 theorem mem_ofTerm_code {Γ l t} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.code t) llen ↔
     ∃ i, ∃ li : l = i + 1,
-    ∃ (t' : (Γ.fst) ⟶ s[i].Ty), t' ∈ I.ofType Γ i t ∧
+    ∃ (t' : Γ.fst ⟶ s[i].Ty), t' ∈ I.ofType Γ i t ∧
     x = li ▸ s.code (by> omega) t' := by
   dsimp only [ofTerm]; cases l <;> simp
 
@@ -584,12 +583,12 @@ whereas `full = true` contains general substitutions
 but where composition is limited to renamings on the left. -/
 inductive CSb : (Δ Γ : s.CObj) → (Δ.1 ⟶ Γ.1) → (full : Bool := true) → Type _ where
   | id Γ (full : Bool := true) : CSb Γ Γ (𝟙 _) full
-  | wk {Γ : s.CObj} {l} (llen : l < s.length + 1) (A : (Γ.1) ⟶ s[l].Ty)
+  | wk {Γ : s.CObj} {l} (llen : l < s.length + 1) (A : Γ.1 ⟶ s[l].Ty)
     (full : Bool := true) : CSb (Γ.snoc llen A) Γ (s[l].disp A) full
   | comp {Θ Δ Γ : s.CObj} {σ τ full} : CSb Θ Δ σ false → CSb Δ Γ τ full → CSb Θ Γ (σ ≫ τ) full
   | snoc' {Δ Γ : s.CObj} {σ full} (_ : CSb Δ Γ σ full) {l} (llen : l < s.length + 1)
-    (A : (Γ.1) ⟶ s[l].Ty) (e) (hf : ¬full → ∃ i, e = .bvar i)
-    {se : (Δ.1) ⟶ s[l].Tm} (eq : se ≫ s[l].tp = (σ) ≫ A)
+    (A : Γ.1 ⟶ s[l].Ty) (e) (hf : ¬full → ∃ i, e = .bvar i)
+    {se : Δ.1 ⟶ s[l].Tm} (eq : se ≫ s[l].tp = σ ≫ A)
     (H : se ∈ I.ofTerm Δ l e) :
     CSb Δ (Γ.snoc llen A) (s[l].substCons σ A se eq) full
 
@@ -618,37 +617,37 @@ variable {Δ Γ : s.CObj} {σ : Δ.1 ⟶ Γ.1} {full : Bool}
   {l : Nat} (llen : l < s.length + 1)
 
 def snoc (sσ : I.CSb Δ Γ σ) {l} (llen : l < s.length + 1)
-    (A : (Γ.1) ⟶ s[l].Ty) (e)
-    {se : (Δ.1) ⟶ s[l].Tm} (eq : se ≫ s[l].tp = (σ) ≫ A)
+    (A : Γ.1 ⟶ s[l].Ty) (e)
+    {se : Δ.1 ⟶ s[l].Tm} (eq : se ≫ s[l].tp = σ ≫ A)
     (H : se ∈ I.ofTerm Δ l e) :
     I.CSb Δ (Γ.snoc llen A) (s[l].substCons σ A se eq) :=
   snoc' sσ llen A e (by simp) eq H
 
 @[simp] theorem snoc_toSb (sσ : I.CSb Δ Γ σ) {l} (llen : l < s.length + 1)
-    (A : (Γ.1) ⟶ s[l].Ty) (e)
-    {se : (Δ.1) ⟶ s[l].Tm} (eq : se ≫ s[l].tp = (σ) ≫ A)
+    (A : Γ.1 ⟶ s[l].Ty) (e)
+    {se : Δ.1 ⟶ s[l].Tm} (eq : se ≫ s[l].tp = σ ≫ A)
     (H : se ∈ I.ofTerm Δ l e) :
     (snoc sσ llen A e eq H).toSb = Expr.snoc sσ.toSb e := rfl
 
-def sub1 {se : (Γ.1) ⟶ s[l].Tm}
-    (A : (Γ.1) ⟶ s[l].Ty) (e) (eq : se ≫ s[l].tp = A) (H : se ∈ I.ofTerm Γ l e) :
+def sub1 {se : Γ.1 ⟶ s[l].Tm}
+    (A : Γ.1 ⟶ s[l].Ty) (e) (eq : se ≫ s[l].tp = A) (H : se ∈ I.ofTerm Γ l e) :
     I.CSb Γ (Γ.snoc llen A) (s[l].sec A se eq) :=
   (CSb.id Γ).snoc llen A e (by simp [eq]) H
 
-@[simp] theorem sub1_toSb {se : (Γ.1) ⟶ s[l].Tm}
-    (A : (Γ.1) ⟶ s[l].Ty) (e) (eq : se ≫ s[l].tp = A) (H : se ∈ I.ofTerm Γ l e) :
+@[simp] theorem sub1_toSb {se : Γ.1 ⟶ s[l].Tm}
+    (A : Γ.1 ⟶ s[l].Ty) (e) (eq : se ≫ s[l].tp = A) (H : se ∈ I.ofTerm Γ l e) :
     (sub1 llen A e eq H).toSb = Expr.toSb e := by
   simp [sub1, toSb, Expr.toSb]
 
 def up {Δ Γ σ full} (sσ : I.CSb Δ Γ σ full)
-    {l} (llen : l < s.length + 1) (A : (Γ.1) ⟶ s[l].Ty)
-    (A' := (σ) ≫ A) (eq : (σ) ≫ A = A' := by rfl) :
+    {l} (llen : l < s.length + 1) (A : Γ.1 ⟶ s[l].Ty)
+    (A' := σ ≫ A) (eq : σ ≫ A = A' := by rfl) :
     I.CSb (Δ.snoc llen A') (Γ.snoc llen A) (s[l].substWk σ A _ eq) full := by
   refine ((CSb.wk _ _ false).comp sσ).snoc' _ _ (.bvar 0) (by simp) _ ?_
   simp [UHomSeq.CObj.var, UHomSeq.ExtSeq.var]
 
 @[simp] theorem up_toSb {Δ Γ σ full} (sσ : I.CSb Δ Γ σ full)
-     {l} {llen : l < s.length + 1} {A A'} {eq : (σ) ≫ A = A'} :
+     {l} {llen : l < s.length + 1} {A A'} {eq : σ ≫ A = A'} :
     (up sσ llen A _ eq).toSb = Expr.up sσ.toSb := by
   simp [up, toSb, Expr.up_eq_snoc]
 
@@ -656,37 +655,37 @@ end CSb
 
 /-! ## Admissibility of substitution -/
 
-open UHomSeq PolymorphicSigma PolymorphicPi
+open UHomSeq PolymorphicSigma PolymorphicPi PolymorphicIdIntro PolymorphicIdElim
 variable (slen : univMax ≤ s.length)
 
 theorem mem_ofType_ofTerm_subst' {full}
     (IH : full = true → ∀ {Δ Γ l} (llen : l < s.length + 1) {sσ} (σ : I.CSb Δ Γ sσ false) {se e},
-      se ∈ I.ofTerm Γ l e llen → (sσ) ≫ se ∈ I.ofTerm Δ l (Expr.subst σ.toSb e) llen)
+      se ∈ I.ofTerm Γ l e llen → sσ ≫ se ∈ I.ofTerm Δ l (Expr.subst σ.toSb e) llen)
     {e l} (llen : l < s.length + 1)
     {Δ Γ : s.CObj} {sσ} (σ : I.CSb Δ Γ sσ full) {σ'} (eq : σ.toSb = σ') :
     (∀ {sA}, sA ∈ I.ofType Γ l e llen →
-      (sσ) ≫ sA ∈ I.ofType Δ l (Expr.subst σ' e) llen) ∧
+      sσ ≫ sA ∈ I.ofType Δ l (Expr.subst σ' e) llen) ∧
     (∀ {se}, se ∈ I.ofTerm Γ l e llen →
-      (sσ) ≫ se ∈ I.ofTerm Δ l (Expr.subst σ' e) llen) := by
+      sσ ≫ se ∈ I.ofTerm Δ l (Expr.subst σ' e) llen) := by
   subst σ'
   induction e generalizing Δ Γ l <;>
     (constructor <;> [intro sA H; intro se H] <;> try cases Part.notMem_none _ H)
   case pi.left ihA ihB =>
     obtain ⟨rfl, H⟩ := I.mem_ofType_pi.1 H; simp at H llen
     obtain ⟨A, hA, B, hB, rfl⟩ := H; clear H
-    simp only [Expr.subst, comp_mkPi, mem_ofType_pi, exists_true_left]
+    simp only [Expr.subst, ← Pi_comp, mem_ofType_pi, exists_true_left]
     refine ⟨_, (ihA llen.1 σ).1 hA, _, ?_, rfl⟩
     rw [← CSb.up_toSb]; exact (ihB llen.2 (σ.up llen.1 A)).1 hB
   case sigma.left ihA ihB =>
     obtain ⟨rfl, H⟩ := I.mem_ofType_sigma.1 H; simp at H llen
     obtain ⟨A, hA, B, hB, rfl⟩ := H; clear H
-    simp only [Expr.subst, comp_mkSig, mem_ofType_sigma, exists_true_left]
+    simp only [Expr.subst, ← Sig_comp, mem_ofType_sigma, exists_true_left]
     refine ⟨_, (ihA llen.1 σ).1 hA, _, ?_, rfl⟩
     rw [← CSb.up_toSb]; exact (ihB llen.2 (σ.up llen.1 A)).1 hB
   case Id.left ihA iha ihb =>
     obtain := I.mem_ofType_Id.1 H; simp at H llen
     obtain ⟨A, hA, a, ha, b, hb, eq, eq', rfl⟩ := H
-    simp only [Expr.subst, comp_mkId, mem_ofType_Id]
+    simp only [Expr.subst, ← Id_comp, mem_ofType_Id]
     refine ⟨_, (ihA llen σ).1 hA, _, (iha llen σ).2 ha, _, (ihb llen σ).2 hb, ?_, ?_, rfl⟩
       <;> simp [eq, eq']
   case el.left ih =>
@@ -728,51 +727,52 @@ theorem mem_ofType_ofTerm_subst' {full}
   case lam ihA ihB =>
     obtain ⟨rfl, H⟩ := I.mem_ofTerm_lam.1 H; simp at H llen
     obtain ⟨A, hA, B, hB, rfl⟩ := H; clear H
-    simp only [Expr.subst, comp_mkLam, mem_ofTerm_lam, exists_true_left]
+    simp only [Expr.subst, mem_ofTerm_lam, exists_true_left, ← lam_comp, ← Category.assoc]
     refine ⟨_, (ihA llen.1 σ).1 hA, _, ?_, rfl⟩
     rw [← CSb.up_toSb]; exact (ihB llen.2 (σ.up llen.1 A)).2 hB
   case app ihB ihf iha =>
     obtain ⟨llen', f, hf, a, ha, _, rfl, B, hB, eq, rfl⟩ := I.mem_ofTerm_app.1 H
-    simp only [Expr.subst, comp_mkApp, mem_ofTerm_app]
-    -- refine ⟨‹_›, _, (ihf (by simp [*]) σ).2 hf, _, (iha llen' σ).2 ha, _, rfl, _, ?_, ?_, rfl⟩
-    -- · rw [← CSb.up_toSb]; exact (ihB llen (σ.up llen' _ _ (Category.assoc ..).symm)).1 hB
-    -- · simp [*, comp_mkPi]
-    --   congr! 1
-    sorry
+    simp only [Expr.subst, mem_ofTerm_app, ← app_comp, ← Category.assoc]
+    refine ⟨‹_›, _, (ihf (by simp [*]) σ).2 hf, _, (iha llen' σ).2 ha, _, rfl, _, ?_, ?_, rfl⟩
+    · rw [← CSb.up_toSb]; exact (ihB llen (σ.up llen' _ _ (Category.assoc ..).symm)).1 hB
+    · simp [*, Pi_comp]
   case pair ihB iht ihu =>
     obtain ⟨rfl, H⟩ := I.mem_ofTerm_pair.1 H; simp at H llen
     obtain ⟨t, ht, B, hB, u, hu, eq, rfl⟩ := H; clear H
-    simp only [Expr.subst, comp_mkPair, mem_ofTerm_pair, exists_true_left]
-    -- refine ⟨_, (iht llen.1 σ).2 ht, _, rfl, _, ?_, _, (ihu llen.2 σ).2 hu, ?_, rfl⟩
-    -- · rw [← CSb.up_toSb]; exact (ihB llen.2 (σ.up llen.1 _ _ (Category.assoc ..).symm)).1 hB
-    -- · simp [*]; rw [← Functor.map_comp_assoc, comp_sec, ← Functor.map_comp_assoc]; congr! 0
-    sorry
+    simp only [Expr.subst, ← pair_comp, mem_ofTerm_pair, exists_true_left, ← Category.assoc]
+    refine ⟨_, (iht llen.1 σ).2 ht, _, rfl, _, ?_, _, (ihu llen.2 σ).2 hu, ?_, rfl⟩
+    · rw [← CSb.up_toSb]; exact (ihB llen.2 (σ.up llen.1 _ _ (Category.assoc ..).symm)).1 hB
+    . simp [eq, reassoc_of% comp_sec]
+      congr 2 <;> try simp
+      . congr 1 <;> simp
   case fst ihA ihB ihp =>
     obtain ⟨jlen, A, hA, B, hB, p, hp, eq, rfl⟩ := I.mem_ofTerm_fst.1 H
-    simp only [Expr.subst, comp_mkFst, mem_ofTerm_fst]
+    simp only [Expr.subst, ← fst_comp, mem_ofTerm_fst]
     refine ⟨jlen, _, (ihA llen σ).1 hA, _, ?_, _, (ihp (by simp [*]) σ).2 hp, ?_, rfl⟩
     · rw [← CSb.up_toSb]; exact (ihB jlen (σ.up llen _)).1 hB
-    · simp [*, comp_mkSig]
+    · simp [*, Sig_comp]
   case snd ihA ihB ihp =>
     obtain ⟨ilen, A, hA, B, hB, p, hp, eq, rfl⟩ := I.mem_ofTerm_snd.1 H
-    simp only [Expr.subst, comp_mkSnd, mem_ofTerm_snd]
+    simp only [Expr.subst, ← snd_comp, mem_ofTerm_snd]
     refine ⟨ilen, _, (ihA ilen σ).1 hA, _, ?_, _, (ihp (by simp [*]) σ).2 hp, ?_, rfl⟩
     · rw [← CSb.up_toSb]; exact (ihB llen (σ.up ilen _)).1 hB
-    · simp [*, comp_mkSig]
+    · simp [*, Sig_comp]
   case refl iht =>
     obtain ⟨t, ht, rfl⟩ := I.mem_ofTerm_refl.1 H
-    simp only [Expr.subst, comp_mkRefl, mem_ofTerm_refl]
+    simp only [Expr.subst, ← refl_comp, mem_ofTerm_refl]
     exact ⟨_, (iht llen σ).2 ht, rfl⟩
   case idRec iht ihM ihr ihu ihh =>
-    obtain ⟨ilen, t, ht, A, Aeq, B, Beq, M, hM, r, hr, rtp, u, hu, utp, h, hh, htp, rfl⟩ :=
+    obtain ⟨ilen, t, ht, A, Aeq, I, Ieq, M, hM, r, hr, rtp, u, hu, utp, h, hh, htp, rfl⟩ :=
       I.mem_ofTerm_idRec.1 H
     simp only [Expr.subst, mem_ofTerm_idRec]
-    refine ⟨ilen, _, (iht ilen σ).2 ht, _, by simp [Aeq], _, ?_, _, ?_,
-      _, (ihr llen σ).2 hr, _, _, (ihu ilen σ).2 hu, _, _, (ihh ilen σ).2 hh, _,
-      comp_mkIdRec (σA_eq := rfl) (σB_eq := rfl) ..⟩
-    · simp [← Beq, comp_mkId (eq := rfl)]
-      congr 1 <;> simp only [← Category.assoc, substWk_disp]
+    refine ⟨ilen, _, (iht ilen σ).2 ht, sσ ≫ A, by simp [Aeq], ?_⟩
+    refine ⟨substWk _ sσ _ ≫ I, by simp [Ieq, ← Id_comp], ?_⟩
+    refine ⟨substWk _ (substWk _ sσ _) _ ≫ M, ?_, ?_⟩
     · rw [← CSb.up_toSb, ← CSb.up_toSb]; exact (ihM llen ((σ.up ilen _).up ilen _ _ _)).1 hM
+    refine ⟨_, (ihr llen σ).2 hr, _,
+      _, (ihu ilen σ).2 hu, _,
+      _, (ihh ilen σ).2 hh, _,
+      (idRec_comp (I_eq := Ieq) ..).symm⟩
   case code ihA =>
     obtain ⟨l, rfl, H⟩ := I.mem_ofTerm_code.1 H; simp at H llen
     obtain ⟨A, hA, rfl⟩ := H; clear H
@@ -786,14 +786,14 @@ theorem mem_ofType_ofTerm_subst' {full}
 theorem mem_ofType_ofTerm_subst {e l} (llen : l < s.length + 1)
     {Δ Γ : s.CObj} {sσ full} (σ : I.CSb Δ Γ sσ full) {σ'} (eq : σ.toSb = σ') :
     (∀ {sA}, sA ∈ I.ofType Γ l e llen →
-      (sσ) ≫ sA ∈ I.ofType Δ l (Expr.subst σ' e) llen) ∧
+      sσ ≫ sA ∈ I.ofType Δ l (Expr.subst σ' e) llen) ∧
     (∀ {se}, se ∈ I.ofTerm Γ l e llen →
-      (sσ) ≫ se ∈ I.ofTerm Δ l (Expr.subst σ' e) llen) := by
+      sσ ≫ se ∈ I.ofTerm Δ l (Expr.subst σ' e) llen) := by
   refine I.mem_ofType_ofTerm_subst' (fun _ _ _ _ llen sσ σ se i => ?_) llen σ eq
   exact (I.mem_ofType_ofTerm_subst' (by simp) llen σ rfl).2
 
 theorem mem_ofType_wk {e l l' hl} (hl' : l' < s.length + 1)
-    {Γ : s.CObj} {X : (Γ.1) ⟶ s[l'].Ty}
+    {Γ : s.CObj} {X : Γ.1 ⟶ s[l'].Ty}
     {se} (H : se ∈ I.ofType Γ l e hl) :
     (s[l'].disp X) ≫ se ∈ I.ofType (Γ.snoc hl' X) l (Expr.subst Expr.wk e) hl :=
   (I.mem_ofType_ofTerm_subst hl (.wk hl' X) rfl).1 H
@@ -837,9 +837,9 @@ theorem tp_sound {Γ i A l} (H : Lookup Γ i A l) {sΓ} (hΓ : sΓ ∈ I.ofCtx �
     obtain ⟨_, hΓ', _, _, hB, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ
     simp [UHomSeq.CObj.tp, UHomSeq.ExtSeq.tp, *] at *)
   | zero => exact I.mem_ofType_wk _ hB
-  | succ _ _ _ ih =>
+  | succ _ _ ih =>
     have ⟨_, _, _, _⟩ := ih hΓ'
-    exact ⟨‹_›, _, ⟨_, ‹_›, rfl⟩, I.mem_ofType_wk _ ‹_›⟩
+    exact ⟨‹_›, _, ‹_›, I.mem_ofType_wk _ ‹_›⟩
 
 theorem var_sound {Γ i A l} (H : Lookup Γ i A l) {sΓ} (hΓ : sΓ ∈ I.ofCtx Γ) :
     ∃ llen, ∃ st ∈ sΓ.var llen i, st ≫ s[l].tp ∈ I.ofType sΓ l A llen := by
@@ -961,11 +961,11 @@ theorem EqTmIH.lam {Γ A A' B t t' l l'} :
     obtain ⟨_, hΓ₁, _, _, hA₁, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ'
     cases Part.mem_unique hΓ hΓ₁
     cases Part.mem_unique hA hA₁
-    sorry
-    -- exact ⟨_, hΓ, _, _, I.mem_ofType_pi.2 ⟨rfl, _, hA, _, hB, by simp⟩, _,
-    --   I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, by simp⟩,
-    --   I.mem_ofTerm_lam.2 ⟨rfl, _, hA', _, ht', by simp⟩,
-    --   mkLam_tp (t_tp := ttp) ..⟩
+    refine ⟨_, hΓ, by omega, ?_⟩
+    refine ⟨_, I.mem_ofType_pi.2 ⟨rfl, _, hA, _, hB, rfl⟩, ?_⟩
+    refine ⟨_, I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, rfl⟩, ?_⟩
+    refine ⟨I.mem_ofTerm_lam.2 ⟨rfl, _, hA', _, ht', rfl⟩, ?_⟩
+    rw [lam_tp, ttp]
 
 theorem EqTmIH.app {Γ A B B' f f' a a' l l'} :
     I.EqTpIH ((A, l) :: Γ) l' B B' →
@@ -980,7 +980,7 @@ theorem EqTmIH.app {Γ A B B' f f' a a' l l'} :
     refine ⟨_, hΓ, _, _, I.mem_ofType_toSb _ ha _ hB, _,
       I.mem_ofTerm_app.2 ⟨_, _, hf, _, ha, _, atp, _, hB, ?a, rfl⟩,
       I.mem_ofTerm_app.2 ⟨_, _, hf', _, ha', _, atp, _, hB', ?a, rfl⟩,
-      mkApp_tp ..⟩
+      app_tp ..⟩
     obtain ⟨_, _, hA₁, _, hB₁, eq⟩ := I.mem_ofType_pi.1 hF; simp at eq
     cases Part.mem_unique hA hA₁
     cases Part.mem_unique hB hB₁
@@ -1000,7 +1000,7 @@ theorem EqTmIH.pair {Γ A B B' t t' u u' l l'} :
       I.mem_ofType_sigma.2 ⟨rfl, _, hA, _, hB, by simp; rfl⟩, _,
       I.mem_ofTerm_pair.2 ⟨rfl, _, ht, _, ttp, _, hB, _, hu, ?a, by simp; rfl⟩,
       I.mem_ofTerm_pair.2 ⟨rfl, _, ht', _, ttp, _, hB', _, hu', ?a, by simp⟩,
-      mkPair_tp ..⟩
+      pair_tp ..⟩
     exact utp ▸ Part.mem_unique hBt (I.mem_ofType_toSb _ ht _ hB)
 
 theorem EqTmIH.fst_snd {Γ A A' B B' p p' l l'} :
@@ -1019,12 +1019,12 @@ theorem EqTmIH.fst_snd {Γ A A' B B' p p' l l'} :
       ⟨_, hΓ, _, _, hA, _,
         I.mem_ofTerm_fst.2 ⟨_, _, hA, _, hB, _, hp, ?a, rfl⟩,
         I.mem_ofTerm_fst.2 ⟨_, _, hA', _, hB', _, hp', ?a, rfl⟩,
-        mkFst_tp ..⟩,
+        fst_tp ..⟩,
       ⟨_, hΓ, _, _,
         I.mem_ofType_toSb _ (I.mem_ofTerm_fst.2 ⟨_, _, hA, _, hB, _, hp, ?a, rfl⟩) _ hB, _,
         I.mem_ofTerm_snd.2 ⟨_, _, hA, _, hB, _, hp, ?a, rfl⟩,
         I.mem_ofTerm_snd.2 ⟨_, _, hA', _, hB', _, hp', ?a, rfl⟩,
-        mkSnd_tp ..⟩⟩
+        snd_tp ..⟩⟩
     obtain ⟨_, _, hA₁, _, hB₁, eq⟩ := I.mem_ofType_sigma.1 hP; simp at eq
     cases Part.mem_unique hA hA₁
     cases Part.mem_unique hB hB₁
@@ -1033,11 +1033,12 @@ theorem EqTmIH.fst_snd {Γ A A' B B' p p' l l'} :
 theorem EqTmIH.refl_tm {Γ A t t' l} :
     I.EqTmIH Γ l A t t' → I.EqTmIH Γ l (Expr.Id l A t t) (Expr.refl l t) (Expr.refl l t')
   | ⟨_, hΓ, _, _, hA, _, ht, ht', ttp⟩ => by
-    exact ⟨_, hΓ, _, _,
+    refine ⟨_, hΓ, _, _,
       I.mem_ofType_Id.2 ⟨_, hA, _, ht, _, ht, ttp, ttp, rfl⟩, _,
       I.mem_ofTerm_refl.2 ⟨_, ht, rfl⟩,
       I.mem_ofTerm_refl.2 ⟨_, ht', rfl⟩,
-      mkRefl_tp ..⟩
+      ?_⟩
+    simp; congr
 
 theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
     I.EqTmIH Γ l A t t' →
@@ -1048,8 +1049,8 @@ theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
     I.EqTmIH Γ l' (.subst (.snoc u.toSb h) M)
       (.idRec l l' t M r u h) (.idRec l l' t' M' r' u' h') := by
   intro ⟨_, hΓ, _, _, hA, _, ht, ht', ttp⟩ ⟨_, hΓ', _, _, hM, hM'⟩
-    ⟨_, hΓ₁, _, _, hR, _, hr, hr', rtp⟩ ⟨_, hΓ₂, _, _, hA₁, _, hu, hu', utp⟩
-    ⟨_, hΓ₃, _, _, hH, _, hh, hh', htp⟩
+      ⟨_, hΓ₁, _, _, hR, _, hr, hr', rtp⟩ ⟨_, hΓ₂, _, _, hA₁, _, hu, hu', utp⟩
+      ⟨_, hΓ₃, _, _, hH, _, hh, hh', htp⟩
   cases Part.mem_unique hΓ hΓ₁
   cases Part.mem_unique hΓ hΓ₂
   cases Part.mem_unique hΓ hΓ₃
@@ -1070,16 +1071,16 @@ theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
     (I.mem_ofType_ofTerm_subst _ (.snoc (.sub1 _ _ _ utp hu) _ _ _ ?_ hh) ?_).1 hM, _,
     I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, ?b, _, hM, _, hr, ?a, _, hu, utp, _, hh, htp, rfl⟩,
     I.mem_ofTerm_idRec.2 ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
-    mkIdRec_tp ..⟩
-  · rw [htp, Beq, comp_mkId]
-    · congr 1 <;> simp
-    · simp [sAeq]
+    idRec_tp (I_eq := _) ..⟩
+  · rw [htp, Beq, ← Id_comp]
+    congr 1 <;> simp [sAeq]
   · simp
   · simp [Beq, sAeq]
   · refine rtp ▸ Part.mem_unique hR ?_
     refine (I.mem_ofType_ofTerm_subst _
       (.snoc (.sub1 _ _ _ ttp ht) _ _ (.refl l t) _ ?_) ?_).1 hM
-    · exact I.mem_ofTerm_refl.2 ⟨_, ht, rfl⟩
+    · refine I.mem_ofTerm_refl.2 ⟨_, ht, ?_⟩
+      simp [ttp]
     · simp
 
 include slen in
@@ -1100,12 +1101,14 @@ theorem EqTmIH.app_lam {Γ A B t u l l'} :
     obtain ⟨_, hΓ₁, _, _, hA₁, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ'
     cases Part.mem_unique hΓ hΓ₁
     cases Part.mem_unique hA hA₁
-    exact ⟨_, hΓ, _, _, I.mem_ofType_toSb _ hu utp hB, _,
-      I.mem_ofTerm_app.2 ⟨_, _,
-        I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, by simp⟩, _, hu, _, utp, _, hB,
-        mkLam_tp (t_tp := ttp) ..,
-        (mkApp_mkLam (t_tp := ttp) ..).symm⟩,
-      I.mem_ofTerm_toSb _ hu _ ht, by simp [ttp]⟩
+    refine ⟨_, hΓ, by omega, ?_⟩
+    refine ⟨_, I.mem_ofType_toSb _ hu utp hB, ?_⟩
+    refine ⟨_, I.mem_ofTerm_app.2 ⟨_, _,
+        I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, by simp [ttp]⟩, _, hu, _, utp, _, hB,
+        lam_tp (b_tp := ttp) ..,
+        (PolymorphicPi.app_lam (t_tp := ttp) ..).symm⟩,
+        ?_⟩
+    exact ⟨I.mem_ofTerm_toSb _ hu _ ht, by simp [ttp]⟩
 
 theorem EqTmIH.fst_snd_pair {Γ A B t u l l'} :
     I.WfTpIH ((A, l) :: Γ) l' B → I.WfTmIH Γ l A t → I.WfTmIH Γ l' (Expr.subst t.toSb B) u →
@@ -1119,11 +1122,11 @@ theorem EqTmIH.fst_snd_pair {Γ A B t u l l'} :
     cases Part.mem_unique hU (I.mem_ofType_toSb _ ht ttp hB)
     refine
       have hp := I.mem_ofTerm_pair.2 ⟨rfl, _, ht, _, ttp, _, hB, _, hu, utp, by simp⟩
-      have tp := mkPair_tp (u_tp := utp) ..
+      have tp := pair_tp (b_tp := utp) ..
       ⟨⟨_, hΓ, _, _, hA, _,
-        I.mem_ofTerm_fst.2 ⟨_, _, hA, _, hB, _, hp, tp, (mkFst_mkPair ..).symm⟩, ht, ttp⟩,
+        I.mem_ofTerm_fst.2 ⟨_, _, hA, _, hB, _, hp, tp, (fst_pair ..).symm⟩, ht, ttp⟩,
        ⟨_, hΓ, _, _, I.mem_ofType_toSb _ ht ttp hB, _,
-        I.mem_ofTerm_snd.2 ⟨_, _, hA, _, hB, _, hp, tp, (mkSnd_mkPair ..).symm⟩, hu, utp⟩⟩
+        I.mem_ofTerm_snd.2 ⟨_, _, hA, _, hB, _, hp, tp, (snd_pair ..).symm⟩, hu, utp⟩⟩
 
 theorem EqTmIH.idRec_refl {Γ A M t r l l'} :
     I.WfTmIH Γ l A t →
@@ -1143,30 +1146,38 @@ theorem EqTmIH.idRec_refl {Γ A M t r l l'} :
   obtain ⟨_, hv⟩ := CObj.mem_var_zero.1 (I.ofTerm_bvar ▸ hv :); simp at hv; subst hv
   refine
     have h1 := I.mem_ofTerm_refl.2 ⟨_, ht, rfl⟩
-    have h2 := mkRefl_tp ..
+    have h2 := refl_tp ..
     have sM := (I.mem_ofType_ofTerm_subst _
       (.snoc (.sub1 _ _ _ ttp ht) _ _ (.refl l t) (h2 ▸ ?_) h1) (by simp)).1 hM
     have sr := rtp ▸ Part.mem_unique hR sM
     have ir := I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, by simp [Beq, sAeq],
-      _, hM, _, hr, sr, _, ht, ttp, _, h1, h2, (mkIdRec_mkRefl ..).symm⟩
+      _, hM, _, hr, by simp [ttp, sr], _, ht, ttp, _, h1, by simp [ttp],
+        by rw! [ttp, PolymorphicIdElim.idRec_refl (I_eq := _)]⟩
     ⟨_, hΓ, _, _, sM, _, ir, hr, sr⟩
-  simp [Beq, comp_mkId, sAeq]
+  simp [Beq, ← Id_comp, sAeq, ttp]
 
 theorem EqTmIH.lam_app {Γ A B f l l'} :
     I.WfTmIH Γ (max l l') (.pi l l' A B) f →
     I.EqTmIH Γ (max l l') (.pi l l' A B) f
       (.lam l l' A (.app l l' (.subst (.up .wk) B) (.subst .wk f) (.bvar 0)))
   | ⟨_, hΓ, _, _, hF, _, hf, ftp⟩ => by
-    obtain ⟨_, _, hA, _, hB, eq⟩ := I.mem_ofType_pi.1 hF; simp at eq; subst eq
-    -- refine
-    --   have sB := (I.mem_ofType_ofTerm_subst _ (.up (.wk _ _) _ _ _ rfl) (CSb.up_toSb _)).1 hB
-    --   have hv := I.ofTerm_bvar ▸ CObj.mem_var_zero.2 ⟨rfl, by simp⟩
-    --   have hl := I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _,
-    --     I.mem_ofTerm_app.2 ⟨_, _, I.mem_ofTerm_wk _ hf, _, hv, _, by simp, _, sB, ?_, rfl⟩,
-    --     (s.etaExpand_eq (f_tp := ftp) ..).symm⟩
-    --   ⟨_, hΓ, _, _, hF, _, hf, hl, ftp⟩
-    -- simp [ftp, comp_mkPi]
-    sorry
+    obtain ⟨_, sA, hA, sB, hB, eq⟩ := I.mem_ofType_pi.1 hF
+    dsimp at eq; subst eq
+    refine ⟨_, hΓ, by omega, _, hF, _, hf, ?_, ftp⟩
+    refine I.mem_ofTerm_lam.2 ⟨rfl, _, hA, ?_⟩
+    have sB' := (I.mem_ofType_ofTerm_subst _ (.up (.wk _ sA) _ sA _ rfl) (CSb.up_toSb _)).1 hB
+    have hv := I.ofTerm_bvar ▸ CObj.mem_var_zero (A := sA) |>.2 ⟨rfl, rfl⟩
+    refine ⟨
+      _, I.mem_ofTerm_app.2
+        ⟨_, _, I.mem_ofTerm_wk _ hf, _, hv, _, by simp, _, sB', by simp [ftp, ← Pi_comp], rfl⟩,
+      ?_⟩
+    . dsimp
+      conv_lhs => rw [← (s.polyPi l l' _ _).etaExpand_eq _ _ ftp, etaExpand]
+      congr 1
+      simp only [app_tp, ← Category.assoc]
+      conv_lhs => rw [← Category.id_comp sB]
+      congr 1
+      apply (s[l].disp_pullback _).hom_ext <;> simp
 
 theorem EqTmIH.pair_fst_snd {Γ A B p l l'} :
     I.WfTmIH Γ (max l l') (Expr.sigma l l' A B) p →
@@ -1177,7 +1188,7 @@ theorem EqTmIH.pair_fst_snd {Γ A B p l l'} :
     exact
       have h1 := I.mem_ofTerm_fst.2 ⟨by omega, _, hA, _, hB, _, hp, ptp, rfl⟩
       have h2 := I.mem_ofTerm_snd.2 ⟨by omega, _, hA, _, hB, _, hp, ptp, rfl⟩
-      have pr := I.mem_ofTerm_pair.2 ⟨rfl, _, h1, _, mkFst_tp .., _, hB, _, h2, mkSnd_tp .., by simp⟩
+      have pr := I.mem_ofTerm_pair.2 ⟨rfl, _, h1, _, fst_tp .., _, hB, _, h2, snd_tp .., by simp⟩
       ⟨_, hΓ, _, _, hP, _, hp, pr, ptp⟩
 
 theorem EqTmIH.code_el {Γ a l} :
@@ -1330,7 +1341,7 @@ theorem interpTm_eq (H : E ∣ Γ ⊢[l] t ≡ u : A) :
   cases Part.mem_unique (I.interpCtx_mem H.wf_ctx) h1
   exact h2
 
-def empty (χ : Type*) (s : UHomSeq R) : Interpretation χ s where
+def empty (χ : Type*) (s : UHomSeq 𝒞) : Interpretation χ s where
   ax _ _ _ := none
 
 def snoc [DecidableEq χ] (I : Interpretation χ s) (c : χ) (l : Nat) (l_lt : l < s.length)
@@ -1339,4 +1350,4 @@ def snoc [DecidableEq χ] (I : Interpretation χ s) (c : χ) (l : Nat) (l_lt : l
   ax d k _ := if h : c = d ∧ k = l then some (h.2 ▸ sc) else I.ax d k
 
 end Interpretation
-end StructuredUniverse
+end UnstructuredUniverse

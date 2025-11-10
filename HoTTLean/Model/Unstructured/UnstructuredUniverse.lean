@@ -247,10 +247,12 @@ structure PolymorphicSigma (U0 U1 U2 : UnstructuredUniverse Ctx) where
   (snd_pair : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
     (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) (b : Γ ⟶ U1.Tm)
     (b_tp : b ≫ U1.tp = U0.sec A a a_tp ≫ B), snd B (pair B a a_tp b b_tp) (pair_tp ..) = b)
-  (eta : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
+  (pair_fst_snd : ∀ {Γ} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty) (s : Γ ⟶ U2.Tm)
     (s_tp : s ≫ U2.tp = Sig B), pair B (fst B s s_tp) (fst_tp ..) (snd B s s_tp) (snd_tp ..) = s)
 
 namespace PolymorphicSigma
+
+attribute [simp] pair_tp fst_tp snd_tp fst_pair snd_pair pair_fst_snd
 
 variable {U0 U1 U2 : UnstructuredUniverse Ctx}
 
@@ -305,7 +307,7 @@ def mk' (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.
     simp only [← Category.assoc]
     rw [sec_apply_comp_var _ _ _ (by simp [assoc_disp])]
     simp
-  eta B s s_tp := by
+  pair_fst_snd B s s_tp := by
     simp only [← Category.assoc]
     rw! [sec_apply_comp_var _ _ _ (by simp [← assoc_disp])]
     rw [U1.substCons_apply_comp_var _ _ _ (by simp)]
@@ -317,13 +319,13 @@ lemma fst_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ex
     (s : Γ ⟶ U2.Tm) (s_tp : s ≫ U2.tp = S.Sig B) :
     S.fst (U0.substWk σ A σA eq ≫ B) (σ ≫ s) (by simp [s_tp, S.Sig_comp]) =
     σ ≫ S.fst B s s_tp := by
-  rw! [(S.eta B s (by simp [s_tp])).symm, ← S.pair_comp, S.fst_pair, S.fst_pair]
+  rw! [(S.pair_fst_snd B s (by simp [s_tp])).symm, ← S.pair_comp, S.fst_pair, S.fst_pair]
 
 lemma snd_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ext A ⟶ U1.Ty}
     (s : Γ ⟶ U2.Tm) (s_tp : s ≫ U2.tp = S.Sig B) :
     S.snd (U0.substWk σ A σA eq ≫ B) (σ ≫ s) (by simp [s_tp, S.Sig_comp]) =
     σ ≫ S.snd B s s_tp := by
-  rw! [(S.eta B s (by simp [s_tp])).symm, ← S.pair_comp, S.snd_pair, S.snd_pair]
+  rw! [(S.pair_fst_snd B s (by simp [s_tp])).symm, ← S.pair_comp, S.snd_pair, S.snd_pair]
 
 end PolymorphicSigma
 
@@ -351,6 +353,8 @@ structure PolymorphicPi (U0 U1 U2 : UnstructuredUniverse Ctx) where
 
 namespace PolymorphicPi
 
+attribute [simp] lam_tp unLam_tp unLam_lam lam_unLam
+
 variable {U0 U1 U2 : UnstructuredUniverse Ctx} (P : PolymorphicPi U0 U1 U2)
 
 lemma unLam_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.ext A ⟶ U1.Ty}
@@ -360,6 +364,75 @@ lemma unLam_comp {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} {σA} (eq) {B : U0.
   rw [← P.unLam_lam (U0.substWk σ A σA eq ≫ B) (U0.substWk σ A σA eq ≫ P.unLam B f f_tp)]
   . rw! [P.lam_comp σ eq B, P.lam_unLam]
   . rw [Category.assoc, P.unLam_tp]
+
+/--
+```
+Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B  Γ ⊢ᵢ a : A
+---------------------------------
+Γ ⊢ⱼ f a : B[id.a]
+``` -/
+def app {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) : Γ ⟶ U1.Tm :=
+  U0.sec A a a_tp ≫ P.unLam B f f_tp
+
+@[simp]
+theorem app_tp {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+    P.app B f f_tp a a_tp ≫ U1.tp = (U0.sec A a a_tp) ≫ B := by
+  simp [app]
+
+theorem app_comp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
+    {A : Γ ⟶ U0.Ty} (σA) (eq : σ ≫ A = σA)
+    (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+      P.app (U0.substWk σ A _ eq ≫ B)
+        (σ ≫ f) (by simp [f_tp, Pi_comp])
+        (σ ≫ a) (by simp [a_tp, eq]) =
+      σ ≫ P.app B f f_tp a a_tp := by
+  rw [app, app, reassoc_of% comp_sec, unLam_comp]
+
+/--
+```
+Γ ⊢ᵢ A  Γ.A ⊢ⱼ t : B  Γ ⊢ᵢ a : A
+--------------------------------
+Γ.A ⊢ⱼ (λA. t) a ≡ t[a] : B[a]
+``` -/
+@[simp]
+theorem app_lam {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (t : U0.ext A ⟶ U1.Tm) (t_tp : t ≫ U1.tp = B)
+    (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A) :
+    P.app B (P.lam B t t_tp) (by simp) a a_tp = U0.sec A a a_tp ≫ t := by
+  simp [app]
+
+/--
+```
+Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ f : ΠA. B
+--------------------------------------
+Γ ⊢ₘₐₓ₍ᵢ,ⱼ₎ λA. f[↑] v₀ : ΠA. B
+```
+-/
+def etaExpand {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B) :
+    Γ ⟶ U2.Tm :=
+  P.lam B
+    (P.app (A := U0.disp A ≫ A) (U0.substWk .. ≫ B)
+      (U0.disp A ≫ f) (by simp [Pi_comp, f_tp])
+      (U0.var A) (U0.var_tp A))
+    (by
+      rw [app_tp, substWk, reassoc_of% comp_substCons]
+      simp [substCons])
+
+@[simp]
+theorem etaExpand_eq {Γ : Ctx} {A : Γ ⟶ U0.Ty} (B : U0.ext A ⟶ U1.Ty)
+    (f : Γ ⟶ U2.Tm) (f_tp : f ≫ U2.tp = P.Pi B) :
+    P.etaExpand B f f_tp = f := by
+  unfold etaExpand
+  convert P.lam_unLam B f f_tp using 2
+  rw [app, unLam_comp (f_tp := f_tp), substWk, reassoc_of% comp_substCons]
+  simp [substCons]
 
 end PolymorphicPi
 
@@ -381,65 +454,149 @@ variable {U0 U1 : UnstructuredUniverse Ctx} (i : PolymorphicIdIntro U0 U1)
 
 namespace PolymorphicIdIntro
 
+attribute [simp] refl_tp
+
 variable {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
 
-@[simp]
-lemma refl_tp' : i.refl a a_tp ≫ U1.tp = i.Id a a a_tp a_tp := refl_tp ..
-
-/-- Given `Γ ⊢ a : A` this is the identity type weakened to the context
-`Γ.(x : A) ⊢ Id(a,x) : U1.Ty` -/
+/-- Given `Γ ⊢ a : A`, this is the identity type `Γ.(y : A) ⊢ Id(a, y) : U1.Ty`. -/
 @[simp]
 abbrev weakenId : U0.ext A ⟶ U1.Ty :=
-  i.Id (A := U0.disp A ≫ A) (U0.disp A ≫ a) (U0.var A) (by cat_disch) (by cat_disch)
+  i.Id (A := U0.disp A ≫ A) (U0.disp A ≫ a) (U0.var A) (by simp [*]) (by simp)
 
-lemma weakenId_comp : i.weakenId (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) =
+lemma weakenId_comp :
+    i.weakenId (A := σ ≫ A) (σ ≫ a) (by simp [*]) =
     U0.substWk σ A ≫ i.weakenId a a_tp := by
   simp [← Id_comp]
 
-/-- Given `Γ ⊢ a : A` this is the context `Γ.(x : A).(h:Id(a,x))` -/
+/-- Given `Γ ⊢ a : A`, this is the context `Γ.(y : A).Id(a, y)`. -/
 @[simp]
 abbrev motiveCtx : Ctx :=
   U1.ext (i.weakenId a a_tp)
 
-/-- Given `Γ ⊢ a : A`, `reflSubst` is the substitution `(a,refl) : Γ ⟶ Γ.(x:A).(h:Id(a,x))`
-appearing in identity elimination `J`  so that we can write `Γ ⊢ r : C(a,refl)` -/
-abbrev reflSubst : Γ ⟶ i.motiveCtx a a_tp :=
-  U1.substCons (U0.sec A a a_tp) (i.weakenId a a_tp) (i.refl a a_tp) (by simp [← Id_comp])
+variable (b : Γ ⟶ U0.Tm) (b_tp : b ≫ U0.tp = A)
+  (h : Γ ⟶ U1.Tm) (h_tp : h ≫ U1.tp = i.Id a b a_tp b_tp)
 
-/-- Given a substitution `σ : Δ ⟶ Γ` and `Γ ⊢ a : A`,
-this is the substitution `Δ.(x: σ ≫ A).(h:Id(σ ≫ a,x)) ⟶ Γ.(x:A).(h:Id(a,x))`-/
-abbrev motiveSubst {σA} (eq : σA = σ ≫ A := by rfl) :
-    i.motiveCtx (A := σA) (σ ≫ a) (by cat_disch) ⟶ i.motiveCtx a a_tp :=
-  substWk _ (substWk _ σ _ _ (by simp [eq])) _ _ (by
-    simp [← Id_comp, substWk_disp_assoc, eq])
+/-- Given `Γ ⊢ b : A` and `Γ ⊢ h : Id(a, b)`,
+this is the substitution `Γ ⊢ σ.b.h : Γ.(y : A).Id(a, y)`. -/
+abbrev motiveInst : Γ ⟶ i.motiveCtx a a_tp :=
+  let σb := U0.substCons (𝟙 _) A b (by simp [b_tp])
+  U1.substCons σb (i.weakenId a a_tp) h (by simp +zetaDelta [*, ← Id_comp])
 
-@[reassoc (attr := simp)]
-lemma reflSubst_comp_motiveSubst {σA} (eq : σA = σ ≫ A := by rfl) :
-    i.reflSubst (σ ≫ a) (by cat_disch) ≫ i.motiveSubst σ a a_tp eq =
-    σ ≫ i.reflSubst a a_tp := by
-  subst a_tp eq
+/-- Given `Γ ⊢ a : A`, this is the substitution `Γ ⊢ 𝟙.a.refl : Γ.(y : A).Id(a, y)`. -/
+abbrev reflInst : Γ ⟶ i.motiveCtx a a_tp :=
+  i.motiveInst a a_tp a a_tp (i.refl a a_tp) (by simp)
+
+/-- Given a substitution `Δ ⊢ σ : Γ` and `Γ ⊢ a : A`,
+this is the substitution `Δ.(y : σ ≫ A).Id(σ ≫ a, y) ⊢ (↑²≫σ).v₁.v₀ : Γ.(y : A).Id(a, y)`. -/
+abbrev motiveSubst {σA} (σA_eq : σA = σ ≫ A := by rfl) :
+    i.motiveCtx (A := σA) (σ ≫ a) (by simp [*]) ⟶ i.motiveCtx a a_tp :=
+  U1.substWk (U0.substWk σ A σA (by simp [*])) _ _ (by
+    simp [← Id_comp, substWk_disp_assoc, σA_eq])
+
+@[reassoc]
+lemma motiveInst_comp_motiveSubst
+    {σA} (σA_eq : σA = σ ≫ A := by rfl) :
+    i.motiveInst (σ ≫ a) (by simp [*]) (σ ≫ b) (by simp [*]) (σ ≫ h) (by simp [*, Id_comp]) ≫
+      i.motiveSubst σ a a_tp σA_eq =
+    σ ≫ i.motiveInst a a_tp b b_tp h h_tp := by
+  subst a_tp σA_eq
   repeat any_goals apply (disp_pullback ..).hom_ext
-  any_goals simp [← refl_comp, substWk_disp]
+  any_goals simp [substWk_disp]
+
+@[reassoc]
+lemma reflInst_comp_motiveSubst {σA} (σA_eq : σA = σ ≫ A := by rfl) :
+    i.reflInst (A := σA) (σ ≫ a) (by simp [*]) ≫ i.motiveSubst σ a a_tp σA_eq =
+    σ ≫ i.reflInst a a_tp := by
+  convert i.motiveInst_comp_motiveSubst ..
+  simp [← refl_comp, *]
 
 end PolymorphicIdIntro
 
+open PolymorphicIdIntro in
 structure PolymorphicIdElim (U2 : UnstructuredUniverse Ctx) where
-  (j : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
-    (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm),
-    (c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C) → (i.motiveCtx a a_tp ⟶ U2.Tm))
-  (comp_j : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm)
-    (a_tp : a ≫ U0.tp = A) (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
-    (c_tp : c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C),
-    j (σ ≫ a) (by cat_disch) (i.motiveSubst σ a a_tp rfl ≫ C) (σ ≫ c) (by cat_disch) =
-    i.motiveSubst σ a a_tp ≫ j a a_tp C c c_tp)
-  (j_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
-    (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
-    (c_tp : c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C),
-    j a a_tp C c c_tp ≫ U2.tp = C)
-  (reflSubst_j : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
-    (C : i.motiveCtx a a_tp ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
-    (c_tp : c ≫ U2.tp = (i.reflSubst a a_tp) ≫ C),
-    i.reflSubst a a_tp ≫ j a a_tp C c c_tp = c)
+  /-- Paulin-Mohring formulation of the J rule,
+  stated over the context `Γ.(y : A).Id(a, y)`. -/
+  (jElim : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+    (C : i.motiveCtx a a_tp ⟶ U2.Ty)
+    (c : Γ ⟶ U2.Tm), (c ≫ U2.tp = i.reflInst a a_tp ≫ C) →
+    (i.motiveCtx a a_tp ⟶ U2.Tm))
+  (jElim_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+    (C : i.motiveCtx a a_tp ⟶ U2.Ty)
+    (c : Γ ⟶ U2.Tm) (c_tp : c ≫ U2.tp = i.reflInst a a_tp ≫ C),
+    jElim (σ ≫ a) (by simp [a_tp]) (i.motiveSubst σ a a_tp rfl ≫ C) (σ ≫ c)
+      (by simp [*, reflInst_comp_motiveSubst_assoc]) =
+    i.motiveSubst σ a a_tp rfl ≫ jElim a a_tp C c c_tp)
+  (jElim_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+    (C : i.motiveCtx a a_tp ⟶ U2.Ty)
+    (c : Γ ⟶ U2.Tm) (c_tp : c ≫ U2.tp = i.reflInst a a_tp ≫ C),
+    jElim a a_tp C c c_tp ≫ U2.tp = C)
+  (reflSubst_jElim : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+    (C : i.motiveCtx a a_tp ⟶ U2.Ty)
+    (c : Γ ⟶ U2.Tm) (c_tp : c ≫ U2.tp = i.reflInst a a_tp ≫ C),
+    i.reflInst a a_tp ≫ jElim a a_tp C c c_tp = c)
+
+namespace PolymorphicIdElim
+open PolymorphicIdIntro
+
+attribute [simp] jElim_tp reflSubst_jElim
+
+variable {i} {U2 : UnstructuredUniverse Ctx} (e : PolymorphicIdElim i U2)
+  {Γ Δ} (σ : Δ ⟶ Γ)
+  {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+  (I : U0.ext A ⟶ U1.Ty) (I_eq : I = i.weakenId a a_tp := by rfl)
+  (M : U1.ext I ⟶ U2.Ty)
+  (r : Γ ⟶ U2.Tm)
+  (r_tp : r ≫ U2.tp =
+    -- TODO: by>
+    U1.substCons (U0.sec A a a_tp) I (i.refl a a_tp) (by simp [I_eq, ← Id_comp]) ≫ M)
+  (b : Γ ⟶ U0.Tm) (b_tp : b ≫ U0.tp = A)
+  (h : Γ ⟶ U1.Tm) (h_tp : h ≫ U1.tp = i.Id a b a_tp b_tp)
+
+def idRec : Γ ⟶ U2.Tm :=
+  i.motiveInst a a_tp b b_tp h h_tp ≫
+  e.jElim a a_tp (eqToHom (by simp [I_eq]) ≫ M) r
+    (by
+      rw [r_tp]; congr 1 <;> simp [I_eq]
+      . rw! [I_eq]; rfl)
+
+theorem idRec_comp (σA) (σA_eq : σ ≫ A = σA)
+    (σI) (σI_eq : U0.substWk σ A σA σA_eq ≫ I = σI) :
+    e.idRec (A := σA) (σ ≫ a) (by simp [*])
+      σI (by simp [← Id_comp, ← σI_eq, *])
+      (U1.substWk (U0.substWk σ _ _ σA_eq) _ _ σI_eq ≫ M)
+      (σ ≫ r) (by
+        rw [Category.assoc, r_tp]
+        simp only [← Category.assoc]; congr 1
+        apply (U1.disp_pullback _).hom_ext <;>
+          simp [← refl_comp, comp_sec, *])
+      (σ ≫ b) (by simp [*])
+      (σ ≫ h) (by simp [*, ← Id_comp]) =
+    σ ≫ e.idRec a a_tp I I_eq M r r_tp b b_tp h h_tp := by
+  unfold idRec
+  slice_rhs 1 2 => rw [← motiveInst_comp_motiveSubst]
+  slice_rhs 2 3 => rw [← jElim_comp]
+  cases I_eq
+  have : σI =
+      i.Id (A := U0.disp σA ≫ σA) (U0.disp σA ≫ σ ≫ a) (U0.var σA) (by simp [*]) (by simp) := by
+    cases σI_eq; simp [← Id_comp, *]
+  cases this; cases σA_eq
+  simp
+
+@[simp]
+theorem idRec_tp :
+    e.idRec a a_tp I I_eq M r r_tp b b_tp h h_tp ≫ U2.tp =
+      U1.substCons (U0.sec A b b_tp) I h (by simp [h_tp, I_eq, ← Id_comp]) ≫ M := by
+  simp only [idRec, Category.assoc, jElim_tp]
+  rw! (castMode := .all) [I_eq]
+  simp only [← Category.assoc]; congr 1
+  simp [motiveInst, sec]
+
+@[simp]
+theorem idRec_refl :
+    e.idRec a a_tp I I_eq M r r_tp a a_tp (i.refl a a_tp) (by simp) = r := by
+  simp [idRec]
+
+end PolymorphicIdElim
 
 end
 
