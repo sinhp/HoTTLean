@@ -535,8 +535,60 @@ structure PolymorphicIdElim (U2 : UnstructuredUniverse Ctx) where
     (c : Γ ⟶ U2.Tm) (c_tp : c ≫ U2.tp = i.reflInst a a_tp ≫ C),
     i.reflInst a a_tp ≫ jElim a a_tp C c c_tp = c)
 
-open PolymorphicIdElim in
+namespace PolymorphicIdElim
+open PolymorphicIdIntro
+
 attribute [simp] jElim_tp reflSubst_jElim
+
+variable {i} {U2 : UnstructuredUniverse Ctx} (e : PolymorphicIdElim i U2)
+  {Γ Δ} (σ : Δ ⟶ Γ)
+  {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
+  (I : U0.ext A ⟶ U1.Ty) (I_eq : I = i.weakenId a a_tp := by rfl)
+  (M : U1.ext I ⟶ U2.Ty)
+  (r : Γ ⟶ U2.Tm)
+  (r_tp : r ≫ U2.tp =
+    -- TODO: by>
+    U1.substCons (U0.sec A a a_tp) I (i.refl a a_tp) (by simp [I_eq, ← Id_comp]) ≫ M)
+  (b : Γ ⟶ U0.Tm) (b_tp : b ≫ U0.tp = A)
+  (h : Γ ⟶ U1.Tm) (h_tp : h ≫ U1.tp = i.Id a b a_tp b_tp)
+
+def idRec : Γ ⟶ U2.Tm :=
+  i.motiveInst a a_tp b b_tp h h_tp ≫
+  e.jElim a a_tp (eqToHom (by simp [I_eq]) ≫ M) r
+    (by
+      rw [r_tp]; congr 1 <;> simp [I_eq]
+      . rw! [I_eq]; rfl)
+
+theorem idRec_comp (σA) (σA_eq : σ ≫ A = σA)
+    (σI) (σI_eq : U0.substWk σ A σA σA_eq ≫ I = σI) :
+    e.idRec (A := σA) (σ ≫ a) (by simp [*])
+      σI (by simp [← Id_comp, ← σI_eq, *])
+      (U1.substWk (U0.substWk σ _ _ σA_eq) _ _ σI_eq ≫ M)
+      (σ ≫ r) (by
+        rw [Category.assoc, r_tp]
+        simp only [← Category.assoc]; congr 1
+        apply (U1.disp_pullback _).hom_ext <;>
+          simp [← refl_comp, comp_sec, *])
+      (σ ≫ b) (by simp [*])
+      (σ ≫ h) (by simp [*, ← Id_comp]) =
+    σ ≫ e.idRec a a_tp I I_eq M r r_tp b b_tp h h_tp := by
+  sorry
+
+@[simp]
+theorem idRec_tp :
+    e.idRec a a_tp I I_eq M r r_tp b b_tp h h_tp ≫ U2.tp =
+      U1.substCons (U0.sec A b b_tp) I h (by simp [h_tp, I_eq, ← Id_comp]) ≫ M := by
+  simp only [idRec, Category.assoc, jElim_tp]
+  rw! (castMode := .all) [I_eq]
+  simp only [← Category.assoc]; congr 1
+  simp [motiveInst, sec]
+
+@[simp]
+theorem idRec_refl :
+    e.idRec a a_tp I I_eq M r r_tp a a_tp (i.refl a a_tp) (by simp) = r := by
+  simp [idRec]
+
+end PolymorphicIdElim
 
 end
 

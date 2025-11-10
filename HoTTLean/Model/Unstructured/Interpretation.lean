@@ -376,7 +376,7 @@ def ofTerm (Γ : s.CObj) (l : Nat) :
   | .refl _ t, llen => do
     let t ← ofTerm Γ l t
     return (s.idIntro l llen).refl t rfl
-  | .idRec i j t M r u h, llen => do
+  | .idRec i _ t M r u h, llen => do
     Part.assert (i < s.length + 1) fun ilen => do
     let t ← ofTerm Γ i t
     let A := t ≫ s[i].tp
@@ -387,8 +387,7 @@ def ofTerm (Γ : s.CObj) (l : Nat) :
     Part.assert (u ≫ s[i].tp = A) fun u_tp => do
     let h ← ofTerm Γ i h
     Part.assert (h ≫ s[i].tp = (s.idIntro i ilen).Id t u rfl u_tp) fun h_tp => do
-    return (s.idIntro i ilen).motiveInst t rfl u (by simp +zetaDelta [*]) h (by simp [*]) ≫
-      (s.idElim i l ilen llen).jElim t rfl M r r_tp
+    return (s.idElim i l ilen llen).idRec t rfl _ rfl M r r_tp u u_tp h h_tp
   | .code t, _ =>
     Part.assert (0 < l) fun lpos => do
     let A ← ofType Γ (l-1) t
@@ -535,19 +534,18 @@ theorem mem_ofTerm_idRec {Γ l i j t M r u h} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.idRec i j t M r u h) llen ↔
     ∃ ilen : i < s.length + 1,
     ∃ t' : Γ.1 ⟶ s[i].Tm, t' ∈ I.ofTerm Γ i t ∧
-    let A' := t' ≫ s[i].tp
-    ∃ M' : ((Γ.snoc ilen A').snoc ilen _).1 ⟶ s[l].Ty,
-      M' ∈ I.ofType ((Γ.snoc ilen A').snoc ilen _) l M ∧
+    ∃ A' : Γ.1 ⟶ s[i].Ty, ∃ t_tp : t' ≫ s[i].tp = A',
+    ∃ I', ∃ I_eq : I' = (s.idIntro i ilen).weakenId t' t_tp,
+    ∃ M' : ((Γ.snoc ilen A').snoc ilen I').1 ⟶ s[l].Ty,
+      M' ∈ I.ofType ((Γ.snoc ilen A').snoc ilen I') l M ∧
     ∃ r' : Γ.1 ⟶ s[l].Tm, r' ∈ I.ofTerm Γ l r ∧
     ∃ r_tp,
     ∃ u' : Γ.1 ⟶ s[i].Tm, u' ∈ I.ofTerm Γ i u ∧
     ∃ u_tp : u' ≫ s[i].tp = A',
     ∃ h' : Γ.1 ⟶ s[i].Tm, h' ∈ I.ofTerm Γ i h ∧
-    ∃ h_tp : h' ≫ s[i].tp = (s.idIntro i ilen).Id t' u' rfl u_tp,
-    x =
-      (s.idIntro i ilen).motiveInst t' rfl u' (by simp +zetaDelta [*]) h' (by simp [*]) ≫
-      (s.idElim i l ilen llen).jElim t' rfl M' r' r_tp := by
-  dsimp only [ofTerm]; simp_part
+    ∃ h_tp : h' ≫ s[i].tp = (s.idIntro i ilen).Id t' u' t_tp u_tp,
+    x = (s.idElim i l ilen llen).idRec t' t_tp I' I_eq M' r' r_tp u' u_tp h' h_tp := by
+  dsimp only [ofTerm]; simp_part; simp [exists_prop_eq']
 
 @[simp]
 theorem mem_ofTerm_code {Γ l t} {llen : l < s.length + 1} {x} :
@@ -764,23 +762,17 @@ theorem mem_ofType_ofTerm_subst' {full}
     simp only [Expr.subst, ← refl_comp, mem_ofTerm_refl]
     exact ⟨_, (iht llen σ).2 ht, rfl⟩
   case idRec iht ihM ihr ihu ihh =>
-    obtain ⟨ilen, t, tmem, M, Mmem, r, rmem, rtp, u, umem, utp, h, hmem, htp, rfl⟩ :=
+    obtain ⟨ilen, t, ht, A, Aeq, I, Ieq, M, hM, r, hr, rtp, u, hu, utp, h, hh, htp, rfl⟩ :=
       I.mem_ofTerm_idRec.1 H
     simp only [Expr.subst, mem_ofTerm_idRec]
-    refine ⟨ilen, _, (iht ilen σ).2 tmem,
-      (s.idIntro _ ilen).motiveSubst sσ t rfl (by simp) ≫ M, ?Mmem,
-      _, (ihr llen σ).2 rmem, by simp [rtp, reflInst_comp_motiveSubst_assoc],
-      _, (ihu ilen σ).2 umem, by simp [utp],
-      _, (ihh ilen σ).2 hmem, by simp [htp, ← Id_comp],
-      ?eq⟩
-    case Mmem =>
-      rw! [Category.assoc]
-      convert (ihM llen ((σ.up ilen _).up ilen _ _ _)).1 Mmem using 3
-      simp [CSb.up_toSb]
-    case eq =>
-      rw! [Category.assoc sσ t, PolymorphicIdElim.jElim_comp (c_tp := rtp)]
-      rw [motiveInst_comp_motiveSubst_assoc (σA_eq := rfl)]
-
+    refine ⟨ilen, _, (iht ilen σ).2 ht, sσ ≫ A, by simp [Aeq], ?_⟩
+    refine ⟨substWk _ sσ _ ≫ I, by simp [Ieq, ← Id_comp], ?_⟩
+    refine ⟨substWk _ (substWk _ sσ _) _ ≫ M, ?_, ?_⟩
+    · rw [← CSb.up_toSb, ← CSb.up_toSb]; exact (ihM llen ((σ.up ilen _).up ilen _ _ _)).1 hM
+    refine ⟨_, (ihr llen σ).2 hr, _,
+      _, (ihu ilen σ).2 hu, _,
+      _, (ihh ilen σ).2 hh, _,
+      (idRec_comp (I_eq := Ieq) ..).symm⟩
   case code ihA =>
     obtain ⟨l, rfl, H⟩ := I.mem_ofTerm_code.1 H; simp at H llen
     obtain ⟨A, hA, rfl⟩ := H; clear H
@@ -1057,8 +1049,8 @@ theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
     I.EqTmIH Γ l' (.subst (.snoc u.toSb h) M)
       (.idRec l l' t M r u h) (.idRec l l' t' M' r' u' h') := by
   intro ⟨_, hΓ, _, _, hA, _, ht, ht', ttp⟩ ⟨_, hΓ', _, _, hM, hM'⟩
-    ⟨_, hΓ₁, _, _, hR, _, hr, hr', rtp⟩ ⟨_, hΓ₂, _, _, hA₁, _, hu, hu', utp⟩
-    ⟨_, hΓ₃, _, _, hH, _, hh, hh', htp⟩
+      ⟨_, hΓ₁, _, _, hR, _, hr, hr', rtp⟩ ⟨_, hΓ₂, _, _, hA₁, _, hu, hu', utp⟩
+      ⟨_, hΓ₃, _, _, hH, _, hh, hh', htp⟩
   cases Part.mem_unique hΓ hΓ₁
   cases Part.mem_unique hΓ hΓ₂
   cases Part.mem_unique hΓ hΓ₃
@@ -1075,22 +1067,21 @@ theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
   cases Part.mem_unique hA hA₁
   cases Part.mem_unique ht ht₁
   cases Part.mem_unique hu hu₁
-  sorry
-  -- refine ⟨_, hΓ, _, _,
-  --   (I.mem_ofType_ofTerm_subst _ (.snoc (.sub1 _ _ _ utp hu) _ _ _ ?_ hh) ?_).1 hM, _,
-  --   I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, ?b, _, hM, _, hr, ?a, _, hu, utp, _, hh, htp, rfl⟩,
-  --   I.mem_ofTerm_idRec.2 ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
-  --   mkIdRec_tp ..⟩
-  -- · rw [htp, Beq, comp_mkId]
-  --   · congr 1 <;> simp
-  --   · simp [sAeq]
-  -- · simp
-  -- · simp [Beq, sAeq]
-  -- · refine rtp ▸ Part.mem_unique hR ?_
-  --   refine (I.mem_ofType_ofTerm_subst _
-  --     (.snoc (.sub1 _ _ _ ttp ht) _ _ (.refl l t) _ ?_) ?_).1 hM
-  --   · exact I.mem_ofTerm_refl.2 ⟨_, ht, rfl⟩
-  --   · simp
+  refine ⟨_, hΓ, _, _,
+    (I.mem_ofType_ofTerm_subst _ (.snoc (.sub1 _ _ _ utp hu) _ _ _ ?_ hh) ?_).1 hM, _,
+    I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, ?b, _, hM, _, hr, ?a, _, hu, utp, _, hh, htp, rfl⟩,
+    I.mem_ofTerm_idRec.2 ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
+    idRec_tp (I_eq := _) ..⟩
+  · rw [htp, Beq, ← Id_comp]
+    congr 1 <;> simp [sAeq]
+  · simp
+  · simp [Beq, sAeq]
+  · refine rtp ▸ Part.mem_unique hR ?_
+    refine (I.mem_ofType_ofTerm_subst _
+      (.snoc (.sub1 _ _ _ ttp ht) _ _ (.refl l t) _ ?_) ?_).1 hM
+    · refine I.mem_ofTerm_refl.2 ⟨_, ht, ?_⟩
+      simp [ttp]
+    · simp
 
 include slen in
 theorem EqTmIH.code {Γ A A' l} (_ : l < univMax) :
@@ -1153,17 +1144,17 @@ theorem EqTmIH.idRec_refl {Γ A M t r l l'} :
   have sAeq := Part.mem_unique sA (I.mem_ofType_wk _ hA)
   cases Part.mem_unique (I.mem_ofTerm_wk _ ht) st
   obtain ⟨_, hv⟩ := CObj.mem_var_zero.1 (I.ofTerm_bvar ▸ hv :); simp at hv; subst hv
-  sorry
-  -- refine
-  --   have h1 := I.mem_ofTerm_refl.2 ⟨_, ht, rfl⟩
-  --   have h2 := refl_tp ..
-  --   have sM := (I.mem_ofType_ofTerm_subst _
-  --     (.snoc (.sub1 _ _ _ ttp ht) _ _ (.refl l t) (h2 ▸ ?_) h1) (by simp)).1 hM
-  --   have sr := rtp ▸ Part.mem_unique hR sM
-  --   have ir := I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, by simp [Beq, sAeq],
-  --     _, hM, _, hr, sr, _, ht, ttp, _, h1, h2, (mkIdRec_mkRefl ..).symm⟩
-  --   ⟨_, hΓ, _, _, sM, _, ir, hr, sr⟩
-  -- simp [Beq, comp_mkId, sAeq]
+  refine
+    have h1 := I.mem_ofTerm_refl.2 ⟨_, ht, rfl⟩
+    have h2 := refl_tp ..
+    have sM := (I.mem_ofType_ofTerm_subst _
+      (.snoc (.sub1 _ _ _ ttp ht) _ _ (.refl l t) (h2 ▸ ?_) h1) (by simp)).1 hM
+    have sr := rtp ▸ Part.mem_unique hR sM
+    have ir := I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, by simp [Beq, sAeq],
+      _, hM, _, hr, by simp [ttp, sr], _, ht, ttp, _, h1, by simp [ttp],
+        by rw! [ttp, PolymorphicIdElim.idRec_refl (I_eq := _)]⟩
+    ⟨_, hΓ, _, _, sM, _, ir, hr, sr⟩
+  simp [Beq, ← Id_comp, sAeq, ttp]
 
 theorem EqTmIH.lam_app {Γ A B f l l'} :
     I.WfTmIH Γ (max l l') (.pi l l' A B) f →
