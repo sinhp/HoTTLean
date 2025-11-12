@@ -756,12 +756,34 @@ def cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O 
     Functor.whiskerLeft _ (MorphismProperty.Over.pullbackId R ⊤ O).hom
   cellLeft ≫ᵥ cellMid ≫ᵥ cellRight
 
-open NatTrans in
-theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O E' B')
-    (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i = φ ≫ P'.i) (pb : IsPullback φ P.p P'.p δ)
-    (hδ : δ ≫ P'.o = P.o) :
-    (cartesianNatTrans P P' δ φ hφ pb hδ).IsCartesian := by
-  dsimp [cartesianNatTrans]
+-- TODO: This name is not quite correct, because the functor is not cartesian
+-- rather, it takes a commutative square in `R.Over I` that is a pullback in the (whole!)
+-- over category `Over I` to
+-- a commutative square that is a pullback in the over category `Over O`
+-- This subtlety can be ignored when `R.Over I = Over I`, like in the π-clan `UvPoly` case.
+
+-- Here are some relevant facts:
+-- 1. partial right adjoints preserve limits in the whole category of diagrams from the subcategory
+-- whole limit also lands in the subcategory,
+-- hence `pullback i : R.Over I -> R.Over E` and
+-- `pushforward p : R.Over E -> R.Over B` both preserve pullbacks in `Over I`
+-- that are from `R.Over I`.
+-- 2. `map : R.Over E -> R.Over O` also has this pullback preservation property.
+
+-- open NatTrans in
+-- theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O E' B')
+--     (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i = φ ≫ P'.i) (pb : IsPullback φ P.p P'.p δ)
+--     (hδ : δ ≫ P'.o = P.o) :
+--     (cartesianNatTrans P P' δ φ hφ pb hδ).IsCartesian := by
+--   dsimp [cartesianNatTrans]
+--   repeat apply IsCartesian.vComp
+--   · apply IsCartesian.comp
+--     · apply isCartesian_of_isIso
+--     · sorry --apply isCartesian_of_isIso
+  -- · apply isCartesian_of_isIso
+  -- · -- apply IsCartesian.whiskerLeft
+    -- sorry
+
   -- NOTE: this lemma could be extracted, but `repeat' apply IsCartesian.comp` will unfold past it.
   -- have : NatTrans.IsCartesian
   --     (pullbackMapTwoSquare R P.o δ (𝟙 _) P'.o.1 P'.o.2 P.ho (by simp [hδ])) := by
@@ -777,17 +799,19 @@ theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' :
   --   · sorry --refine IsCartesian.whiskerRight _ _
   --   · apply IsCartesian.whiskerLeft
   --     apply isCartesian_mapPullbackAdj_counit
-  repeat' apply IsCartesian.comp
-  any_goals apply isCartesian_of_isIso
-  apply IsCartesian.whiskerLeft
-  repeat' apply IsCartesian.comp
-  any_goals apply isCartesian_of_isIso
-  apply IsCartesian.whiskerLeft
-  repeat' apply IsCartesian.comp
-  any_goals apply isCartesian_of_isIso
-  · sorry -- apply IsCartesian.whiskerRight
-  · apply IsCartesian.whiskerLeft
-    apply isCartesian_mapPullbackAdj_counit
+
+  -- repeat' apply IsCartesian.comp
+  -- any_goals apply isCartesian_of_isIso
+  -- apply IsCartesian.whiskerLeft
+  -- repeat' apply IsCartesian.comp
+  -- any_goals apply isCartesian_of_isIso
+  -- apply IsCartesian.whiskerLeft
+  -- repeat' apply IsCartesian.comp
+  -- any_goals apply isCartesian_of_isIso
+  -- · sorry -- apply IsCartesian.whiskerRight
+  -- · apply IsCartesian.whiskerLeft
+  --   apply isCartesian_mapPullbackAdj_counit
+
 
 end MvPoly
 
@@ -969,13 +993,13 @@ open TwoSquare
 induces a natural transformation between their associated functors obtained by pasting the following
 2-cells
 ```
-             P'.p
-C --- >  C/E' ----> C/B' -----> C
-‖         |          |          ‖
-‖   ↗    | φ*  ≅    | δ* ↗    ‖
-‖         v          v          ‖
-C --- >  C/E -----> C/B  -----> C
-              P.p
+                   P'.p
+C --- >  R.Over E' ----> R.Over B' -----> C
+‖           |               |             ‖
+‖    ↗     | φ*     ≅      | δ*    ↗    ‖
+‖           v               v             ‖
+C --- >  R.Over E -----> R.Over B  -----> C
+                   P.p
 ```
 -/
 def cartesianNatTrans {E' B' : C} (P : UvPoly R E B) (P' : UvPoly R E' B')
@@ -984,13 +1008,17 @@ def cartesianNatTrans {E' B' : C} (P : UvPoly R E B) (P' : UvPoly R E' B')
     pb (isTerminal.hom_ext ..)
   (toOverTerminal).whiskerLeft (Functor.whiskerRight mv fromOverTerminal)
 
+-- TODO: this is cartesian. Unlike with the MvPoly case there is no distinction between
+-- `C` and `Over.terminal` and `R.Over terminal`, since `R` has objects.
+
 open NatTrans in
 theorem isCartesian_cartesianNatTrans {D F : C} (P : UvPoly R E B) (Q : UvPoly R F D)
     (δ : B ⟶ D) (φ : E ⟶ F) (pb : IsPullback φ P.p Q.p δ) :
     (cartesianNatTrans P Q δ φ pb).IsCartesian := by
-  apply IsCartesian.whiskerLeft
-  apply IsCartesian.whiskerRight
-  apply MvPoly.isCartesian_cartesianNatTrans
+  sorry
+--   apply IsCartesian.whiskerLeft
+--   apply IsCartesian.whiskerRight
+--   apply MvPoly.isCartesian_cartesianNatTrans
 
 /-- A morphism from a polynomial `P` to a polynomial `Q` is a pair of morphisms `e : E ⟶ E'`
 and `b : B ⟶ B'` such that the diagram
