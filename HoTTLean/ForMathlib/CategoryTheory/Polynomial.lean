@@ -489,9 +489,9 @@ instance {B O : C} {i : B ⟶ O} (hi : R i) [R.HasPullbacks] [R.IsStableUnderBas
     [R.IsStableUnderComposition] : (pullback R ⊤ i).IsRightAdjoint :=
   (mapPullbackAdj R ⊤ i hi ⟨⟩).isRightAdjoint
 
-instance [R.IsStableUnderComposition] {X Y} {f : X ⟶ Y} (hf : R f) :
-    Limits.PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.map ⊤ hf) :=
-  sorry
+-- instance [R.IsStableUnderComposition] {X Y} {f : X ⟶ Y} (hf : R f) :
+--     Limits.PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.map ⊤ hf) :=
+--   sorry
 
 variable {I O E B : C} (P : MvPoly R H I O E B) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     [H.HasPullbacks] [R.HasPushforwards H] [R.IsStableUnderPushforward H]
@@ -631,24 +631,24 @@ lemma eta (pair : Γ ⟶ (P @ X).toComma) : mk (fst pair) (by simp) (snd pair) =
 
 end Equiv
 
--- NOTE: please leave the commented out subgoals, it makes debugging this easier
-instance (P : MvPoly R H I O E B) : PreservesLimitsOfShape WalkingCospan
-    (MorphismProperty.Over.pullback R ⊤ P.i ⋙ R.pushforward P.hp ⋙
-    MorphismProperty.Over.map ⊤ P.ho) :=
-  have : (MorphismProperty.Over.pullback R ⊤ P.i).IsRightAdjoint :=
-    Adjunction.isRightAdjoint (MorphismProperty.Over.mapPullbackAdj R ⊤ P.i P.hi trivial)
-  -- have : PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.pullback R ⊤ P.i) :=
-  --   inferInstance
-  -- have : PreservesLimitsOfShape WalkingCospan (R.pushforward P.hp) :=
-  --   inferInstance
-  -- have : PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.map ⊤ P.ho) :=
-  --   inferInstance
-  inferInstance
+-- -- NOTE: please leave the commented out subgoals, it makes debugging this easier
+-- instance (P : MvPoly R H I O E B) : PreservesLimitsOfShape WalkingCospan
+--     (MorphismProperty.Over.pullback R ⊤ P.i ⋙ R.pushforward P.hp ⋙
+--     MorphismProperty.Over.map ⊤ P.ho) :=
+--   have : (MorphismProperty.Over.pullback R ⊤ P.i).IsRightAdjoint :=
+--     Adjunction.isRightAdjoint (MorphismProperty.Over.mapPullbackAdj R ⊤ P.i P.hi trivial)
+--   -- have : PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.pullback R ⊤ P.i) :=
+--   --   inferInstance
+--   -- have : PreservesLimitsOfShape WalkingCospan (R.pushforward P.hp) :=
+--   --   inferInstance
+--   -- have : PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.map ⊤ P.ho) :=
+--   --   inferInstance
+--   inferInstance
 
-instance (P : MvPoly R H I O E B) :
-    Limits.PreservesLimitsOfShape WalkingCospan (MvPoly.functor P) := by
-  dsimp [functor]
-  infer_instance
+-- instance (P : MvPoly R H I O E B) :
+--     Limits.PreservesLimitsOfShape WalkingCospan (MvPoly.functor P) := by
+--   dsimp [functor]
+--   infer_instance
 
 /-- A commutative triangle
 ```
@@ -884,10 +884,10 @@ def apply [ChosenTerminal C] (P : UvPoly R E B) : C → C := P.functor.obj
 @[inherit_doc]
 infix:90 " @ " => apply
 
-instance [ChosenTerminal C] (P : UvPoly R E B) :
-    Limits.PreservesLimitsOfShape WalkingCospan P.functor := by
-  unfold functor
-  infer_instance
+-- instance [ChosenTerminal C] (P : UvPoly R E B) :
+--     Limits.PreservesLimitsOfShape WalkingCospan P.functor := by
+--   unfold functor
+--   infer_instance
 
 variable (B)
 
@@ -1498,7 +1498,7 @@ lemma mk'_comp_verticalNatTrans_app {Γ : C} (X : C) (b : Γ ⟶ B) {R f g}
 
 end
 
-instance preservesPullbacks (P : UvPoly R E B) {Pb X Y Z : C} (fst : Pb ⟶ X) (snd : Pb ⟶ Y)
-    (f : X ⟶ Z) (g : Y ⟶ Z) (h: IsPullback fst snd f g) :
-    IsPullback (P.functor.map fst) (P.functor.map snd) (P.functor.map f) (P.functor.map g) :=
-  P.functor.map_isPullback h
+-- instance preservesPullbacks (P : UvPoly R E B) {Pb X Y Z : C} (fst : Pb ⟶ X) (snd : Pb ⟶ Y)
+--     (f : X ⟶ Z) (g : Y ⟶ Z) (h: IsPullback fst snd f g) :
+--     IsPullback (P.functor.map fst) (P.functor.map snd) (P.functor.map f) (P.functor.map g) :=
+--   P.functor.map_isPullback h
