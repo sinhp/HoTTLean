@@ -31,44 +31,51 @@ namespace MorphismProperty
 
 variable (R : MorphismProperty C)
 
-def OverFibration (X : C) : MorphismProperty (R.Over ⊤ X) := fun _ _ f => R f.left
-
-instance (X : C) [R.IsStableUnderComposition] : (OverFibration R X).IsStableUnderComposition where
-  comp_mem _ _ hf hg := R.comp_mem _ _ hf hg
+def LocalPreclan (X : C) : MorphismProperty (R.Over ⊤ X) := fun _ _ f => R f.left
 
 instance (X : C) [R.IsStableUnderComposition] [R.IsStableUnderBaseChange] :
-  (OverFibration R X).IsStableUnderBaseChange := sorry
+  (LocalPreclan R X).IsStableUnderBaseChange := sorry
 
 instance (X : C) [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderBaseChange] :
-    (OverFibration R X).HasPullbacks := sorry
+    (LocalPreclan R X).HasPullbacks := sorry
 
-instance (X : C) : (OverFibration R X).HasObjects := sorry
+instance (X : C) : (LocalPreclan R X).HasObjects := sorry
 
-instance (X : C) [R.ContainsIdentities] : (OverFibration R X).ContainsIdentities where
+instance (X : C) [R.ContainsIdentities] : (LocalPreclan R X).ContainsIdentities where
   id_mem _ := R.id_mem _
+
+instance (X : C) [R.IsStableUnderComposition] : (LocalPreclan R X).IsStableUnderComposition where
+  comp_mem _ _ hf hg := R.comp_mem _ _ hf hg
 
 structure RepresentableFibrantChosenPullbacks (f : X ⟶ Y)
     extends RepresentableChosenPullbacks f where
   fibrant {Γ : C} (b : y(Γ) ⟶ Y) : R (disp b)
 
-def ExtendedFibration.Fibrant (F : Psh C) : ObjectProperty (Over F) :=
-  fun X => Nonempty (RepresentableFibrantChosenPullbacks R X.hom)
+-- this is a preclan, does not satisfy HasObjects
+def ExtendedFibration : MorphismProperty (Psh C) :=
+  fun _ _ f => Nonempty (RepresentableFibrantChosenPullbacks R f)
 
-abbrev ExtendedFibration (F : Psh C) := ObjectProperty.FullSubcategory
-  (ExtendedFibration.Fibrant R F)
+instance : (ExtendedFibration R).IsStableUnderBaseChange := sorry
 
-notation:max R"^("F")"  => ExtendedFibration R F
+instance : (ExtendedFibration R).HasPullbacks := sorry
+
+instance [R.ContainsIdentities] : (ExtendedFibration R).ContainsIdentities where
+  id_mem _ := sorry
+
+instance [R.IsStableUnderComposition] : (ExtendedFibration R).IsStableUnderComposition where
+  comp_mem _ _ hf hg := sorry
+
+notation:max R"^("F")"  => LocalPreclan (ExtendedFibration R) F
 
 namespace ExtendedFibration
 
 variable (F : Psh C)
 
-def Fibration : MorphismProperty (R ^(F)) := fun _ _ θ =>
-  Nonempty (RepresentableFibrantChosenPullbacks R θ.left)
-
-theorem hasObjects_fullSubcategory_extendedFibrationClan [R.HasPullbacks] :
-    (Fibration R F).HasPullbacks where
-  hasPullback := sorry
+example [R.IsStableUnderComposition] : (R ^(F)).HasPullbacks := inferInstance
+example [R.IsStableUnderComposition] : (R ^(F)).IsStableUnderBaseChange := inferInstance
+example : (R ^(F)).HasObjects := inferInstance
+example [R.ContainsIdentities] : (R ^(F)).ContainsIdentities := inferInstance
+example [R.IsStableUnderComposition] : (R ^(F)).IsStableUnderComposition := inferInstance
 
 end ExtendedFibration
 
