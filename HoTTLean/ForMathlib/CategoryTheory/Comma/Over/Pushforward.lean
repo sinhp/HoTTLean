@@ -46,11 +46,11 @@ def pushforward.isPushforward (X : Over S) [HasPushforward f X] :
 
 /-- A morphism `f` has pushforwards (also called exponentiable) when there is a pushforward
 along `f` for any map into its domain. -/
-abbrev HasPushforwards : Prop := ∀ (X : Over S), HasPushforward f X
+abbrev HasPushforwardsAlong : Prop := ∀ (X : Over S), HasPushforward f X
 
 namespace Over
 
-variable [HasPushforwards f]
+variable [HasPushforwardsAlong f]
 
 lemma pullback_rightAdjointObjIsDefined_eq_top :
     (Over.pullback f).rightAdjointObjIsDefined = ⊤ := by aesop_cat

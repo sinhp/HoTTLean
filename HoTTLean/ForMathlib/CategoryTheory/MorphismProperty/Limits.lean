@@ -67,7 +67,7 @@ instance [P.IsStableUnderBaseChange] {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
     IsPullback.hasPullback (IsPullback.paste_horiz (IsPullback.of_hasPullback
       (pullback.snd h g) f) (IsPullback.of_hasPullback h g))
 
-/-- A morphism property satisfies `ContainsObjects` when any map `! : X ⟶ Y` to a terminal
+/-- A morphism property satisfies `HasObjects` when any map `! : X ⟶ Y` to a terminal
 object `Y` satisfies the morphism property. -/
 class HasObjects (P : MorphismProperty C) : Prop where
   obj_mem {X Y} (f : X ⟶ Y) : Limits.IsTerminal Y → P f
