@@ -31,20 +31,20 @@ namespace MorphismProperty
 
 variable (R : MorphismProperty C)
 
-def ClanOver (X : C) : MorphismProperty (R.Over ⊤ X) := fun _ _ f => R f.left
+def OverFibration (X : C) : MorphismProperty (R.Over ⊤ X) := fun _ _ f => R f.left
 
-instance (X : C) [R.IsStableUnderComposition] : (ClanOver R X).IsStableUnderComposition where
+instance (X : C) [R.IsStableUnderComposition] : (OverFibration R X).IsStableUnderComposition where
   comp_mem _ _ hf hg := R.comp_mem _ _ hf hg
 
 instance (X : C) [R.IsStableUnderComposition] [R.IsStableUnderBaseChange] :
-  (ClanOver R X).IsStableUnderBaseChange := sorry
+  (OverFibration R X).IsStableUnderBaseChange := sorry
 
 instance (X : C) [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderBaseChange] :
-    (ClanOver R X).HasPullbacks := sorry
+    (OverFibration R X).HasPullbacks := sorry
 
-instance (X : C) : (ClanOver R X).HasObjects := sorry
+instance (X : C) : (OverFibration R X).HasObjects := sorry
 
-instance (X : C) [R.ContainsIdentities] : (ClanOver R X).ContainsIdentities where
+instance (X : C) [R.ContainsIdentities] : (OverFibration R X).ContainsIdentities where
   id_mem _ := R.id_mem _
 
 structure RepresentableFibrantChosenPullbacks (f : X ⟶ Y)
