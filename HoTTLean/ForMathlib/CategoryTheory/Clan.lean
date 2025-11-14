@@ -8,7 +8,8 @@ import HoTTLean.ForMathlib
 import HoTTLean.ForMathlib.CategoryTheory.NatTrans
 import Mathlib.Tactic.DepRewrite
 import Poly.ForMathlib.CategoryTheory.NatTrans
-import HoTTLean.Model.Natural.NaturalModel
+import HoTTLean.ForMathlib.CategoryTheory.Yoneda
+import Poly.ForMathlib.CategoryTheory.LocallyCartesianClosed.Presheaf
 
 universe w v u v₁ u₁
 
@@ -18,9 +19,21 @@ namespace CategoryTheory
 
 open Category Limits MorphismProperty
 
-variable {C : Type u} [Category.{v} C] {X Y : Psh C}
+variable {C : Type u} [Category.{v} C] {C' : Type u₁} [Category.{v₁} C'] (F : C ⥤ C')
 
-structure RepresentableChosenPullbacks (f : X ⟶ Y) where
+class Functor.PreservesMorphismProperty (R : MorphismProperty C) (R' : MorphismProperty C') where
+  map_mem {X Y : C} (f : X ⟶ Y) : R f → R' (F.map f)
+
+abbrev Functor.map_mem {R : MorphismProperty C} {R' : MorphismProperty C'}
+    [F.PreservesMorphismProperty R R'] {X Y : C} (f : X ⟶ Y) : R f → R' (F.map f) :=
+  PreservesMorphismProperty.map_mem f
+
+class Functor.PreservesPullbacksOf (R : MorphismProperty C) where
+  pb {P X Y Z : C} (fst : P ⟶ X) (snd : P ⟶ Y) (f : X ⟶ Z) (g : Y ⟶ Z) :
+  R snd → IsPullback fst snd f g → IsPullback (F.map fst) (F.map snd) (F.map f) (F.map g)
+
+-- NOTE this definition should refactor NaturalModel.Universe
+structure RepresentableChosenPullbacks {X Y : Psh C} (f : X ⟶ Y) where
   ext {Γ : C} (A : y(Γ) ⟶ Y) : C
   disp {Γ : C} (A : y(Γ) ⟶ Y) : ext A ⟶ Γ
   var {Γ : C} (A : y(Γ) ⟶ Y) : y(ext A) ⟶ X
@@ -31,23 +44,60 @@ namespace MorphismProperty
 
 variable (R : MorphismProperty C)
 
-def LocalPreclan (X : C) : MorphismProperty (R.Over ⊤ X) := fun _ _ f => R f.left
+def Local (X : C) : MorphismProperty (R.Over ⊤ X) := fun _ _ f => R f.left
 
 instance (X : C) [R.IsStableUnderComposition] [R.IsStableUnderBaseChange] :
-  (LocalPreclan R X).IsStableUnderBaseChange := sorry
+  (Local R X).IsStableUnderBaseChange := sorry
 
 instance (X : C) [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderBaseChange] :
-    (LocalPreclan R X).HasPullbacks := sorry
+    (Local R X).HasPullbacks := sorry
 
-instance (X : C) : (LocalPreclan R X).HasObjects := sorry
+instance (X : C) : (Local R X).HasObjects := sorry
 
-instance (X : C) [R.ContainsIdentities] : (LocalPreclan R X).ContainsIdentities where
+instance (X : C) [R.ContainsIdentities] : (Local R X).ContainsIdentities where
   id_mem _ := R.id_mem _
 
-instance (X : C) [R.IsStableUnderComposition] : (LocalPreclan R X).IsStableUnderComposition where
-  comp_mem _ _ hf hg := R.comp_mem _ _ hf hg
+instance (X : C) [R.IsStableUnderComposition] :
+    (Local R X).IsStableUnderComposition where
+  comp_mem _ _ := R.comp_mem _ _
 
-structure RepresentableFibrantChosenPullbacks (f : X ⟶ Y)
+abbrev chosenTerminal [R.ContainsIdentities] (X) : R.Over ⊤ X := .mk ⊤ (𝟙 X) (R.id_mem _)
+
+@[simps!]
+protected def Over.post (R : MorphismProperty C) (R' : MorphismProperty C')
+    [F.PreservesMorphismProperty R R'] (X : C) : R.Over ⊤ X ⥤ R'.Over ⊤ (F.obj X) where
+  obj X := MorphismProperty.Over.mk ⊤ (F.map X.hom) (F.map_mem _ X.prop)
+  map f := MorphismProperty.Over.homMk (F.map f.left) (by simp [← F.map_comp])
+  map_id := sorry
+  map_comp := sorry
+
+instance {R' : MorphismProperty C'} [F.PreservesMorphismProperty R R'] (X : C) :
+    (Over.post F R R' X).PreservesMorphismProperty (Local R X) (Local R' (F.obj X)) where
+  map_mem _ := F.map_mem _
+
+instance {R' : MorphismProperty C'} [F.PreservesMorphismProperty R R'] [F.PreservesPullbacksOf R]
+    (X : C) : (Over.post F R R' X).PreservesPullbacksOf (Local R X) where
+  pb := sorry
+
+@[simp]
+lemma localFunctor_obj_chosenTerminal [R.ContainsIdentities] {R' : MorphismProperty C'}
+    [R'.ContainsIdentities] [F.PreservesMorphismProperty R R'] (X : C) :
+    (Over.post F R R' X).obj (R.chosenTerminal X) = R'.chosenTerminal (F.obj X) := by
+  cat_disch
+
+instance [R.IsStableUnderBaseChange] {X Y : C} (f : X ⟶ Y) [R.HasPullbacksAlong f] :
+    (Over.pullback R ⊤ f).PreservesMorphismProperty (Local R Y) (Local R X) := sorry
+
+instance [R.IsStableUnderBaseChange] {X Y : C} (f : X ⟶ Y) [R.HasPullbacksAlong f] :
+    (Over.pullback R ⊤ f).PreservesPullbacksOf (Local R Y) := sorry
+
+def Over.pullback_obj_chosenTerminal [R.IsStableUnderBaseChange] [R.ContainsIdentities]
+    {X Y : C} (f : X ⟶ Y) [R.HasPullbacksAlong f] :
+    (Over.pullback R ⊤ f).obj (R.chosenTerminal Y) ≅ R.chosenTerminal X :=
+  have : HasPullback (𝟙 Y) f := HasPullbacksAlong.hasPullback (𝟙 Y) (R.id_mem Y)
+  MorphismProperty.Over.isoMk (IsPullback.id_vert f).isoPullback.symm
+
+structure RepresentableFibrantChosenPullbacks {X Y : Psh C} (f : X ⟶ Y)
     extends RepresentableChosenPullbacks f where
   fibrant {Γ : C} (b : y(Γ) ⟶ Y) : R (disp b)
 
@@ -65,21 +115,19 @@ instance [R.ContainsIdentities] : (ExtendedFibration R).ContainsIdentities where
 instance [R.IsStableUnderComposition] : (ExtendedFibration R).IsStableUnderComposition where
   comp_mem _ _ hf hg := sorry
 
-notation:max R"^("F")"  => LocalPreclan (ExtendedFibration R) F
+notation:max R"^("F")"  => Local (ExtendedFibration R) F
 
 namespace ExtendedFibration
 
 variable (F : Psh C)
 
-example [R.IsStableUnderComposition] : (R ^(F)).HasPullbacks := inferInstance
-example [R.IsStableUnderComposition] : (R ^(F)).IsStableUnderBaseChange := inferInstance
-example : (R ^(F)).HasObjects := inferInstance
-example [R.ContainsIdentities] : (R ^(F)).ContainsIdentities := inferInstance
-example [R.IsStableUnderComposition] : (R ^(F)).IsStableUnderComposition := inferInstance
+example [R.IsStableUnderComposition] : (R^(F)).HasPullbacks := inferInstance
+example [R.IsStableUnderComposition] : (R^(F)).IsStableUnderBaseChange := inferInstance
+example : (R^(F)).HasObjects := inferInstance
+example [R.ContainsIdentities] : (R^(F)).ContainsIdentities := inferInstance
+example [R.IsStableUnderComposition] : (R^(F)).IsStableUnderComposition := inferInstance
 
 end ExtendedFibration
-
-
 
 instance : (⊤ : MorphismProperty C).HasOfPostcompProperty ⊤ where
   of_postcomp := by simp
@@ -131,9 +179,9 @@ def pullbackMapTwoSquare {T : Type u} [Category.{v} T] (R : MorphismProperty T)
     (MorphismProperty.Over.pullback R ⊤ g) :=
   (mateEquiv (MorphismProperty.Over.mapPullbackAdj R ⊤ k rk trivial)
     (MorphismProperty.Over.mapPullbackAdj R ⊤ h rh trivial)).symm <|
-    ((MorphismProperty.Over.pullbackComp _ _).inv ≫
+    (MorphismProperty.Over.pullbackComp _ _).inv ≫
     eqToHom (by rw! [sq]) ≫
-    (MorphismProperty.Over.pullbackComp _ _).hom)
+    (MorphismProperty.Over.pullbackComp _ _).hom
 
 /--
 The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
@@ -193,19 +241,20 @@ It is the mate of the square of pullback functors
 `pullback k ⋙ pullback g ⟶ pullback f ⋙ pullback h`.
 -/
 def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProperty T}
-    [R.HasPullbacks] [R.IsStableUnderBaseChange] {Q : MorphismProperty T} [Q.HasPullbacks]
-    [R.HasPushforwards Q] [R.IsStableUnderPushforward Q] {X Y Z W : T}
-    (h : X ⟶ Z) {f : X ⟶ Y} {g : Z ⟶ W} (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
-    (hf : Q f) (hg : Q g) :
-    TwoSquare (pushforward (P := R) hg) (Over.pullback R ⊤ h) (Over.pullback R ⊤ k)
-    (pushforward (P := R) hf) :=
+    [R.HasPullbacks] [R.IsStableUnderBaseChange] {X Y Z W : T}
+    (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+    [HasPullbacksAlong f] [HasPullbacksAlong g]
+    [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
+    [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g] :
+    TwoSquare (pushforward R g) (Over.pullback R ⊤ h) (Over.pullback R ⊤ k)
+    (pushforward R f) :=
   let pullbackTwoSquare : TwoSquare (Over.pullback R ⊤ k) (Over.pullback R ⊤ g)
       (Over.pullback R ⊤ f) (Over.pullback R ⊤ h) :=
-    ((Over.pullbackComp _ _).inv ≫
+    (Over.pullbackComp _ _).inv ≫
     eqToHom (by rw! [sq]) ≫
-    (Over.pullbackComp _ _).hom)
-  mateEquiv (pullbackPushforwardAdjunction R hg)
-  (pullbackPushforwardAdjunction R hf)
+    (Over.pullbackComp _ _).hom
+  mateEquiv (pullbackPushforwardAdjunction R g)
+  (pullbackPushforwardAdjunction R f)
   pullbackTwoSquare
 
 /--
@@ -232,9 +281,11 @@ NOTE: we know it holds when for π-clans with `R = Q = the π-clan`
 NOTE: we also know it holds in a category with pullbacks with `R = ⊤` and `Q = ExponentiableMaps`.
 -/
 theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{v} T] (R : MorphismProperty T)
-    [R.HasPullbacks] [R.IsStableUnderBaseChange] {Q : MorphismProperty T} [Q.HasPullbacks]
-    [R.HasPushforwards Q] [R.IsStableUnderPushforward Q]
-    {X Y Z W : T} (h : X ⟶ Z) {f : X ⟶ Y} {g : Z ⟶ W} (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
-    (hf : Q f) (hg : Q g) (pb : IsPullback h f g k) :
-    IsIso (pushforwardPullbackTwoSquare (R := R) h k pb.w hf hg) :=
+    [R.HasPullbacks] [R.IsStableUnderBaseChange]
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+    [HasPullbacksAlong f] [HasPullbacksAlong g]
+    [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
+    [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g]
+    (pb : IsPullback h f g k) :
+    IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) :=
   sorry

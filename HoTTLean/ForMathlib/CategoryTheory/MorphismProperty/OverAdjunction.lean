@@ -54,53 +54,86 @@ end Map
 
 section Pullback
 
-variable [P.IsStableUnderBaseChange] [Q.IsStableUnderBaseChange] [Q.IsMultiplicative]
+/-- A morphism property is `IsStableUnderBaseChangeAlong f` if the base change along `f` of such
+a morphism still falls in the class. -/
+class IsStableUnderBaseChangeAlong {X S : T} (f : X ⟶ S) : Prop where
+  of_isPullback {Y Y' : T} {g : Y ⟶ S} {f' : Y' ⟶ Y} {g' : Y' ⟶ X}
+    (pb : IsPullback f' g' g f) (hg : P g) : P g'
 
-instance (f : X ⟶ Y) [P.HasPullbacksAlong f] (A : P.Over Q Y) : HasPullback A.hom f :=
+instance [P.IsStableUnderBaseChange] {X S : T} (f : X ⟶ S) : P.IsStableUnderBaseChangeAlong f where
+  of_isPullback := P.of_isPullback
+
+variable [Q.IsStableUnderBaseChange] [Q.IsMultiplicative] (f : X ⟶ Y) [P.HasPullbacksAlong f]
+  [P.IsStableUnderBaseChangeAlong f]
+
+instance (A : P.Over Q Y) : HasPullback A.hom f :=
   HasPullbacksAlong.hasPullback A.hom A.prop
 
-instance [P.IsStableUnderBaseChange] {X Y Z} (f : X ⟶ Y) (g : Y ⟶ Z) [P.HasPullbacksAlong f]
-    [P.HasPullbacksAlong g] (A : P.Over Q Z) : HasPullback (pullback.snd A.hom g) f :=
+instance {X Y Z} (f : X ⟶ Y) (g : Y ⟶ Z) [P.HasPullbacksAlong f]
+    [P.IsStableUnderBaseChangeAlong g] [P.HasPullbacksAlong g] : P.HasPullbacksAlong (f ≫ g) where
+  hasPullback p hp :=
+  have := HasPullbacksAlong.hasPullback (f := g) p hp
+  have right := IsPullback.of_hasPullback p g
+  have := HasPullbacksAlong.hasPullback (f := f) (pullback.snd p g)
+    (IsStableUnderBaseChangeAlong.of_isPullback right hp)
+  (IsPullback.paste_horiz (IsPullback.of_hasPullback (pullback.snd p g) f) right).hasPullback
+
+instance {X Y Z} (f : X ⟶ Y) (g : Y ⟶ Z) [P.IsStableUnderBaseChangeAlong f]
+    [P.IsStableUnderBaseChangeAlong g] [P.HasPullbacksAlong g] :
+    P.IsStableUnderBaseChangeAlong (f ≫ g) where
+  of_isPullback {_ _ p _ _} pb hp :=
+  have := HasPullbacksAlong.hasPullback (f := g) p hp
+  have right := IsPullback.of_hasPullback p g
+  IsStableUnderBaseChangeAlong.of_isPullback (IsPullback.of_right' pb right)
+    (IsStableUnderBaseChangeAlong.of_isPullback right hp)
+
+instance {X Y Z} (f : X ⟶ Y) (g : Y ⟶ Z) [P.HasPullbacksAlong f]
+    [P.IsStableUnderBaseChangeAlong f] [P.HasPullbacksAlong g] [P.IsStableUnderBaseChangeAlong g]
+    (A : P.Over Q Z) : HasPullback (pullback.snd A.hom g) f :=
   HasPullbacksAlong.hasPullback (pullback.snd A.hom g)
-  (P.of_isPullback (IsPullback.of_hasPullback A.hom g) A.prop)
+  (IsStableUnderBaseChangeAlong.of_isPullback (IsPullback.of_hasPullback A.hom g) A.prop)
 
 /-- If `P` and `Q` are stable under base change and pullbacks along `f` exist for morphisms in `P`,
 this is the functor `P.Over Q Y ⥤ P.Over Q X` given by base change along `f`. -/
 @[simps! obj_left obj_hom map_left]
-noncomputable def Over.pullback (f : X ⟶ Y) [P.HasPullbacksAlong f] :
+noncomputable def Over.pullback :
     P.Over Q Y ⥤ P.Over Q X where
   obj A := Over.mk Q (Limits.pullback.snd A.hom f)
-    (pullback_snd A.hom f A.prop)
+    (IsStableUnderBaseChangeAlong.of_isPullback (IsPullback.of_hasPullback A.hom f) A.prop)
   map {A B} g := Over.homMk (pullback.lift (pullback.fst A.hom f ≫ g.left)
     (pullback.snd A.hom f) (by simp [pullback.condition])) (by simp)
     (baseChange_map' _ _ g.prop_hom_left)
 
-variable {P} {Q}
+variable {P} {Q} (f : X ⟶ Y) [P.HasPullbacksAlong f] [P.IsStableUnderBaseChangeAlong f]
+    (g : Y ⟶ Z) [P.HasPullbacksAlong g] [P.IsStableUnderBaseChangeAlong g]
 
 /-- `Over.pullback` commutes with composition. -/
 @[simps! hom_app_left inv_app_left]
-noncomputable def Over.pullbackComp (f : X ⟶ Y) [P.HasPullbacksAlong f] (g : Y ⟶ Z)
-    [P.HasPullbacksAlong g] [Q.RespectsIso] : Over.pullback P Q (f ≫ g) ≅
+noncomputable def Over.pullbackComp [Q.RespectsIso] :
+    Over.pullback P Q (f ≫ g) ≅
     Over.pullback P Q g ⋙ Over.pullback P Q f :=
   NatIso.ofComponents
     (fun X ↦ Over.isoMk ((pullbackLeftPullbackSndIso X.hom g f).symm) (by simp))
 
-lemma Over.pullbackComp_left_fst_fst (f : X ⟶ Y) [P.HasPullbacksAlong f] (g : Y ⟶ Z)
-    [P.HasPullbacksAlong g] [Q.RespectsIso] (A : P.Over Q Z) :
+lemma Over.pullbackComp_left_fst_fst (A : P.Over Q Z) :
     ((Over.pullbackComp f g).hom.app A).left ≫ pullback.fst (pullback.snd A.hom g) f ≫
     pullback.fst A.hom g = pullback.fst A.hom (f ≫ g) := by
   simp
 
+variable {f} {g}
+
 /-- If `f = g`, then base change along `f` is naturally isomorphic to base change along `g`. -/
-noncomputable def Over.pullbackCongr {f : X ⟶ Y} [P.HasPullbacksAlong f] {g : X ⟶ Y} (h : f = g) :
+noncomputable def Over.pullbackCongr {g : X ⟶ Y} (h : f = g) :
     have : P.HasPullbacksAlong g := by subst h; infer_instance
+    have : P.IsStableUnderBaseChangeAlong g := by subst h; infer_instance
     Over.pullback P Q f ≅ Over.pullback P Q g :=
   NatIso.ofComponents (fun X ↦ eqToIso (by simp [h]))
 
 @[reassoc (attr := simp)]
-lemma Over.pullbackCongr_hom_app_left_fst {f : X ⟶ Y} [P.HasPullbacksAlong f] {g : X ⟶ Y}
+lemma Over.pullbackCongr_hom_app_left_fst {g : X ⟶ Y}
     (h : f = g) (A : P.Over Q Y) :
     have : P.HasPullbacksAlong g := by subst h; infer_instance
+    have : P.IsStableUnderBaseChangeAlong g := by subst h; infer_instance
     ((Over.pullbackCongr h).hom.app A).left ≫ pullback.fst A.hom g = pullback.fst A.hom f := by
   subst h
   simp [pullbackCongr]
@@ -114,7 +147,7 @@ variable [P.IsStableUnderComposition] [P.IsStableUnderBaseChange]
 
 /-- `P.Over.map` is left adjoint to `P.Over.pullback` if `f` satisfies `P` and `Q`. -/
 noncomputable def Over.mapPullbackAdj (f : X ⟶ Y) [P.HasPullbacksAlong f]
-    [Q.HasOfPostcompProperty Q] (hPf : P f) (hQf : Q f) :
+    [P.IsStableUnderBaseChangeAlong f] [Q.HasOfPostcompProperty Q] (hPf : P f) (hQf : Q f) :
     Over.map Q hPf ⊣ Over.pullback P Q f :=
   Adjunction.mkOfHomEquiv
     { homEquiv := fun A B ↦
@@ -140,8 +173,7 @@ end Adjunction
 
 /-- Pushforward along a morphism `f` (for which all pullbacks exist) exists relative to `P`
 when pushforwards exist along `f` for all morphisms satisfying `P`. -/
-protected class HasPushforwardsAlong {S S' : T} {f : S ⟶ S'}
-    (hpb : HasPullbacksAlong f) : Prop where
+protected class HasPushforwardsAlong {S S' : T} (f : S ⟶ S') [hpb : HasPullbacksAlong f] where
   hasPushforward : ∀ {W} (h : W ⟶ S), P h → HasPushforward f (.mk h)
 
 lemma hasPullbacksAlong_of_hasPullbacks {Q : MorphismProperty T} [Q.HasPullbacks]
@@ -159,87 +191,82 @@ pushforward along `p` relative to the pullback.
 -/
 protected class HasPushforwards [Q.HasPullbacks] : Prop where
   hasPushforwardsAlong : ∀ {S S' : T} (q : S ⟶ S') (hq : Q q),
-    P.HasPushforwardsAlong (hasPullbacksAlong_of_hasPullbacks hq)
+    have : HasPullbacksAlong q := hasPullbacksAlong_of_hasPullbacks hq
+    P.HasPushforwardsAlong q
 
-variable {P Q} in
-lemma HasPushforwards.hasPushforward [Q.HasPullbacks] [P.HasPushforwards Q]
-    {S S' W : T} {f : S ⟶ S'} (hf : Q f) {g : W ⟶ S} (hg : P g) :
-    @HasPushforward _ _ _ _ f (fun h => hasPullbacksAlong_of_hasPullbacks hf h) (.mk g) :=
-  (HasPushforwards.hasPushforwardsAlong f hf).hasPushforward g hg
+/-- Morphisms satisfying `P` are stable under pushforward along morphism `f`
+if whenever pushforward along `f` exists it is in `P`. -/
+class IsStableUnderPushforwardsAlong {S S' : T} (q : S ⟶ S') [HasPullbacksAlong q] : Prop where
+  of_isPushforward {X Y : T} (f : X ⟶ S) (hf : P f) {g : Y ⟶ S'}
+  (isPushforward : IsPushforward q (.mk f) (.mk g)) : P g
 
 /-- Morphisms satisfying `P` are stable under pushforward along morphisms satisfying `Q`
 if whenever pushforward along a morphism in `Q` exists it is in `P`. -/
-class IsStableUnderPushforward [Q.HasPullbacks] : Prop where
-  of_isPushforward {S S' X Y : T} (q : S ⟶ S') (hq : Q q) (f : X ⟶ S) (hf : P f) {g : Y ⟶ S'}
-  (isPushforward : IsPushforward (inst_hasPullback := hasPullbacksAlong_of_hasPullbacks hq)
-    q (.mk f) (.mk g)) : P g
+class IsStableUnderPushforwards [Q.HasPullbacks] : Prop where
+  of_isPushforward {S S' : T} (q : S ⟶ S') (hq : Q q) :
+  have : HasPullbacksAlong q := hasPullbacksAlong_of_hasPullbacks hq
+  IsStableUnderPushforwardsAlong P q
 
 noncomputable section
 
 /-- If `P` has pushforwards along `q` then there is a partial left adjoint `P.Over ⊤ S ⥤ Over S'`
 of the pullback functor `pullback q : Over S' ⥤ Over S`.
 -/
-noncomputable def pushforwardPartial {S S' : T} (q : S ⟶ S')
-    (hpb : HasPullbacksAlong q)
-    (hpf : P.HasPushforwardsAlong hpb) :
-    P.Over ⊤ S ⥤ Over S' :=
+noncomputable def pushforwardPartial {S S' : T} (q : S ⟶ S') [HasPullbacksAlong q]
+    [P.HasPushforwardsAlong q] : P.Over ⊤ S ⥤ Over S' :=
   ObjectProperty.lift _ (Over.forget P ⊤ S)
     (fun X => HasPushforwardsAlong.hasPushforward X.hom X.prop) ⋙
     (CategoryTheory.Over.pullback q).partialRightAdjoint
 
 /-- When `P` has pushforwards along `Q` and is stable under pushforwards along `Q`,
 the pushforward functor along any morphism `q` satisfying `Q` can be defined. -/
-noncomputable def pushforward {Q : MorphismProperty T} [Q.HasPullbacks] [P.HasPushforwards Q]
-    [P.IsStableUnderPushforward Q] {S S' : T} {q : S ⟶ S'} (hq : Q q) :
+noncomputable def pushforward {S S' : T} (q : S ⟶ S') [HasPullbacksAlong q]
+    [P.HasPushforwardsAlong q] [P.IsStableUnderPushforwardsAlong q] :
     P.Over ⊤ S ⥤ P.Over ⊤ S' :=
-  Comma.lift (pushforwardPartial P q (hasPullbacksAlong_of_hasPullbacks hq)
-    (HasPushforwards.hasPushforwardsAlong q hq)
-    ) (fun X => IsStableUnderPushforward.of_isPushforward q hq X.hom X.prop
-      ((have : HasPullbacksAlong q := hasPullbacksAlong_of_hasPullbacks hq
-        have : HasPushforward q X.toComma := HasPushforwards.hasPushforward hq X.prop
+  Comma.lift (pushforwardPartial P q) (fun X =>
+    IsStableUnderPushforwardsAlong.of_isPushforward (q := q) X.hom X.prop
+      ((have : HasPushforward q X.toComma := HasPushforwardsAlong.hasPushforward _ X.prop
         pushforward.isPushforward q (X.toComma))))
   (by simp) (by simp)
 
 section homEquiv
 
-open Over
+variable {P} {S S' : T} (q : S ⟶ S') [HasPullbacksAlong q]
+  [P.HasPushforwardsAlong q] [P.IsStableUnderPushforwardsAlong q]
 
-variable {P} {Q : MorphismProperty T} [Q.HasPullbacks] [P.HasPushforwards Q]
-  [P.IsStableUnderPushforward Q] {S S' : T} {q : S ⟶ S'} (hq : Q q)
-
-@[simp]
-abbrev Over.pullback' := @CategoryTheory.Over.pullback _ _ _ _ q (hasPullbacksAlong_of_hasPullbacks hq)
+-- @[simp]
+-- abbrev Over.pullback' := @CategoryTheory.Over.pullback _ _ _ _ q (hasPullbacksAlong_of_hasPullbacks hq)
 
 /-- The pushforward functor is a partial right adjoint to pullback in the sense that
 there is a natural bijection of hom-sets `T / S (pullback q X, Y) ≃ T / S' (X, pushforward q Y)`. -/
 def pushforward.homEquiv {X : Over S'} {Y : P.Over ⊤ S} :
-    (X ⟶ ((pushforward P hq).obj Y).toComma) ≃
-    ((pullback' hq).obj X ⟶
+    (X ⟶ ((pushforward P q).obj Y).toComma) ≃
+    ((CategoryTheory.Over.pullback q).obj X ⟶
     Y.toComma) :=
   (Functor.partialRightAdjointHomEquiv ..)
 
 lemma pushforward.homEquiv_comp {X X' : Over S'} {Y : P.Over ⊤ S}
-    (f : X' ⟶ ((pushforward P hq).obj Y).toComma) (g : X ⟶ X') :
-    pushforward.homEquiv hq (g ≫ f) =
-    (pullback' hq).map g ≫ homEquiv hq f :=
+    (f : X' ⟶ ((pushforward P q).obj Y).toComma) (g : X ⟶ X') :
+    pushforward.homEquiv q (g ≫ f) =
+    (CategoryTheory.Over.pullback q).map g ≫ homEquiv q f :=
   Functor.partialRightAdjointHomEquiv_comp ..
 
 lemma pushforward.homEquiv_map_comp {X : Over S'} {Y Y' : P.Over ⊤ S}
-    (f : X ⟶ ((pushforward P hq).obj Y).toComma) (g : Y ⟶ Y') :
-    homEquiv hq (f ≫ Comma.Hom.hom ((P.pushforward hq).map g)) =
-    homEquiv hq f ≫ Comma.Hom.hom g :=
+    (f : X ⟶ ((pushforward P q).obj Y).toComma) (g : Y ⟶ Y') :
+    homEquiv q (f ≫ Comma.Hom.hom ((P.pushforward q).map g)) =
+    homEquiv q f ≫ Comma.Hom.hom g :=
   Functor.partialRightAdjointHomEquiv_map_comp ..
 
 lemma pushforward.homEquiv_symm_comp {X : Over S'} {Y Y' : P.Over ⊤ S}
-    (f : (pullback' hq).obj X ⟶ Y.toComma) (g : Y ⟶ Y') :
-    (homEquiv hq).symm f ≫ Comma.Hom.hom ((P.pushforward hq).map g) =
-    (homEquiv hq).symm (f ≫ Comma.Hom.hom g) :=
+    (f : (CategoryTheory.Over.pullback q).obj X ⟶ Y.toComma) (g : Y ⟶ Y') :
+    (homEquiv q).symm f ≫ Comma.Hom.hom ((P.pushforward q).map g) =
+    (homEquiv q).symm (f ≫ Comma.Hom.hom g) :=
   Functor.partialRightAdjointHomEquiv_symm_comp ..
 
 lemma pushforward.homEquiv_comp_symm {X X' : Over S'} {Y : P.Over ⊤ S}
-    (f : (pullback' hq).obj X' ⟶ Y.toComma) (g : X ⟶ X') :
-    g ≫ (homEquiv hq).symm f =
-    (homEquiv hq).symm ((pullback' hq).map g ≫ f) :=
+    (f : (CategoryTheory.Over.pullback q).obj X' ⟶ Y.toComma) (g : X ⟶ X') :
+    g ≫ (homEquiv q).symm f =
+    (homEquiv q).symm ((CategoryTheory.Over.pullback q).map g ≫ f) :=
   Functor.partialRightAdjointHomEquiv_comp_symm ..
 
 end homEquiv
@@ -248,25 +275,23 @@ section
 
 open MorphismProperty.Over
 
-variable {Q} [P.IsStableUnderBaseChange] {S S' : T} {f : S ⟶ S'} (hf : Q f)
-    [Q.HasPullbacks] [P.HasPushforwards Q] [P.IsStableUnderPushforward Q]
+variable [P.IsStableUnderBaseChange] {S S' : T} (f : S ⟶ S')
+    [HasPullbacksAlong f] [P.HasPushforwardsAlong f] [P.IsStableUnderPushforwardsAlong f]
 
-@[simp]
-abbrev Over.pullback'' := @Over.pullback _ _ P ⊤ _ _ _ _ _ f
-  (hasPullbacksAlong_of_hasPullbacks' hf)
+instance : P.HasPullbacksAlong f where
+  hasPullback := inferInstance
 
 /-- The `pullback ⊣ pushforward` adjunction. -/
-def pullbackPushforwardAdjunction : @Over.pullback _ _ P ⊤ _ _ _ _ _ f
-  (hasPullbacksAlong_of_hasPullbacks' hf)  ⊣ pushforward P hf :=
+def pullbackPushforwardAdjunction : Over.pullback P ⊤ f ⊣ pushforward P f :=
   Adjunction.mkOfHomEquiv {
     homEquiv X Y :=
-      calc ((pullback'' P hf).obj X ⟶ Y)
-      _ ≃ (((pullback'' P hf).obj X).toComma ⟶ Y.toComma) :=
+      calc ((pullback P ⊤ f).obj X ⟶ Y)
+      _ ≃ (((pullback P ⊤ f).obj X).toComma ⟶ Y.toComma) :=
         (Functor.FullyFaithful.ofFullyFaithful (Over.forget P ⊤ S)).homEquiv
-      _ ≃ (X.toComma ⟶ ((P.pushforward hf).obj Y).toComma) :=
-        (pushforward.homEquiv hf).symm
+      _ ≃ (X.toComma ⟶ ((P.pushforward f).obj Y).toComma) :=
+        (pushforward.homEquiv f).symm
       _ ≃ _ := Equiv.cast (by dsimp) -- why?
-      _ ≃ (X ⟶ (P.pushforward hf).obj Y) :=
+      _ ≃ (X ⟶ (P.pushforward f).obj Y) :=
         (Functor.FullyFaithful.ofFullyFaithful (Over.forget P ⊤ S')).homEquiv.symm
     homEquiv_naturality_left_symm g f := by
       simp only [Equiv.trans_def, Equiv.cast_refl, Equiv.trans_refl,
@@ -291,11 +316,11 @@ def pullbackPushforwardAdjunction : @Over.pullback _ _ P ⊤ _ _ _ _ _ f
       rfl
   }
 
-instance : (pullback'' P hf).IsLeftAdjoint :=
-  Adjunction.isLeftAdjoint (pullbackPushforwardAdjunction P hf)
+instance : (pullback P ⊤ f).IsLeftAdjoint :=
+  Adjunction.isLeftAdjoint (pullbackPushforwardAdjunction P f)
 
-instance : (pushforward P hf).IsRightAdjoint :=
-  Adjunction.isRightAdjoint (pullbackPushforwardAdjunction P hf)
+instance : (pushforward P f).IsRightAdjoint :=
+  Adjunction.isRightAdjoint (pullbackPushforwardAdjunction P f)
 
 end
 

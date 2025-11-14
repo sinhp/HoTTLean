@@ -40,6 +40,9 @@ as `f`, the pullback of that morphism along `f` exists. -/
 protected class HasPullbacksAlong {X Y : C} (f : X ⟶ Y) : Prop where
   hasPullback {W} (g : W ⟶ Y) : P g → HasPullback g f
 
+instance {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f] : P.HasPullbacksAlong f where
+  hasPullback := inferInstance
+
 variable {P}
 
 theorem baseChange_map' [IsStableUnderBaseChange P] {S S' X Y : C} (f : S' ⟶ S)

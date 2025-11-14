@@ -74,7 +74,13 @@ Specializations of results from the `Poly` package to natural models. -/
 abbrev uvPolyTp : UvPoly R M.Tm M.Ty := ⟨M.tp, M.morphismProperty⟩
 
 variable [ChosenTerminal Ctx] [R.HasObjects] [R.IsMultiplicative]
-  [R.HasPushforwards R] [R.IsStableUnderPushforward R]
+  [R.HasPushforwards R] [R.IsStableUnderPushforwards R]
+
+instance : R.HasPushforwardsAlong M.uvPolyTp.p :=
+  MorphismProperty.HasPushforwards.hasPushforwardsAlong M.tp M.morphismProperty
+
+instance : R.IsStableUnderPushforwardsAlong M.uvPolyTp.p :=
+  MorphismProperty.IsStableUnderPushforwards.of_isPushforward M.tp M.morphismProperty
 
 def Ptp : Ctx ⥤ Ctx := M.uvPolyTp.functor
 
@@ -118,7 +124,7 @@ lemma fst_mk (A : Γ ⟶ M.Ty) (B : M.ext A ⟶ X) :
 lemma snd_mk (A : Γ ⟶ M.Ty) (B : M.ext A ⟶ X) :
     snd M (mk M A B) _ (fst_mk ..) = B := by
   dsimp only [snd, mk]
-  rw! [UvPoly.Equiv.snd'_mk']
+  rw! [UvPoly.Equiv.snd'_mk' (P := M.uvPolyTp)]
 
 section
 variable {Δ : Ctx} {σ : Δ ⟶ Γ} {AB : Γ ⟶ M.Ptp.obj X}
@@ -133,7 +139,7 @@ theorem fst_comp_right {Y} (σ : X ⟶ Y) : fst M (AB ≫ M.Ptp.map σ) = fst M 
 theorem snd_comp_right {Y} (σ : X ⟶ Y) {A} (eq : fst M AB = A) :
     snd M (AB ≫ M.Ptp.map σ) _ (by simpa) = snd M AB _ eq ≫ σ := by
   simp only [snd, Ptp]
-  rw [UvPoly.Equiv.snd'_comp_right]
+  rw [UvPoly.Equiv.snd'_comp_right (P := M.uvPolyTp)]
 
 theorem snd_comp_left {A} (eqA : fst M AB = A) {σA} (eqσ : σ ≫ A = σA) :
     snd M (σ ≫ AB) σA (by simp [fst_comp_left, eqA, eqσ]) =
@@ -326,8 +332,8 @@ theorem comp_mk (α : Γ ⟶ M.Tm) {A} (e1 : α ≫ M.tp = A) (B : (M.ext A) ⟶
       ((M.substWk σ A _ e3) ≫ B) (σ ≫ β)
       (by simp [e2]; rw [← Category.assoc, comp_sec]; simp; congr!) := by
   dsimp only [mk]
-  rw [UvPoly.compDomEquiv.comp_mk σ _ α e1 (M.disp _) (M.var _) (M.disp_pullback _).flip
-    (M.disp _) (M.var _) (M.disp_pullback _).flip ]
+  rw [UvPoly.compDomEquiv.comp_mk (P := M.uvPolyTp) (P' := N.uvPolyTp) σ _ α e1 (M.disp _)
+    (M.var _) (M.disp_pullback _).flip (M.disp _) (M.var _) (M.disp_pullback _).flip]
   subst e1 e3
   congr 2
   apply (disp_pullback ..).hom_ext <;> simp [substWk_disp]
@@ -336,7 +342,7 @@ theorem comp_mk (α : Γ ⟶ M.Tm) {A} (e1 : α ≫ M.tp = A) (B : (M.ext A) ⟶
 lemma mk_comp (α : Γ ⟶ M.Tm) {A} (e1 : α ≫ M.tp = A) (B : (M.ext A) ⟶ N.Ty)
     (β : Γ ⟶ N.Tm) (e2 : β ≫ N.tp = (M.sec A α e1) ≫ B) :
     mk α e1 B β e2 ≫ M.compP N = PtpEquiv.mk M A B := by
-  erw [PtpEquiv.mk, UvPoly.compDomEquiv.mk_comp]
+  erw [PtpEquiv.mk, UvPoly.compDomEquiv.mk_comp (P := M.uvPolyTp) (P' := N.uvPolyTp)]
 
 theorem eta (ab : Γ ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     {A} (eq : fst ab ≫ M.tp = A) :
@@ -1187,8 +1193,29 @@ This is the signature for a polynomial functor `iUvPoly` on the presheaf categor
 abbrev iUvPoly : UvPoly R ie.i M.Tm :=
   ie.i2UvPoly.vcomp ii.k2UvPoly
 
+lemma iUvPoly_morphismProperty : R (ie.i2 ≫ ii.k2) := by
+  apply R.comp_mem
+  · exact R.of_isPullback ie.i_isPullback M.morphismProperty
+  · exact R.of_isPullback ii.isKernelPair M.morphismProperty
+
+instance : R.HasPushforwardsAlong ie.iUvPoly.p := by
+  apply MorphismProperty.HasPushforwards.hasPushforwardsAlong (Q := R)
+  apply iUvPoly_morphismProperty
+
+instance : R.IsStableUnderPushforwardsAlong ie.iUvPoly.p := by
+  apply MorphismProperty.IsStableUnderPushforwards.of_isPushforward (Q := R)
+  apply iUvPoly_morphismProperty
+
 /-- The functor part of the polynomial endofunctor `iOverUvPoly` -/
 abbrev iFunctor : Ctx ⥤ Ctx := ie.iUvPoly.functor
+
+instance : R.HasPushforwardsAlong (UvPoly.id R M.Tm).p := by
+  apply MorphismProperty.HasPushforwards.hasPushforwardsAlong (Q := R)
+  apply R.id_mem
+
+instance : R.IsStableUnderPushforwardsAlong (UvPoly.id R M.Tm).p := by
+  apply MorphismProperty.IsStableUnderPushforwards.of_isPushforward (Q := R)
+  apply R.id_mem
 
 /-- Consider the comparison map `comparison : Tm ⟶ i` in the slice over `Tm`.
 Then the contravariant action `UVPoly.verticalNatTrans` of taking `UvPoly` on a slice
