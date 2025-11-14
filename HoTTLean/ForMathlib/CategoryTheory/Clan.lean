@@ -44,25 +44,56 @@ namespace MorphismProperty
 
 variable (R : MorphismProperty C)
 
+@[simp]
 def Local (X : C) : MorphismProperty (R.Over ⊤ X) := fun _ _ f => R f.left
 
+section pullback
 
+variable {R} [R.HasPullbacks] {X : C}
 
-#check Functor.map_isPullback
+lemma Local.hasPullback {U V W : R.Over ⊤ X} {f : U ⟶ W} (g : V ⟶ W) (rf : R f.left) :
+    HasPullback f.left g.left :=
+  MorphismProperty.HasPullbacks.hasPullback (g.left) (f:= f.left) rf
 
+variable [R.IsStableUnderComposition] [R.IsStableUnderBaseChange]
 
+def Local.pullback {U V W : R.Over ⊤ X} {f : U ⟶ W} (g : V ⟶ W) (rf : R f.left) : R.Over ⊤ X :=
+  have := Local.hasPullback g rf
+  .mk ⊤ ((pullback.snd f.left g.left) ≫ V.hom)
+  (R.comp_mem _ _ (R.of_isPullback (IsPullback.of_hasPullback f.left g.left) rf) V.prop)
 
-instance (X : C) [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderBaseChange] :
-  (Local R X).HasPullbacks where
-    hasPullback {U V W} f g Rf := by
-     have e: HasPullback f.left g.left :=
-      MorphismProperty.HasPullbacks.hasPullback (g.left) (f:= f.left) Rf
-     let pbinC := IsPullback.of_hasPullback f.left g.left
-     let P : R.Over ⊤ X := .mk ⊤ ((pullback.snd f.left g.left) ≫ V.hom)
-      (by apply R.comp_mem
-        sorry)
-     apply IsPullback.hasPullback
-     sorry
+def Local.pullback.fst {U V W : R.Over ⊤ X} {f : U ⟶ W} (g : V ⟶ W) (rf : R f.left) :
+    Local.pullback g rf ⟶ U :=
+  have := Local.hasPullback g rf
+  Over.homMk (Limits.pullback.fst f.left g.left) (by
+    simp only [pullback, ← Over.w f, Limits.pullback.condition_assoc]
+    simp)
+
+def Local.pullback.snd {U V W : R.Over ⊤ X} {f : U ⟶ W} (g : V ⟶ W) (rf : R f.left) :
+    Local.pullback g rf ⟶ V :=
+  have := Local.hasPullback g rf
+  Over.homMk (Limits.pullback.snd f.left g.left)
+
+theorem Local.pullback.isPullback {U V W : R.Over ⊤ X} {f : U ⟶ W} (g : V ⟶ W) (rf : R f.left) :
+    IsPullback (Local.pullback.fst g rf) (Local.pullback.snd g rf) f g := by
+  have := Local.hasPullback g rf
+  have : (CostructuredArrow.proj (𝟭 C) X).Faithful := CostructuredArrow.proj_faithful -- why?
+  have : ReflectsLimitsOfShape WalkingCospan (CostructuredArrow.proj (𝟭 C) X) := inferInstance -- why?
+  apply Functor.reflect_isPullback (Over.forget R ⊤ X ⋙ CostructuredArrow.proj (Functor.id C) X)
+  simpa [fst, snd, Comma.Hom.hom_left] using IsPullback.of_hasPullback f.left g.left
+
+variable (X)
+
+instance : (Local R X).HasPullbacks where
+  hasPullback {U V W} f g rf := by
+    have := Local.hasPullback g rf
+    let pbinC := IsPullback.of_hasPullback f.left g.left
+    --  let P : R.Over ⊤ X := .mk ⊤ ((pullback.snd f.left g.left) ≫ V.hom)
+    -- (by apply R.comp_mem
+    --   sorry)
+    --  apply IsPullback.hasPullback
+    sorry
+
     -- let F := CostructuredArrow.proj (Functor.id C) X
     -- have p00:  PreservesLimit (cospan f g) (Over.forget R ⊤ X) := sorry
     -- have p0 :  PreservesLimit (cospan f g ⋙ Over.forget R ⊤ X)
@@ -79,24 +110,13 @@ instance (X : C) [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderB
     -- simp[Local] at *
     -- apply R.of_isPullback p rf
 
-instance (X : C) [R.IsStableUnderComposition] [R.IsStableUnderBaseChange] :
-  (Local R X).IsStableUnderBaseChange where
-    of_isPullback {W V P K} g f fst snd i rf := by
-     let F := CostructuredArrow.proj (Functor.id C) X
-     have p00:  PreservesLimit (cospan f g) (Over.forget R ⊤ X) := sorry
-     have p0 :  PreservesLimit (cospan f g ⋙ Over.forget R ⊤ X)
-       (CostructuredArrow.proj (𝟭 C) X) := sorry
+instance : (Local R X).IsStableUnderBaseChange where
+  of_isPullback {W V P K} g f fst snd i rf := by
+    have := Local.hasPullback g rf
+    rw [← IsPullback.isoIsPullback_hom_snd _ _ i (Local.pullback.isPullback g rf), Local]
+    exact RespectsIso.precomp _ _ _ (R.of_isPullback (IsPullback.of_hasPullback f.left g.left) rf)
 
-     have p1 : @PreservesLimit
-        (R.Over ⊤ X) _ C _ WalkingCospan _ (cospan f g)
-        (Over.forget R ⊤ X ⋙ (CostructuredArrow.proj (Functor.id C) X)) := by
-         apply CategoryTheory.Limits.comp_preservesLimit
-
-     have p: IsPullback fst.left snd.left f.left g.left := by
-       apply Functor.map_isPullback
-             (Over.forget R ⊤ X ⋙ CostructuredArrow.proj (Functor.id C) X) i
-     simp[Local] at *
-     apply R.of_isPullback p rf
+end pullback
 
 instance (X : C) [R.IsStableUnderComposition] [R.IsStableUnderBaseChange] :
   (Local R X).IsStableUnderBaseChange := sorry
