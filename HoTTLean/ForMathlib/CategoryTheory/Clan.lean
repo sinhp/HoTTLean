@@ -46,11 +46,60 @@ variable (R : MorphismProperty C)
 
 def Local (X : C) : MorphismProperty (R.Over ⊤ X) := fun _ _ f => R f.left
 
-instance (X : C) [R.IsStableUnderComposition] [R.IsStableUnderBaseChange] :
-  (Local R X).IsStableUnderBaseChange := sorry
+
+
+#check Functor.map_isPullback
+
+
 
 instance (X : C) [R.IsStableUnderComposition] [R.HasPullbacks] [R.IsStableUnderBaseChange] :
-    (Local R X).HasPullbacks := sorry
+  (Local R X).HasPullbacks where
+    hasPullback {U V W} f g Rf := by
+     have e: HasPullback f.left g.left :=
+      MorphismProperty.HasPullbacks.hasPullback (g.left) (f:= f.left) Rf
+     let pbinC := IsPullback.of_hasPullback f.left g.left
+     let P : R.Over ⊤ X := .mk ⊤ ((pullback.snd f.left g.left) ≫ V.hom)
+      (by apply R.comp_mem
+        sorry)
+     apply IsPullback.hasPullback
+     sorry
+    -- let F := CostructuredArrow.proj (Functor.id C) X
+    -- have p00:  PreservesLimit (cospan f g) (Over.forget R ⊤ X) := sorry
+    -- have p0 :  PreservesLimit (cospan f g ⋙ Over.forget R ⊤ X)
+    --     (CostructuredArrow.proj (𝟭 C) X) := sorry
+
+    -- have p1 : @PreservesLimit
+    --     (R.Over ⊤ X) _ C _ WalkingCospan _ (cospan f g)
+    --     (Over.forget R ⊤ X ⋙ (CostructuredArrow.proj (Functor.id C) X)) := by
+    --      apply CategoryTheory.Limits.comp_preservesLimit
+
+    -- have p: IsPullback fst.left snd.left f.left g.left := by
+    --    apply Functor.map_isPullback
+    --          (Over.forget R ⊤ X ⋙ CostructuredArrow.proj (Functor.id C) X) i
+    -- simp[Local] at *
+    -- apply R.of_isPullback p rf
+
+instance (X : C) [R.IsStableUnderComposition] [R.IsStableUnderBaseChange] :
+  (Local R X).IsStableUnderBaseChange where
+    of_isPullback {W V P K} g f fst snd i rf := by
+     let F := CostructuredArrow.proj (Functor.id C) X
+     have p00:  PreservesLimit (cospan f g) (Over.forget R ⊤ X) := sorry
+     have p0 :  PreservesLimit (cospan f g ⋙ Over.forget R ⊤ X)
+       (CostructuredArrow.proj (𝟭 C) X) := sorry
+
+     have p1 : @PreservesLimit
+        (R.Over ⊤ X) _ C _ WalkingCospan _ (cospan f g)
+        (Over.forget R ⊤ X ⋙ (CostructuredArrow.proj (Functor.id C) X)) := by
+         apply CategoryTheory.Limits.comp_preservesLimit
+
+     have p: IsPullback fst.left snd.left f.left g.left := by
+       apply Functor.map_isPullback
+             (Over.forget R ⊤ X ⋙ CostructuredArrow.proj (Functor.id C) X) i
+     simp[Local] at *
+     apply R.of_isPullback p rf
+
+instance (X : C) [R.IsStableUnderComposition] [R.IsStableUnderBaseChange] :
+  (Local R X).IsStableUnderBaseChange := sorry
 
 instance (X : C) : (Local R X).HasObjects := sorry
 
