@@ -123,51 +123,73 @@ lemma Over.pullbackComp_left_fst_fst (A : P.Over Q Z) :
 variable {f} {g}
 
 /-- If `f = g`, then base change along `f` is naturally isomorphic to base change along `g`. -/
+@[simps!]
 noncomputable def Over.pullbackCongr {g : X ⟶ Y} (h : f = g) :
     have : P.HasPullbacksAlong g := by subst h; infer_instance
     have : P.IsStableUnderBaseChangeAlong g := by subst h; infer_instance
     Over.pullback P Q f ≅ Over.pullback P Q g :=
-  NatIso.ofComponents (fun X ↦ eqToIso (by simp [h]))
-
-@[reassoc (attr := simp)]
-lemma Over.pullbackCongr_hom_app_left_fst {g : X ⟶ Y}
-    (h : f = g) (A : P.Over Q Y) :
-    have : P.HasPullbacksAlong g := by subst h; infer_instance
-    have : P.IsStableUnderBaseChangeAlong g := by subst h; infer_instance
-    ((Over.pullbackCongr h).hom.app A).left ≫ pullback.fst A.hom g = pullback.fst A.hom f := by
-  subst h
-  simp [pullbackCongr]
+  have : P.HasPullbacksAlong g := by subst h; infer_instance
+  NatIso.ofComponents (fun _ ↦ Over.isoMk (pullback.congrHom rfl h))
 
 end Pullback
 
 section Adjunction
 
-variable [P.IsStableUnderComposition] [P.IsStableUnderBaseChange]
-  [Q.IsMultiplicative] [Q.IsStableUnderBaseChange]
+variable {P Q} [P.IsStableUnderComposition] [Q.IsMultiplicative] [Q.IsStableUnderBaseChange]
+
+/-- `P.Over.map` is left adjoint to `P.Over.pullback` if `f` satisfies `P` and `Q`. -/
+@[simps!]
+noncomputable def Over.mapPullbackAdjHomEquiv (f : X ⟶ Y) [P.HasPullbacksAlong f]
+    [P.IsStableUnderBaseChangeAlong f] [Q.HasOfPostcompProperty Q] (hPf : P f) (hQf : Q f)
+    (A : P.Over Q X) (B : P.Over Q Y) : ((map Q hPf).obj A ⟶ B) ≃ (A ⟶ (pullback P Q f).obj B) :=
+  { toFun g := Over.homMk (pullback.lift g.left A.hom <| by simp) (by simp) <| by
+        apply Q.of_postcomp (W' := Q)
+        · exact Q.pullback_fst B.hom f hQf
+        · simpa using g.prop_hom_left
+    invFun h := Over.homMk (h.left ≫ pullback.fst B.hom f) (by
+        simp only [map_obj_left, Functor.const_obj_obj, pullback_obj_left, Functor.id_obj,
+          Category.assoc, pullback.condition, map_obj_hom, ← pullback_obj_hom, Over.w_assoc])
+      (Q.comp_mem _ _ h.prop_hom_left (Q.pullback_fst _ _ hQf))
+    left_inv := by cat_disch
+    right_inv h := by
+      ext
+      dsimp
+      ext
+      · simp
+      · simpa using h.w.symm }
 
 /-- `P.Over.map` is left adjoint to `P.Over.pullback` if `f` satisfies `P` and `Q`. -/
 noncomputable def Over.mapPullbackAdj (f : X ⟶ Y) [P.HasPullbacksAlong f]
     [P.IsStableUnderBaseChangeAlong f] [Q.HasOfPostcompProperty Q] (hPf : P f) (hQf : Q f) :
     Over.map Q hPf ⊣ Over.pullback P Q f :=
   Adjunction.mkOfHomEquiv
-    { homEquiv := fun A B ↦
-        { toFun := fun g ↦
-            Over.homMk (pullback.lift g.left A.hom <| by simp) (by simp) <| by
-              apply Q.of_postcomp (W' := Q)
-              · exact Q.pullback_fst B.hom f hQf
-              · simpa using g.prop_hom_left
-          invFun := fun h ↦ Over.homMk (h.left ≫ pullback.fst B.hom f)
-            (by
-              simp only [map_obj_left, Functor.const_obj_obj, pullback_obj_left, Functor.id_obj,
-                Category.assoc, pullback.condition, map_obj_hom, ← pullback_obj_hom, Over.w_assoc])
-            (Q.comp_mem _ _ h.prop_hom_left (Q.pullback_fst _ _ hQf))
-          left_inv := by cat_disch
-          right_inv := fun h ↦ by
-            ext
-            dsimp
-            ext
-            · simp
-            · simpa using h.w.symm } }
+    { homEquiv A B := Over.mapPullbackAdjHomEquiv f hPf hQf A B }
+
+variable (f : X ⟶ Y) [P.HasPullbacksAlong f] [P.IsStableUnderBaseChangeAlong f]
+    [Q.HasOfPostcompProperty Q] (hPf : P f) (hQf : Q f)
+    (A : P.Over Q X) (B : P.Over Q Y)
+
+@[simp]
+lemma Over.mapPullbackAdj_homEquiv_apply_left (g : (map Q hPf).obj A ⟶ B) :
+    ((Over.mapPullbackAdj f hPf hQf).homEquiv A B g).left =
+    pullback.lift g.left A.hom (by cat_disch) := by
+  simp [mapPullbackAdj]
+
+@[simp]
+lemma Over.mapPullbackAdj_homEquiv_symm_apply_left (g) :
+    (((Over.mapPullbackAdj f hPf hQf).homEquiv A B).symm g).left =
+    g.left ≫ pullback.fst B.hom f := by
+  simp [mapPullbackAdj]
+
+@[simp]
+lemma Over.mapPullbackAdj_unit_app_left (A) : ((Over.mapPullbackAdj f hPf hQf).unit.app A).left =
+    pullback.lift (𝟙 A.left) A.hom (by cat_disch) :=
+  rfl
+
+@[simp]
+lemma Over.mapPullbackAdj_counit_app_left (A) : ((Over.mapPullbackAdj f hPf hQf).counit.app A).left =
+    pullback.fst A.hom f := by
+  simp [mapPullbackAdj]
 
 end Adjunction
 
