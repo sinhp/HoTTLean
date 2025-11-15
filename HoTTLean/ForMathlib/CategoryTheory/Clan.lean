@@ -40,6 +40,15 @@ structure RepresentableChosenPullbacks {X Y : Psh C} (f : X ⟶ Y) where
   disp_pullback {Γ : C} (A : y(Γ) ⟶ Y) :
     IsPullback (var A) ym(disp A) f A
 
+open Functor in
+theorem NatTrans.isIso_of_whiskerRight_isIso {C D E : Type*} [Category C] [Category D] [Category E]
+    {G H : C ⥤ D} (α : G ⟶ H) (F : D ⥤ E) [IsIso (whiskerRight α F)] [F.ReflectsIsomorphisms] :
+    IsIso α := by
+  rw [NatTrans.isIso_iff_isIso_app] at *
+  intro
+  apply (config := {allowSynthFailures:= true}) Functor.ReflectsIsomorphisms.reflects F
+  cat_disch
+
 namespace MorphismProperty
 
 variable (R : MorphismProperty C)
@@ -246,6 +255,28 @@ noncomputable def Over.pullbackId (P Q : MorphismProperty C) (X)
   NatIso.ofComponents (fun X ↦ Over.isoMk (asIso (pullback.fst X.hom (𝟙 _)))
     (by simp [pullback.condition]))
 
+def pullbackPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProperty T}
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+    [R.IsStableUnderBaseChangeAlong h] [R.IsStableUnderBaseChangeAlong f]
+    [R.IsStableUnderBaseChangeAlong g] [R.IsStableUnderBaseChangeAlong k]
+    [R.HasPullbacksAlong h] [R.HasPullbacksAlong f] [R.HasPullbacksAlong g]
+    [R.HasPullbacksAlong k] : TwoSquare (Over.pullback R ⊤ k) (Over.pullback R ⊤ g)
+    (Over.pullback R ⊤ f) (Over.pullback R ⊤ h) :=
+  (Over.pullbackComp _ _).inv ≫ (Over.pullbackCongr sq).inv ≫ (Over.pullbackComp _ _).hom
+
+@[simp]
+lemma pullbackPullbackTwoSquare_app_left {T : Type u} [Category.{v} T] {R : MorphismProperty T}
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+    [R.IsStableUnderBaseChangeAlong h] [R.IsStableUnderBaseChangeAlong f]
+    [R.IsStableUnderBaseChangeAlong g] [R.IsStableUnderBaseChangeAlong k]
+    [R.HasPullbacksAlong h] [R.HasPullbacksAlong f] [R.HasPullbacksAlong g]
+    [R.HasPullbacksAlong k] (A : R.Over ⊤ W) :
+    ((pullbackPullbackTwoSquare h f g k sq).app A).left =
+    pullback.lift (pullback.map _ _ _ _ (pullback.fst _ _) h k
+      (by simp [pullback.condition]) sq.symm) (pullback.snd _ _) (by cat_disch) := by
+  dsimp [pullbackPullbackTwoSquare]
+  ext <;> simp
+
 /-- Fixing a commutative square,
 ```
    Y - k → W
@@ -281,18 +312,16 @@ def pullbackMapTwoSquare {T : Type u} [Category.{v} T] (R : MorphismProperty T)
     (MorphismProperty.Over.pullback R ⊤ g) :=
   (mateEquiv (MorphismProperty.Over.mapPullbackAdj k rk trivial)
     (MorphismProperty.Over.mapPullbackAdj h rh trivial)).symm <|
-    (MorphismProperty.Over.pullbackComp _ _).inv ≫
-    (Over.pullbackCongr sq).inv ≫
-    (MorphismProperty.Over.pullbackComp _ _).hom
+    pullbackPullbackTwoSquare _ _ _ _ sq
 
 @[simp]
 lemma pullbackMapTwoSquare_app_left {T : Type u} [Category.{v} T] (R : MorphismProperty T)
     [R.IsStableUnderComposition] {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
-    (rk : R k) (rh : R h)
+    (rk : R k) (rh : R h) (sq : h ≫ g = f ≫ k)
     [R.IsStableUnderBaseChangeAlong h] [R.IsStableUnderBaseChangeAlong f]
     [R.IsStableUnderBaseChangeAlong g] [R.IsStableUnderBaseChangeAlong k]
     [R.HasPullbacksAlong h] [R.HasPullbacksAlong f] [R.HasPullbacksAlong g] [R.HasPullbacksAlong k]
-    (sq : h ≫ g = f ≫ k) (A : R.Over ⊤ Y) :
+    (A : R.Over ⊤ Y) :
     have : HasPullback (A.hom ≫ k) g :=
       HasPullbacksAlong.hasPullback (A.hom ≫ k) (R.comp_mem _ _ A.prop rk)
     ((R.pullbackMapTwoSquare h f g k rk rh sq).app A).left =
@@ -334,14 +363,10 @@ theorem pullbackMapTwoSquare_isIso {T : Type u} [Category.{v} T] (R : MorphismPr
   have : HasPullback (A.hom ≫ k) g :=
     HasPullbacksAlong.hasPullback (A.hom ≫ k) (R.comp_mem _ _ A.prop rk)
   apply (config := {allowSynthFailures:= true}) Functor.ReflectsIsomorphisms.reflects
-    (ExtendedFibration.yoneda R Z)
-  apply (config := {allowSynthFailures:= true})
-    Functor.ReflectsIsomorphisms.reflects (Over.forget _ _ _)
-  apply (config := {allowSynthFailures:= true})
-    Functor.ReflectsIsomorphisms.reflects (CategoryTheory.Over.forget _)
-  apply (config := {allowSynthFailures:= true}) yoneda.map_isIso
-  simp [Functor.comp_obj, Over.map_obj_left, Over.pullback_obj_left, Functor.id_obj,
-    Over.map_obj_hom, pullbackMapTwoSquare_app_left, Functor.const_obj_obj]
+    (Over.forget _ _ _ ⋙ CategoryTheory.Over.forget _)
+  simp only [Functor.comp_obj, Comma.forget_obj, Over.forget_obj, Over.map_obj_left,
+    Over.pullback_obj_left, Over.map_obj_hom, Functor.comp_map, Comma.forget_map, Over.forget_map,
+    pullbackMapTwoSquare_app_left, Functor.id_obj, Functor.const_obj_obj]
   apply CategoryTheory.IsPullback.pullback.map_isIso_of_pullback_right_of_comm_cube
   · cat_disch
   · assumption
@@ -375,14 +400,60 @@ def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProp
     [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g] :
     TwoSquare (pushforward R g) (Over.pullback R ⊤ h) (Over.pullback R ⊤ k)
     (pushforward R f) :=
-  let pullbackTwoSquare : TwoSquare (Over.pullback R ⊤ k) (Over.pullback R ⊤ g)
-      (Over.pullback R ⊤ f) (Over.pullback R ⊤ h) :=
-    (Over.pullbackComp _ _).inv ≫
-    (Over.pullbackCongr sq).inv ≫
-    (Over.pullbackComp _ _).hom
-  mateEquiv (pullbackPushforwardAdjunction R g)
-  (pullbackPushforwardAdjunction R f)
-  pullbackTwoSquare
+  mateEquiv (pullbackPushforwardAdjunction R g) (pullbackPushforwardAdjunction R f)
+    (pullbackPullbackTwoSquare _ _ _ _ sq)
+
+-- lemma pushforwardPullbackTwoSquare_ {T : Type u} [Category.{v} T] {R : MorphismProperty T}
+--     [R.HasPullbacks] [R.IsStableUnderBaseChange] {X Y Z W : T}
+--     (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+--     [HasPullbacksAlong f] [HasPullbacksAlong g]
+--     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
+--     [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g] (A : R.Over ⊤ Z) :
+--     (pushforwardPullbackTwoSquare h f g k sq).app A = sorry := by
+--   apply (Over.forget R ⊤ Y).map_injective
+--   simp [pushforwardPullbackTwoSquare, ← Functor.map_comp]
+--   rw [pushforward.homEquiv_symm_comp]
+--   rw [Equiv.symm_apply_eq]
+--   simp
+--   erw [Category.id_comp]
+--   ext
+--   simp
+--   ext
+--   · simp
+--     sorry
+--   · sorry
+
+theorem pushforwardPullbackTwoSquare_isIso_extendedFibration {T : Type u} [Category.{max u v} T]
+    (R : MorphismProperty T)
+    [R.HasPullbacks] [R.IsStableUnderBaseChange]
+    {X Y Z W : Psh T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+    [HasPullbacksAlong f] [HasPullbacksAlong g]
+    [(ExtendedFibration R).HasPushforwardsAlong f] -- TODO: should be automatic in Psh T
+    [(ExtendedFibration R).IsStableUnderPushforwardsAlong f]
+    -- TODO: should follow from [R.IsStableUnderPushforwardsAlong f]
+    [(ExtendedFibration R).HasPushforwardsAlong g] -- TODO: should be automatic in Psh T
+    [(ExtendedFibration R).IsStableUnderPushforwardsAlong g]
+    -- TODO: should follow from [R.IsStableUnderPushforwardsAlong g]
+    (pb : IsPullback h f g k) :
+    IsIso (pushforwardPullbackTwoSquare (R := ExtendedFibration R) h f g k pb.w) := by
+  have : IsIso (Functor.whiskerRight (pushforwardPullbackTwoSquare h f g k pb.w)
+      (Over.forget R.ExtendedFibration ⊤ Y)) := by
+    sorry
+  apply NatTrans.isIso_of_whiskerRight_isIso _ (Over.forget _ _ _)
+  -- apply (config := {allowSynthFailures:= true}) NatIso.isIso_of_isIso_app
+  -- intro A
+  -- apply (config := {allowSynthFailures:= true}) Functor.ReflectsIsomorphisms.reflects
+  --   (ExtendedFibration.yoneda R Y ⋙ Over.forget _ _ _)
+  -- -- apply (config := {allowSynthFailures:= true}) yoneda.map_isIso
+  -- -- simp
+  -- have pb : IsPullback ym(h) ym(f) ym(g) ym(k) := sorry
+  -- have l := CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq
+  -- have li := CategoryTheory.pushforwardPullbackTwoSquare_of_isPullback_isIso pb
+  -- have lii := NatIso.isIso_app_of_isIso
+  --   (CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq)
+  --   ((ExtendedFibration.yoneda R Z ⋙ Over.forget _ _ _).obj A)
+  -- have : IsIso l := inferInstanceAs $ IsIso $ CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq
+  -- sorry
 
 /--
 The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
@@ -407,12 +478,61 @@ NOTE: we know it holds when for π-clans with `R = Q = the π-clan`
 ([Joyal, Notes on Clans and Tribes, Cor 2.4.11](https://arxiv.org/pdf/1710.10238)).
 NOTE: we also know it holds in a category with pullbacks with `R = ⊤` and `Q = ExponentiableMaps`.
 -/
-theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{v} T] (R : MorphismProperty T)
+theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{max u v} T]
+    (R : MorphismProperty T)
     [R.HasPullbacks] [R.IsStableUnderBaseChange]
     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
     [HasPullbacksAlong f] [HasPullbacksAlong g]
     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
     [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g]
     (pb : IsPullback h f g k) :
-    IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) :=
+    IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) := by
+  let α : (R.pushforward g ⋙ Over.pullback R ⊤ k) ⋙ ExtendedFibration.yoneda R Y ⟶
+    (Over.pullback R ⊤ h ⋙ R.pushforward f) ⋙ ExtendedFibration.yoneda R Y := sorry
+  -- TODO: define α as the following composition. All should be either x.hom for some iso x or
+    -- a morphism such that IsIso x
+  -- (R.pushforward g ⋙ Over.pullback R ⊤ k) ⋙ ExtendedFibration.yoneda R Y
+  -- ≅ R.pushforward g ⋙ Over.pullback R ⊤ k ⋙ ExtendedFibration.yoneda R Y
+  -- ≅ R.pushforward g ⋙ ExtendedFibration.yoneda R W ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- ≅ (R.pushforward g ⋙ ExtendedFibration.yoneda R W) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- ≅ (ExtendedFibration.yoneda R Z ⋙ (ExtendedFibration R).pushforward ym(g)) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- ≅ ExtendedFibration.yoneda R Z ⋙ (ExtendedFibration R).pushforward ym(g) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- use `pushforwardPullbackTwoSquare_isIso_extendedFibration` here
+  -- ≅ ExtendedFibration.yoneda R Z ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(h) ⋙ (ExtendedFibration R).pushforward f
+  -- ≅ (ExtendedFibration.yoneda R Z ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(h)) ⋙ (ExtendedFibration R).pushforward f
+  -- ≅ (Over.pullback R ⊤ h ⋙ ExtendedFibration.yoneda R X) ⋙ (ExtendedFibration R).pushforward f
+  -- ≅ Over.pullback R ⊤ h ⋙ ExtendedFibration.yoneda R X ⋙ (ExtendedFibration R).pushforward f
+  -- ≅ Over.pullback R ⊤ h ⋙ R.pushforward f ⋙ ExtendedFibration.yoneda R Y
+  -- ≅ (Over.pullback R ⊤ h ⋙ R.pushforward f) ⋙ ExtendedFibration.yoneda R Y
+  have : IsIso α := sorry -- should be automatic by infer_instance. Then remove.
+  have eq : Functor.whiskerRight (pushforwardPullbackTwoSquare h f g k pb.w)
+      (ExtendedFibration.yoneda R Y) = α := sorry
+  have : IsIso (Functor.whiskerRight (pushforwardPullbackTwoSquare h f g k pb.w)
+      (ExtendedFibration.yoneda R Y)) := by rw [eq]; infer_instance
+  apply NatTrans.isIso_of_whiskerRight_isIso _ (ExtendedFibration.yoneda R Y)
+
+/-
+theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{max u v} T]
+    (R : MorphismProperty T)
+    [R.HasPullbacks] [R.IsStableUnderBaseChange]
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
+    [HasPullbacksAlong f] [HasPullbacksAlong g]
+    [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
+    [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g]
+    (pb : IsPullback h f g k) :
+    IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) := by
+  apply (config := {allowSynthFailures:= true}) NatIso.isIso_of_isIso_app
+  intro A
+  apply (config := {allowSynthFailures:= true}) Functor.ReflectsIsomorphisms.reflects
+    (ExtendedFibration.yoneda R Y ⋙ Over.forget _ _ _)
+  -- apply (config := {allowSynthFailures:= true}) yoneda.map_isIso
+  -- simp
+  have pb : IsPullback ym(h) ym(f) ym(g) ym(k) := sorry
+  have l := CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq
+  have li := CategoryTheory.pushforwardPullbackTwoSquare_of_isPullback_isIso pb
+  have lii := NatIso.isIso_app_of_isIso
+    (CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq)
+    ((ExtendedFibration.yoneda R Z ⋙ Over.forget _ _ _).obj A)
+  -- have : IsIso l := inferInstanceAs $ IsIso $ CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq
   sorry
+-/
