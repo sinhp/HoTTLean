@@ -13,7 +13,7 @@ It currently contains the following components:
 - Natural model semantics of MLTT in presheaf categories (`HoTTLean.Model`)
   and a proof that this semantics is sound for the syntax (`ofType_ofTerm_sound`).
 
-- An ongoing construction of the groupoid model of type theory (`HoTTLean.Groupoids`).
+- A `sorry`-free construction of the groupoid model of type theory with Π, Σ, Id types (`HoTTLean.Groupoids`).
 - Pieces of general mathematics and category theory
   such as the Grothendieck construction for groupoids
   (`HoTTLean.ForMathlib`, `HoTTLean.Grothendieck`, `HoTTLean.Pointed`).
