@@ -10,6 +10,7 @@ import Mathlib.Tactic.DepRewrite
 import Poly.ForMathlib.CategoryTheory.LocallyCartesianClosed.BeckChevalley
 import HoTTLean.ForMathlib.CategoryTheory.Yoneda
 import Poly.ForMathlib.CategoryTheory.LocallyCartesianClosed.Presheaf
+import HoTTLean.ForMathlib.CategoryTheory.Adjunction.PartialAdjoint
 
 universe w v u v₁ u₁
 
@@ -423,6 +424,49 @@ def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProp
 --     sorry
 --   · sorry
 
+def pullbackForgetTwoSquare {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks T]
+    [LocallyCartesianClosed T] {R : MorphismProperty T} {X Y : T} (f : X ⟶ Y)
+    [R.IsStableUnderBaseChangeAlong f] :
+    Over.pullback R ⊤ f ⋙ Over.forget R ⊤ X ≅ Over.forget R ⊤ Y ⋙ CategoryTheory.Over.pullback f :=
+  sorry
+
+@[simps]
+def _root_.CategoryTheory.ExponentiableMorphism.pullbackRepresentableByPushforward
+    {T : Type u} [Category.{v} T] [HasPullbacks T]
+    {X Y : T} (f : X ⟶ Y) [ExponentiableMorphism f] (h : Over X) :
+    ((CategoryTheory.Over.pullback f).op ⋙ y(h)).RepresentableBy
+    ((ExponentiableMorphism.pushforward f).obj h) where
+  homEquiv := ((ExponentiableMorphism.adj f).homEquiv _ _).symm
+  homEquiv_comp := by intros; simp [Adjunction.homEquiv_naturality_left_symm]
+
+def _root_.CategoryTheory.ExponentiableMorphism.hasPushforward
+    {T : Type u} [Category.{v} T] [HasPullbacks T]
+    {X Y : T} (f : X ⟶ Y) [ExponentiableMorphism f] (h : Over X) :
+    HasPushforward f h where
+  has_representation := ⟨(ExponentiableMorphism.pushforward f).obj h,
+    ⟨ExponentiableMorphism.pullbackRepresentableByPushforward f h⟩⟩
+
+attribute [local instance] ExponentiableMorphism.hasPushforward
+
+instance {T : Type u} [Category.{v} T] (R : MorphismProperty T) {X Y : T} (f : X ⟶ Y)
+    [HasPullbacksAlong f] [HasPushforwardsAlong f] : R.HasPushforwardsAlong f where
+  hasPushforward := inferInstance
+
+/-- In a locally cartesian closed category, global pushforward (defined using the
+`ExponentiableMorphism` API) commutes with local pushforward
+(defined using the `HasPushforward` API). -/
+def pushforwardForgetTwoSquare {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks T]
+    [LocallyCartesianClosed T] {R : MorphismProperty T} {X Y : T} (f : X ⟶ Y)
+    [R.IsStableUnderPushforwardsAlong f] :
+    Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f ≅
+    R.pushforward f ⋙ Over.forget R ⊤ Y :=
+  calc Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f
+  _ ≅ pushforwardPartial.lift R f ⋙ ObjectProperty.ι _ ⋙ ExponentiableMorphism.pushforward f :=
+    Iso.refl _
+  _ ≅ _ := Functor.isoWhiskerLeft _
+    (Functor.isoPartialRightAdjoint _ _ (Functor.rightAdjoint.partialRightAdjoint _))
+  _ ≅ R.pushforward f ⋙ Over.forget R ⊤ Y := (pushforwardCompForget ..).symm
+
 theorem pushforwardPullbackTwoSquare_isIso_extendedFibration {T : Type u} [Category.{max u v} T]
     (R : MorphismProperty T)
     [R.HasPullbacks] [R.IsStableUnderBaseChange]
@@ -436,9 +480,30 @@ theorem pushforwardPullbackTwoSquare_isIso_extendedFibration {T : Type u} [Categ
     -- TODO: should follow from [R.IsStableUnderPushforwardsAlong g]
     (pb : IsPullback h f g k) :
     IsIso (pushforwardPullbackTwoSquare (R := ExtendedFibration R) h f g k pb.w) := by
+  let α : (R.ExtendedFibration.pushforward g ⋙ Over.pullback R.ExtendedFibration ⊤ k) ⋙
+    Over.forget R.ExtendedFibration ⊤ Y ⟶
+    (Over.pullback R.ExtendedFibration ⊤ h ⋙ R.ExtendedFibration.pushforward f) ⋙
+    Over.forget R.ExtendedFibration ⊤ Y := sorry
+  -- TODO: define α as the following composition. All should be either x.hom for some iso x or
+    -- a morphism such that IsIso x
+  -- (R.pushforward g ⋙ Over.pullback R ⊤ k) ⋙ ExtendedFibration.yoneda R Y
+  -- ≅ R.pushforward g ⋙ Over.pullback R ⊤ k ⋙ ExtendedFibration.yoneda R Y
+  -- ≅ R.pushforward g ⋙ ExtendedFibration.yoneda R W ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- ≅ (R.pushforward g ⋙ ExtendedFibration.yoneda R W) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- ≅ (ExtendedFibration.yoneda R Z ⋙ (ExtendedFibration R).pushforward ym(g)) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- ≅ ExtendedFibration.yoneda R Z ⋙ (ExtendedFibration R).pushforward ym(g) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- use `pushforwardPullbackTwoSquare_isIso_extendedFibration` here
+  -- ≅ ExtendedFibration.yoneda R Z ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(h) ⋙ (ExtendedFibration R).pushforward f
+  -- ≅ (ExtendedFibration.yoneda R Z ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(h)) ⋙ (ExtendedFibration R).pushforward f
+  -- ≅ (Over.pullback R ⊤ h ⋙ ExtendedFibration.yoneda R X) ⋙ (ExtendedFibration R).pushforward f
+  -- ≅ Over.pullback R ⊤ h ⋙ ExtendedFibration.yoneda R X ⋙ (ExtendedFibration R).pushforward f
+  -- ≅ Over.pullback R ⊤ h ⋙ R.pushforward f ⋙ ExtendedFibration.yoneda R Y
+  -- ≅ (Over.pullback R ⊤ h ⋙ R.pushforward f) ⋙ ExtendedFibration.yoneda R Y
+  have : IsIso α := sorry -- should be automatic by infer_instance. Then remove.
+  have eq : Functor.whiskerRight (pushforwardPullbackTwoSquare h f g k pb.w)
+      (Over.forget R.ExtendedFibration ⊤ Y) = α := sorry
   have : IsIso (Functor.whiskerRight (pushforwardPullbackTwoSquare h f g k pb.w)
-      (Over.forget R.ExtendedFibration ⊤ Y)) := by
-    sorry
+      (Over.forget R.ExtendedFibration ⊤ Y)) := by rw [eq]; infer_instance
   apply NatTrans.isIso_of_whiskerRight_isIso _ (Over.forget _ _ _)
   -- apply (config := {allowSynthFailures:= true}) NatIso.isIso_of_isIso_app
   -- intro A

@@ -1,5 +1,6 @@
 import Poly.UvPoly.Basic
 import HoTTLean.ForMathlib
+import HoTTLean.ForMathlib.CategoryTheory.Comma.Over.Pushforward
 
 open CategoryTheory Limits
 
@@ -75,8 +76,8 @@ open ExponentiableMorphism Functor in
 theorem ev_naturality {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     (e : E ⟶ E') (b : B ⟶ B')
     (hp : IsPullback P.p e b P'.p) :
-    let pfwd := pushforward P.p
-    let p'fwd := pushforward P'.p
+    let pfwd := ExponentiableMorphism.pushforward P.p
+    let p'fwd := ExponentiableMorphism.pushforward P'.p
     let pbk := Over.pullback P.p
     let ebk := Over.pullback e
     let bbk := Over.pullback b
@@ -157,7 +158,7 @@ open Over ExponentiableMorphism Functor in
 lemma cartesianNatTrans_fstProj {E B E' B' : C} (P : UvPoly E B) (P' : UvPoly E' B')
     (e : E ⟶ E') (b : B ⟶ B') (pb : IsPullback P.p e b P'.p) (X : C) :
     (P.cartesianNatTrans P' b e pb).app X ≫ P'.fstProj X = P.fstProj X ≫ b := by
-  let m := whiskerRight (Over.starPullbackIsoStar e).inv (pushforward P.p) ≫
+  let m := whiskerRight (Over.starPullbackIsoStar e).inv (ExponentiableMorphism.pushforward P.p) ≫
     whiskerLeft (Over.star E') (pushforwardPullbackIsoSquare pb.flip).inv
   simp [cartesianNatTrans, pullbackForgetTwoSquare, Adjunction.id, Over.mapForget]
   rw [← Category.assoc]

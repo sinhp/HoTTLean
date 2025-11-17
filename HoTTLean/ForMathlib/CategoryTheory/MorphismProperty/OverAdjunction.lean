@@ -239,14 +239,18 @@ class IsStableUnderPushforwards [Q.HasPullbacks] : Prop where
 
 noncomputable section
 
+abbrev pushforwardPartial.lift {S S' : T} (q : S ⟶ S')
+    [HasPullbacksAlong q] [P.HasPushforwardsAlong q] :
+    P.Over ⊤ S ⥤ (CategoryTheory.Over.pullback q).PartialRightAdjointSource :=
+  ObjectProperty.lift _ (Over.forget P ⊤ S)
+    (fun X => HasPushforwardsAlong.hasPushforward X.hom X.prop)
+
 /-- If `P` has pushforwards along `q` then there is a partial left adjoint `P.Over ⊤ S ⥤ Over S'`
 of the pullback functor `pullback q : Over S' ⥤ Over S`.
 -/
 noncomputable def pushforwardPartial {S S' : T} (q : S ⟶ S') [HasPullbacksAlong q]
     [P.HasPushforwardsAlong q] : P.Over ⊤ S ⥤ Over S' :=
-  ObjectProperty.lift _ (Over.forget P ⊤ S)
-    (fun X => HasPushforwardsAlong.hasPushforward X.hom X.prop) ⋙
-    (CategoryTheory.Over.pullback q).partialRightAdjoint
+  pushforwardPartial.lift P q ⋙ (CategoryTheory.Over.pullback q).partialRightAdjoint
 
 /-- When `P` has pushforwards along `Q` and is stable under pushforwards along `Q`,
 the pushforward functor along any morphism `q` satisfying `Q` can be defined. -/
@@ -258,6 +262,11 @@ noncomputable def pushforward {S S' : T} (q : S ⟶ S') [HasPullbacksAlong q]
       ((have : HasPushforward q X.toComma := HasPushforwardsAlong.hasPushforward _ X.prop
         pushforward.isPushforward q (X.toComma))))
   (by simp) (by simp)
+
+def pushforwardCompForget {S S' : T} (q : S ⟶ S') [HasPullbacksAlong q]
+    [P.HasPushforwardsAlong q] [P.IsStableUnderPushforwardsAlong q] :
+    pushforward P q ⋙ Over.forget _ _ _ ≅ pushforwardPartial P q :=
+  Iso.refl _
 
 section homEquiv
 

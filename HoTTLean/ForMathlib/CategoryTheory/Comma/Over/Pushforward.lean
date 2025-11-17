@@ -48,26 +48,26 @@ def pushforward.isPushforward (X : Over S) [HasPushforward f X] :
 along `f` for any map into its domain. -/
 abbrev HasPushforwardsAlong : Prop := ∀ (X : Over S), HasPushforward f X
 
-namespace Over
+-- namespace Over
 
-variable [HasPushforwardsAlong f]
+-- variable [HasPushforwardsAlong f]
 
-lemma pullback_rightAdjointObjIsDefined_eq_top :
-    (Over.pullback f).rightAdjointObjIsDefined = ⊤ := by aesop_cat
+-- lemma pullback_rightAdjointObjIsDefined_eq_top :
+--     (Over.pullback f).rightAdjointObjIsDefined = ⊤ := by aesop_cat
 
-instance : (pullback f).IsLeftAdjoint :=
-  Functor.isLeftAdjoint_of_rightAdjointObjIsDefined_eq_top
-  (pullback_rightAdjointObjIsDefined_eq_top f)
+-- instance : (pullback f).IsLeftAdjoint :=
+--   Functor.isLeftAdjoint_of_rightAdjointObjIsDefined_eq_top
+--   (pullback_rightAdjointObjIsDefined_eq_top f)
 
-/-- The left adjoint of pullback. -/
-def pushforward : Over S ⥤ Over S' :=
-  (pullback f).rightAdjoint
+-- /-- The left adjoint of pullback. -/
+-- def pushforward : Over S ⥤ Over S' :=
+--   (pullback f).rightAdjoint
 
-/-- The pullback-pushforward adjunction. -/
-def pullbackPushforwardAdjunction : pullback f ⊣ pushforward f :=
-  Adjunction.ofIsLeftAdjoint (pullback f)
+-- /-- The pullback-pushforward adjunction. -/
+-- def pullbackPushforwardAdjunction : pullback f ⊣ pushforward f :=
+--   Adjunction.ofIsLeftAdjoint (pullback f)
 
-end Over
+-- end Over
 
 end CategoryTheory
 end
