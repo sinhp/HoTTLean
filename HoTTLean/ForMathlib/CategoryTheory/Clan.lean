@@ -456,9 +456,8 @@ instance {T : Type u} [Category.{v} T] (R : MorphismProperty T) {X Y : T} (f : X
 `ExponentiableMorphism` API) commutes with local pushforward
 (defined using the `HasPushforward` API). -/
 def pushforwardCompForget' {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks T]
-    [LocallyCartesianClosed T] {R : MorphismProperty T} {X Y : T} (f : X ⟶ Y)
-    [R.IsStableUnderPushforwardsAlong f] :
-    R.pushforward f ⋙ Over.forget R ⊤ Y ≅
+    {R : MorphismProperty T} {X Y : T} (f : X ⟶ Y) [ExponentiableMorphism f]
+    [R.IsStableUnderPushforwardsAlong f] : R.pushforward f ⋙ Over.forget R ⊤ Y ≅
     Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f :=
   calc R.pushforward f ⋙ Over.forget R ⊤ Y
   _ ≅ R.pushforwardPartial f := pushforwardCompForget ..
