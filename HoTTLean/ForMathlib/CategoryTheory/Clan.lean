@@ -455,17 +455,17 @@ instance {T : Type u} [Category.{v} T] (R : MorphismProperty T) {X Y : T} (f : X
 /-- In a locally cartesian closed category, global pushforward (defined using the
 `ExponentiableMorphism` API) commutes with local pushforward
 (defined using the `HasPushforward` API). -/
-def pushforwardForgetTwoSquare {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks T]
+def pushforwardCompForget' {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks T]
     [LocallyCartesianClosed T] {R : MorphismProperty T} {X Y : T} (f : X ⟶ Y)
     [R.IsStableUnderPushforwardsAlong f] :
-    Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f ≅
-    R.pushforward f ⋙ Over.forget R ⊤ Y :=
-  calc Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f
+    R.pushforward f ⋙ Over.forget R ⊤ Y ≅
+    Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f :=
+  calc R.pushforward f ⋙ Over.forget R ⊤ Y
+  _ ≅ R.pushforwardPartial f := pushforwardCompForget ..
   _ ≅ pushforwardPartial.lift R f ⋙ ObjectProperty.ι _ ⋙ ExponentiableMorphism.pushforward f :=
-    Iso.refl _
-  _ ≅ _ := Functor.isoWhiskerLeft _
-    (Functor.isoPartialRightAdjoint _ _ (Functor.rightAdjoint.partialRightAdjoint _))
-  _ ≅ R.pushforward f ⋙ Over.forget R ⊤ Y := (pushforwardCompForget ..).symm
+    (Functor.isoWhiskerLeft _
+    (Functor.isoPartialRightAdjoint _ _ (Functor.rightAdjoint.partialRightAdjoint _))).symm
+  _ ≅ Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f := Iso.refl _
 
 theorem pushforwardPullbackTwoSquare_isIso_extendedFibration {T : Type u} [Category.{max u v} T]
     (R : MorphismProperty T)
