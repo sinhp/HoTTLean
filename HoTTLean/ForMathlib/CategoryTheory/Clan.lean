@@ -425,8 +425,7 @@ def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProp
 --   · sorry
 
 def pullbackForgetTwoSquare {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks T]
-    [LocallyCartesianClosed T] {R : MorphismProperty T} {X Y : T} (f : X ⟶ Y)
-    [R.IsStableUnderBaseChangeAlong f] :
+    {R : MorphismProperty T} {X Y : T} (f : X ⟶ Y) [R.IsStableUnderBaseChangeAlong f] :
     Over.pullback R ⊤ f ⋙ Over.forget R ⊤ X ≅ Over.forget R ⊤ Y ⋙ CategoryTheory.Over.pullback f :=
   sorry
 
@@ -452,7 +451,13 @@ instance {T : Type u} [Category.{v} T] (R : MorphismProperty T) {X Y : T} (f : X
     [HasPullbacksAlong f] [HasPushforwardsAlong f] : R.HasPushforwardsAlong f where
   hasPushforward := inferInstance
 
-/-- In a locally cartesian closed category, global pushforward (defined using the
+instance {T : Type u} [Category.{max u v} T] (R : MorphismProperty T)
+    [R.HasPullbacks] [R.IsStableUnderBaseChange] {X Y : T} (f : X ⟶ Y)
+    [HasPullbacksAlong f] [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] :
+    (ExtendedFibration R).IsStableUnderPushforwardsAlong ym(f) where
+  of_isPushforward h rh g pf := sorry
+
+/-- Given an exponentiable morphism, global pushforward (defined using the
 `ExponentiableMorphism` API) commutes with local pushforward
 (defined using the `HasPushforward` API). -/
 def pushforwardCompForget' {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks T]
@@ -466,28 +471,24 @@ def pushforwardCompForget' {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks
     (Functor.isoPartialRightAdjoint _ _ (Functor.rightAdjoint.partialRightAdjoint _))).symm
   _ ≅ Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f := Iso.refl _
 
-theorem pushforwardPullbackTwoSquare_isIso_extendedFibration {T : Type u} [Category.{max u v} T]
-    (R : MorphismProperty T)
+theorem pushforwardPullbackTwoSquare_isIso_of_exponentiableMorphism
+    {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks T] (R : MorphismProperty T)
     [R.HasPullbacks] [R.IsStableUnderBaseChange]
-    {X Y Z W : Psh T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W) (sq : h ≫ g = f ≫ k)
-    [HasPullbacksAlong f] [HasPullbacksAlong g]
-    [(ExtendedFibration R).HasPushforwardsAlong f] -- TODO: should be automatic in Psh T
-    [(ExtendedFibration R).IsStableUnderPushforwardsAlong f]
-    -- TODO: should follow from [R.IsStableUnderPushforwardsAlong f]
-    [(ExtendedFibration R).HasPushforwardsAlong g] -- TODO: should be automatic in Psh T
-    [(ExtendedFibration R).IsStableUnderPushforwardsAlong g]
-    -- TODO: should follow from [R.IsStableUnderPushforwardsAlong g]
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
+    [ExponentiableMorphism f] [ExponentiableMorphism g]
+    [R.IsStableUnderPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong g]
     (pb : IsPullback h f g k) :
-    IsIso (pushforwardPullbackTwoSquare (R := ExtendedFibration R) h f g k pb.w) := by
-  let α : (R.ExtendedFibration.pushforward g ⋙ Over.pullback R.ExtendedFibration ⊤ k) ⋙
-    Over.forget R.ExtendedFibration ⊤ Y ⟶
-    (Over.pullback R.ExtendedFibration ⊤ h ⋙ R.ExtendedFibration.pushforward f) ⋙
-    Over.forget R.ExtendedFibration ⊤ Y := sorry
+    IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) := by
+  let α : (R.pushforward g ⋙ Over.pullback R ⊤ k) ⋙
+    Over.forget R ⊤ Y ⟶
+    (Over.pullback R ⊤ h ⋙ R.pushforward f) ⋙
+    Over.forget R ⊤ Y := sorry
   -- TODO: define α as the following composition. All should be either x.hom for some iso x or
     -- a morphism such that IsIso x
-  -- (R.pushforward g ⋙ Over.pullback R ⊤ k) ⋙ ExtendedFibration.yoneda R Y
-  -- ≅ R.pushforward g ⋙ Over.pullback R ⊤ k ⋙ ExtendedFibration.yoneda R Y
-  -- ≅ R.pushforward g ⋙ ExtendedFibration.yoneda R W ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
+  -- (R.ExtendedFibration.pushforward g ⋙ Over.pullback R.ExtendedFibration ⊤ k) ⋙
+  -- Over.forget R.ExtendedFibration ⊤ Y
+  -- ≅ R.ExtendedFibration.pushforward g ⋙ Over.pullback R.ExtendedFibration ⊤ k ⋙ Over.forget R.ExtendedFibration ⊤ Y
+  -- ≅ R.ExtendedFibration.pushforward g ⋙ Over.forget R.ExtendedFibration ⊤ W ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
   -- ≅ (R.pushforward g ⋙ ExtendedFibration.yoneda R W) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
   -- ≅ (ExtendedFibration.yoneda R Z ⋙ (ExtendedFibration R).pushforward ym(g)) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
   -- ≅ ExtendedFibration.yoneda R Z ⋙ (ExtendedFibration R).pushforward ym(g) ⋙ Over.pullback (ExtendedFibration R) ⊤ ym(k)
@@ -500,24 +501,22 @@ theorem pushforwardPullbackTwoSquare_isIso_extendedFibration {T : Type u} [Categ
   -- ≅ (Over.pullback R ⊤ h ⋙ R.pushforward f) ⋙ ExtendedFibration.yoneda R Y
   have : IsIso α := sorry -- should be automatic by infer_instance. Then remove.
   have eq : Functor.whiskerRight (pushforwardPullbackTwoSquare h f g k pb.w)
-      (Over.forget R.ExtendedFibration ⊤ Y) = α := sorry
+      (Over.forget R ⊤ Y) = α := sorry
   have : IsIso (Functor.whiskerRight (pushforwardPullbackTwoSquare h f g k pb.w)
-      (Over.forget R.ExtendedFibration ⊤ Y)) := by rw [eq]; infer_instance
+      (Over.forget R ⊤ Y)) := by rw [eq]; infer_instance
   apply NatTrans.isIso_of_whiskerRight_isIso _ (Over.forget _ _ _)
-  -- apply (config := {allowSynthFailures:= true}) NatIso.isIso_of_isIso_app
-  -- intro A
-  -- apply (config := {allowSynthFailures:= true}) Functor.ReflectsIsomorphisms.reflects
-  --   (ExtendedFibration.yoneda R Y ⋙ Over.forget _ _ _)
-  -- -- apply (config := {allowSynthFailures:= true}) yoneda.map_isIso
-  -- -- simp
-  -- have pb : IsPullback ym(h) ym(f) ym(g) ym(k) := sorry
-  -- have l := CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq
-  -- have li := CategoryTheory.pushforwardPullbackTwoSquare_of_isPullback_isIso pb
-  -- have lii := NatIso.isIso_app_of_isIso
-  --   (CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq)
-  --   ((ExtendedFibration.yoneda R Z ⋙ Over.forget _ _ _).obj A)
-  -- have : IsIso l := inferInstanceAs $ IsIso $ CategoryTheory.Over.pushforwardPullbackTwoSquare ym(h) ym(f) ym(g) ym(k) pb.toCommSq
-  -- sorry
+
+theorem pushforwardPullbackTwoSquare_isIso_extendedFibration {T : Type u} [Category.{max u v} T]
+    (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
+    [HasPullbacksAlong f] [HasPullbacksAlong g]
+    [R.HasPushforwardsAlong f] [R.HasPushforwardsAlong g]
+    [R.IsStableUnderPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong g]
+    (pb : IsPullback h f g k) :
+    IsIso (pushforwardPullbackTwoSquare (R := ExtendedFibration R) ym(h) ym(f) ym(g) ym(k)
+      (by simp [← Functor.map_comp, pb.w])) :=
+  pushforwardPullbackTwoSquare_isIso_of_exponentiableMorphism
+    (ExtendedFibration R) ym(h) ym(f) ym(g) ym(k) (Functor.map_isPullback _ pb)
 
 /--
 The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
