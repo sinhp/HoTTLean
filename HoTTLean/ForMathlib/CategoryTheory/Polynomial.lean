@@ -14,7 +14,7 @@ namespace CategoryTheory
 
 open Category Limits MorphismProperty
 
-variable {C : Type u} [Category.{v} C]
+variable {C : Type u} [Category.{u} C]
 
 namespace MorphismProperty
 
@@ -23,15 +23,15 @@ open NatTrans MorphismProperty.Over in
 since it is the pullback computed by `P.Over.pullback`. -/
 lemma isCartesian_mapPullbackAdj_counit {P : MorphismProperty C} {X Y : C} {f : X ⟶ Y}
     [P.IsStableUnderComposition] [P.IsStableUnderBaseChange]
-    [P.HasPullbacksAlong f] (hPf : P f) : IsCartesian (mapPullbackAdj P ⊤ f hPf trivial).counit := by
+    [P.HasPullbacksAlong f] (hPf : P f) : IsCartesian (mapPullbackAdj (Q := ⊤) f hPf trivial).counit := by
   intro A B U
   apply (MorphismProperty.Over.forget P ⊤ Y).reflect_isPullback
   apply (CategoryTheory.Over.forget Y).reflect_isPullback
   apply IsPullback.flip
   simp only [Functor.comp_obj, Comma.forget_obj, Over.forget_obj, map_obj_left, pullback_obj_left,
-    Functor.id_obj, mapPullbackAdj, Adjunction.mkOfHomEquiv,
-    Functor.const_obj_obj, map_obj_hom, Equiv.coe_fn_mk, Comma.id_hom, CategoryTheory.Comma.id_left,
-    id_comp, Adjunction.mk'_counit, Comma.forget_map, homMk_hom, Over.forget_map, Over.homMk_left,
+    Functor.id_obj, mapPullbackAdj, Adjunction.mkOfHomEquiv, Equiv.invFun_as_coe,
+    Adjunction.mk'_counit, Comma.forget_map, Over.forget_map,
+    mapPullbackAdjHomEquiv_symm_apply_left, Comma.id_hom, CategoryTheory.Comma.id_left, id_comp,
     Functor.comp_map, map_map_left, pullback_map_left, Functor.id_map]
   apply IsPullback.of_bot (v₂₁ := (pullback.snd B.hom f)) (h₃₁ := f) (v₂₂ := B.hom) _ _
     (IsPullback.of_hasPullback B.hom f)
@@ -72,7 +72,7 @@ def homEquiv {X : Over B} {Y : R.Over ⊤ I} :
     ((leftAdjoint i p).obj X ⟶ Y.toComma) :=
   calc (X ⟶ ((R.pushforward p).obj ((Over.pullback R ⊤ i).obj Y)).toComma)
   _ ≃ ((CategoryTheory.Over.pullback p).obj X ⟶ ((Over.pullback R ⊤ i).obj Y).toComma) :=
-    pushforward.homEquiv _
+    pushforward.homEquiv
   _ ≃ ((CategoryTheory.Over.map i).obj
       ((CategoryTheory.Over.pullback p).obj X) ⟶ Y.toComma) :=
     pullback.homEquiv _
@@ -283,11 +283,7 @@ variable {R : MorphismProperty C}
 
 instance {B O : C} {i : B ⟶ O} (hi : R i) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     [R.IsStableUnderComposition] : (pullback R ⊤ i).IsRightAdjoint :=
-  (mapPullbackAdj R ⊤ i hi ⟨⟩).isRightAdjoint
-
--- instance [R.IsStableUnderComposition] {X Y} {f : X ⟶ Y} (hf : R f) :
---     Limits.PreservesLimitsOfShape WalkingCospan (MorphismProperty.Over.map ⊤ hf) :=
---   sorry
+  (mapPullbackAdj (Q := ⊤) i hi ⟨⟩).isRightAdjoint
 
 variable {I O E B : C} (P : MvPoly R I O E B) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     [HasPullbacksAlong P.p] [R.HasPushforwardsAlong P.p] [R.IsStableUnderPushforwardsAlong P.p]
@@ -571,19 +567,27 @@ def cartesianNatTrans {E' B' : C} (P : MvPoly R I O E B) (P' : MvPoly R I O E' B
 -- that are from `R.Over I`.
 -- 2. `map : R.Over E -> R.Over O` also has this pullback preservation property.
 
--- open NatTrans in
--- theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R H I O E B) (P' : MvPoly R H I O E' B')
---     (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i = φ ≫ P'.i) (pb : IsPullback φ P.p P'.p δ)
---     (hδ : δ ≫ P'.o = P.o) :
---     (cartesianNatTrans P P' δ φ hφ pb hδ).IsCartesian := by
---   dsimp [cartesianNatTrans]
---   repeat apply IsCartesian.vComp
---   · apply IsCartesian.comp
---     · apply isCartesian_of_isIso
---     · sorry --apply isCartesian_of_isIso
+open NatTrans in
+theorem isCartesian_cartesianNatTrans {E' B' : C} (P : MvPoly R I O E B) (P' : MvPoly R I O E' B')
+    [HasPullbacksAlong P.p] [R.HasPushforwardsAlong P.p] [R.IsStableUnderPushforwardsAlong P.p]
+    [HasPullbacksAlong P'.p] [R.HasPushforwardsAlong P'.p] [R.IsStableUnderPushforwardsAlong P'.p]
+    (δ : B ⟶ B') (φ : E ⟶ E') (hφ : P.i = φ ≫ P'.i) (pb : IsPullback φ P.p P'.p δ)
+    (hδ : δ ≫ P'.o = P.o) :
+    (cartesianNatTrans P P' δ φ hφ pb hδ).IsCartesian :=
+  IsCartesian.vCompIsIso <|
+  IsCartesian.vCompIsIso <|
+  IsCartesian.comp
+  (isCartesian_pullbackMapTwoSquare ..)
+  (IsCartesian.whiskerLeft (isCartesian_of_isIso _) _)
+
+  -- dsimp [cartesianNatTrans]
+  -- repeat apply IsCartesian.vComp
+  -- · apply IsCartesian.comp
+  --   · apply isCartesian_of_isIso
+  --   · sorry --apply isCartesian_of_isIso
   -- · apply isCartesian_of_isIso
   -- · -- apply IsCartesian.whiskerLeft
-    -- sorry
+  --   sorry
 
   -- NOTE: this lemma could be extracted, but `repeat' apply IsCartesian.comp` will unfold past it.
   -- have : NatTrans.IsCartesian
@@ -822,10 +826,9 @@ theorem isCartesian_cartesianNatTrans {D F : C} (Q : UvPoly R F D)
     [R.IsStableUnderPushforwardsAlong Q.p] [R.HasPushforwardsAlong Q.p]
     (δ : B ⟶ D) (φ : E ⟶ F) (pb : IsPullback φ P.p Q.p δ) :
     (cartesianNatTrans P Q δ φ pb).IsCartesian := by
-  sorry
---   apply IsCartesian.whiskerLeft
---   apply IsCartesian.whiskerRight
---   apply MvPoly.isCartesian_cartesianNatTrans
+  apply IsCartesian.whiskerLeft
+  apply IsCartesian.whiskerRight
+  apply MvPoly.isCartesian_cartesianNatTrans
 
 /-- A morphism from a polynomial `P` to a polynomial `Q` is a pair of morphisms `e : E ⟶ E'`
 and `b : B ⟶ B'` such that the diagram

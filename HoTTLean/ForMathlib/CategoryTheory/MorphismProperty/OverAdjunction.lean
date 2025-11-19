@@ -230,6 +230,30 @@ class IsStableUnderPushforwardsAlong {S S' : T} (q : S ⟶ S') [HasPullbacksAlon
   of_isPushforward {X Y : T} (f : X ⟶ S) (hf : P f) {g : Y ⟶ S'}
   (isPushforward : IsPushforward q (.mk f) (.mk g)) : P g
 
+lemma IsStableUnderPushforwardsAlong.of_respectsIso [P.RespectsIso] {S S' : T} (q : S ⟶ S')
+    [HasPullbacksAlong q] (g : {X : T} → (f : X ⟶ S) → P f → Over S')
+    (pg : {X : T} → (f : X ⟶ S) → (pf : P f) → P (g f pf).hom)
+    (isPushforward : {X : T} → (f : X ⟶ S) → (pf : P f) → IsPushforward q (.mk f) (g f pf)) :
+    P.IsStableUnderPushforwardsAlong q where
+  of_isPushforward f pf g' isPushforward' :=
+    have : g' = ((isPushforward f pf).uniqueUpToIso isPushforward').inv.left ≫ (g f pf).hom :=
+      by cat_disch
+    this ▸ RespectsIso.precomp _ _ _ (pg ..)
+
+-- lemma IsStableUnderPushforwardsAlong.of_isLeftAdjoint [P.RespectsIso] {S S' : T} (q : S ⟶ S')
+--     [HasPullbacksAlong q] [P.IsStableUnderBaseChangeAlong q]
+--     [isLeftAdjoint : (Over.pullback P ⊤ q).IsLeftAdjoint] :
+--     P.IsStableUnderPushforwardsAlong q where
+--   of_isPushforward {X Y} f pf g isPushforward :=
+--     -- have : ((Over.pullback P ⊤ q).op ⋙ yoneda.obj (Over.mk ⊤ f pf)).RepresentableBy (Over.mk ⊤ g ) := sorry
+--     -- have h := isPushforward.uniqueUpToIso
+--     let i : CategoryTheory.Over.mk g ≅
+--       ((Over.pullback P ⊤ q).rightAdjoint.obj (Over.mk ⊤ f pf)).toComma :=
+--       sorry
+--     have : g = i.hom.left ≫ ((Over.pullback P ⊤ q).rightAdjoint.obj (Over.mk ⊤ f pf)).hom :=
+--       sorry
+--     this ▸ RespectsIso.precomp _ _ _ (Comma.prop ..)
+
 /-- Morphisms satisfying `P` are stable under pushforward along morphisms satisfying `Q`
 if whenever pushforward along a morphism in `Q` exists it is in `P`. -/
 class IsStableUnderPushforwards [Q.HasPullbacks] : Prop where

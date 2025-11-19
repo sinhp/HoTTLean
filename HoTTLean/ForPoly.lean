@@ -631,5 +631,4 @@ instance preservesPullbacks (P : UvPoly E B)
     IsPullback (P.functor.map fst) (P.functor.map snd) (P.functor.map f) (P.functor.map g) :=
     P.functor.map_isPullback h
 
-
 end CategoryTheory.UvPoly

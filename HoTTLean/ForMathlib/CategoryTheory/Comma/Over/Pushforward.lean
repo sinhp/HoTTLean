@@ -6,6 +6,7 @@ Authors: Joseph Hua
 
 import Mathlib.CategoryTheory.Comma.Over.Pullback
 import Mathlib.CategoryTheory.Adjunction.PartialAdjoint
+import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
 
 noncomputable section
 
@@ -16,7 +17,6 @@ namespace CategoryTheory
 open Category Limits Comonad
 
 variable {C : Type u} [Category.{v} C] (X : C)
-variable {D : Type u₂} [Category.{v₂} D]
 
 variable {S S' : C} (f : S ⟶ S') [inst_hasPullback : ∀ {W} (h : W ⟶ S'), HasPullback h f]
 
