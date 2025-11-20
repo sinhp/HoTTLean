@@ -76,8 +76,6 @@ variable [R.HasPullbacks] [R.IsStableUnderBaseChange]
 protected def Over.yoneda (X : C) : R.Over ⊤ X ⥤ CategoryTheory.Over y(X) where
   obj A := .mk ym(A.hom)
   map {A1 A2} f := CategoryTheory.Over.homMk ym(f.left)
-  map_id := sorry
-  map_comp := sorry
 
 instance (X : C) : (Over.yoneda R X).Full where
   map_surjective {A B} f :=
