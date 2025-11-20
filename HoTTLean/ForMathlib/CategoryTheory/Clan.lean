@@ -367,7 +367,7 @@ def pushforwardPullbackIso {T : Type u} [Category.{max u v} T]
     Functor.isoWhiskerLeft _ (pushforwardYonedaIso ..).symm
   _ ≅ (Over.pullback R ⊤ h ⋙ R.pushforward f) ⋙ Over.yoneda R Y := (Functor.associator _ _ _).symm
 
-#exit
+/-
 -- The remaining part of this file is an alternative definition of the iso,
 -- which maybe is not necessary
 
@@ -441,3 +441,4 @@ theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{max u v} T]
     sorry
   rw [eq]
   infer_instance
+-/
