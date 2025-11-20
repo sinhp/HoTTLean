@@ -314,9 +314,8 @@ def isPushforwardYonedaPushforwardObj {T : Type u} [Category.{max u v} T]
     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] (A : R.Over ⊤ X) :
-    IsPushforward ym(f) ((Over.yoneda R X).obj A) ((R.pushforward f ⋙ Over.yoneda R Y).obj A) where
-  homEquiv := sorry
-  homEquiv_comp := sorry
+    IsPushforward ym(f) ((Over.yoneda R X).obj A) ((R.pushforward f ⋙ Over.yoneda R Y).obj A) :=
+  sorry
 
 -- APPROACH 2
 def pushforwardYonedaTwoSquare {T : Type u} [Category.{max u v} T]
@@ -356,6 +355,11 @@ def pushforwardYonedaIso {T : Type u} [Category.{max u v} T]
 
   -- APPROACH 2: define the hom using mateEquiv and show that it satisfies isIso
   -- asIso (pushforwardYonedaTwoSquare ..)
+
+
+  -- APPROACH 3:
+   -- use PresheafCostructruedArrowYonedaOver to land in Psh (Over Y)
+   -- then use `NatIso.yonedaMk`
 
 def pushforwardPullbackIso {T : Type u} [Category.{max u v} T]
     (R : MorphismProperty T)
