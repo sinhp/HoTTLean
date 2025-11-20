@@ -191,13 +191,13 @@ theorem isCartesian_pullbackMapTwoSquare {T : Type u} [Category.{v} T] (R : Morp
     (sq : h ≫ g = f ≫ k) : (pullbackMapTwoSquare R h f g k rk rh sq).IsCartesian := by
   intro A B t
   apply Functor.reflect_isPullback (Over.forget _ _ _ ⋙ CategoryTheory.Over.forget _)
-  have i:  HasPullback (A.hom ≫ k) g :=
+  have :  HasPullback (A.hom ≫ k) g :=
      HasPullbacksAlong.hasPullback (A.hom ≫ k) (R.comp_mem _ _ A.prop rk)
-  have i' : HasPullback (B.hom ≫ k) g :=
+  have : HasPullback (B.hom ≫ k) g :=
      HasPullbacksAlong.hasPullback (B.hom ≫ k) (R.comp_mem _ _ B.prop rk)
-  simp [Comma.Hom.hom]
   rw[CategoryTheory.IsPullback.flip_iff]
-  fapply CategoryTheory.IsPullback.of_right (v₁₃ := t.left) (h₁₂ := pullback.fst (A.hom ≫ k) g) (h₂₂ := (pullback.fst (B.hom ≫ k) g))
+  fapply CategoryTheory.IsPullback.of_right (v₁₃ := t.left)
+    (h₁₂ := pullback.fst (A.hom ≫ k) g) (h₂₂ := (pullback.fst (B.hom ≫ k) g))
   · convert_to
      (CategoryTheory.IsPullback
       (pullback.fst A.hom f)
@@ -207,15 +207,14 @@ theorem isCartesian_pullbackMapTwoSquare {T : Type u} [Category.{v} T] (R : Morp
                    (by simp[pullback.condition])) t.left (pullback.fst B.hom f))
     · simp
     · simp
-    · --rw[CategoryTheory.IsPullback.flip_iff]
-      apply CategoryTheory.IsPullback.of_bot (t:= IsPullback.of_hasPullback B.hom f)
+    · apply CategoryTheory.IsPullback.of_bot (t:= IsPullback.of_hasPullback B.hom f)
       · convert_to (IsPullback (pullback.fst A.hom f) (pullback.snd A.hom f) A.hom f)
         · simp
         · simp
         · exact (IsPullback.of_hasPullback A.hom f)
       · simp
-  ·
-    sorry
+  · simp[pullback.map]
+    ext <;> simp
   · convert_to
       (CategoryTheory.IsPullback
        (pullback.fst (A.hom ≫ k) g)
@@ -224,34 +223,14 @@ theorem isCartesian_pullbackMapTwoSquare {T : Type u} [Category.{v} T] (R : Morp
        (pullback.fst (B.hom ≫ k) g) )
     · simp[pullback.map]
     · apply CategoryTheory.IsPullback.of_bot (t:= IsPullback.of_hasPullback (B.hom ≫ k) g)
-      · convert_to (IsPullback (pullback.fst (A.hom ≫ k) g) (pullback.snd (A.hom ≫ k) g) (A.hom ≫ k) g)
-        · sorry
+      · convert_to (IsPullback (pullback.fst (A.hom ≫ k) g)
+          (pullback.snd (A.hom ≫ k) g) (A.hom ≫ k) g)
+        · simp
         · simp
         · exact (IsPullback.of_hasPullback (A.hom ≫ k) g)
-      · sorry
-  -- rw[CategoryTheory.IsPullback.flip_iff]
-  -- have ee : pullback.map A.hom f (A.hom ≫ k) g (𝟙 A.left) h k sorry sorry ≫ pullback.fst (A.hom ≫ k) g =
-  --  pullback.fst A.hom f := sorry
-
-  -- have eee :
-  -- (pullback.map A.hom f (A.hom ≫ k) g (𝟙 A.left) h k sorry sorry) ≫
-  -- (pullback.lift (pullback.fst (A.hom ≫ k) g ≫ t.left) (pullback.snd (A.hom ≫ k) g) sorry) =
-  -- (pullback.lift (pullback.fst A.hom f ≫ t.left) (pullback.snd A.hom f) sorry) ≫
-  -- (pullback.map B.hom f (B.hom ≫ k) g (𝟙 B.left) h k sorry sorry) := sorry
-  -- -- apply CategoryTheory.IsPullback.of_right (t:= p2) (p := eee)
-  -- sorry
-
-  -- have p := CategoryTheory.IsPullback.of_right (s := p1) (by sorry) (t:= p2)
-  -- rw![ee] at p
-  -- simp[pullback.map] at p
-  -- simp[pullback.map]
-  -- apply p
+      · simp
 
 
-
-
-  --apply CategoryTheory.IsPullback.of_right (s := p1) _ (t:= p2)
-  --sorry -- should be pullback pasting. Try it!
 
 /--
 The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
