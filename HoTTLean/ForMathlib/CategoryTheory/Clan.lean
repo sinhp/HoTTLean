@@ -64,20 +64,6 @@ end pullback
 
 abbrev chosenTerminal [R.ContainsIdentities] (X) : R.Over ⊤ X := .mk ⊤ (𝟙 X) (R.id_mem _)
 
-@[simps!]
-protected def Over.post (R : MorphismProperty C) (R' : MorphismProperty C')
-    [F.PreservesMorphismProperty R R'] (X : C) : R.Over ⊤ X ⥤ R'.Over ⊤ (F.obj X) where
-  obj X := MorphismProperty.Over.mk ⊤ (F.map X.hom) (F.map_mem _ X.prop)
-  map f := MorphismProperty.Over.homMk (F.map f.left) (by simp [← F.map_comp])
-  map_id := sorry
-  map_comp := sorry
-
-@[simp]
-lemma localFunctor_obj_chosenTerminal [R.ContainsIdentities] {R' : MorphismProperty C'}
-    [R'.ContainsIdentities] [F.PreservesMorphismProperty R R'] (X : C) :
-    (Over.post F R R' X).obj (R.chosenTerminal X) = R'.chosenTerminal (F.obj X) := by
-  cat_disch
-
 def Over.pullback_obj_chosenTerminal [R.IsStableUnderBaseChange] [R.ContainsIdentities]
     {X Y : C} (f : X ⟶ Y) [R.HasPullbacksAlong f] :
     (Over.pullback R ⊤ f).obj (R.chosenTerminal Y) ≅ R.chosenTerminal X :=
