@@ -11,6 +11,7 @@ import Poly.ForMathlib.CategoryTheory.LocallyCartesianClosed.BeckChevalley
 import HoTTLean.ForMathlib.CategoryTheory.Yoneda
 import Poly.ForMathlib.CategoryTheory.LocallyCartesianClosed.Presheaf
 import HoTTLean.ForMathlib.CategoryTheory.Adjunction.PartialAdjoint
+import HoTTLean.ForMathlib.CategoryTheory.Comma.Presheaf.Basic
 
 universe w v u v₁ u₁
 
@@ -339,6 +340,8 @@ instance {T : Type u} [Category.{max u v} T]
   simp [pushforwardYonedaTwoSquare, pullbackYonedaIso]
   -- apply (CategoryTheory.forget_reflects_iso)
   sorry
+
+#check overYonedaEquivPresheafOver
 #check Functor.preimageIso
 def pushforwardYonedaIso {T : Type u} [Category.{max u v} T]
     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
