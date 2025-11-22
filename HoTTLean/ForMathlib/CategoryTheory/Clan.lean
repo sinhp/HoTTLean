@@ -341,15 +341,16 @@ instance {T : Type u} [Category.{max u v} T]
   -- apply (CategoryTheory.forget_reflects_iso)
   sorry
 
-#check overYonedaEquivPresheafOver
-#check Functor.preimageIso
 def pushforwardYonedaIso {T : Type u} [Category.{max u v} T]
     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] :
     R.pushforward f ⋙ Over.yoneda R Y ≅
     Over.yoneda R X ⋙ ExponentiableMorphism.pushforward ym(f) :=
-  NatIso.ofComponents (fun A => sorry)
+  NatIso.ofComponents (fun A => overYonedaEquivPresheafOver.functor.preimageIso
+    (NatIso.yonedaMk (fun {B} => by
+      dsimp
+      sorry) sorry))
   sorry
 
   -- APPROACH 1: directly define the isomorphism.
