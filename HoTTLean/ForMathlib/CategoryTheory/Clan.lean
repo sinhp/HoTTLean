@@ -12,6 +12,7 @@ import HoTTLean.ForMathlib.CategoryTheory.Yoneda
 import Poly.ForMathlib.CategoryTheory.LocallyCartesianClosed.Presheaf
 import HoTTLean.ForMathlib.CategoryTheory.Adjunction.PartialAdjoint
 import HoTTLean.ForMathlib.CategoryTheory.Comma.Presheaf.Basic
+import HoTTLean.ForMathlib.CategoryTheory.Functor.FullyFaithful
 
 universe w v u v₁ u₁
 
@@ -329,20 +330,33 @@ def pushforwardYonedaIso {T : Type u} [Category.{u} T]
     R.pushforward f ⋙ Over.yoneda R Y ≅
     Over.yoneda R X ⋙ ExponentiableMorphism.pushforward ym(f) :=
   Over.yonedaNatIsoMk <|
-  -- `Over (y(A)) (Over.post yoneda (-), Over.yoneda (R.pushforward f (⋆)))`
+  let postFF {X} := (Functor.FullyFaithful.ofFullyFaithful (Over.post (X := X) yoneda)).homIso
+  -- `Over y(A) (Over.post yoneda (-), Over.yoneda (R.pushforward f (⋆)))`
   calc (R.pushforward f ⋙ Over.yoneda R Y) ⋙ yoneda ⋙
       (Functor.whiskeringLeft _ _ _).obj (Over.post yoneda).op
-    -- `Over (A) (-, Over.forget (R.pushforward f (⋆)))`
+    _ ≅ R.pushforward f ⋙ Over.forget _ _ _ ⋙ Over.post yoneda ⋙ yoneda ⋙
+      (Functor.whiskeringLeft _ _ _).obj (Over.post yoneda).op :=
+      Functor.associator .. ≪≫ Functor.isoWhiskerLeft _ (Functor.associator ..)
+    -- `Over A (-, Over.forget (R.pushforward f (⋆)))`
     _ ≅ R.pushforward f ⋙ Over.forget _ _ _ ⋙ yoneda :=
-      sorry -- `Over.post yoneda` is fully faithful
-    -- `Over (A) (pullback f (-), Over.forget (⋆))`
+      -- `Over.post yoneda` is fully faithful
+      (Functor.isoWhiskerLeft _ (Functor.isoWhiskerLeft _ postFF)).symm
+    -- `Over A (pullback f (-), Over.forget (⋆))`
     _ ≅ Over.forget _ _ _ ⋙ yoneda ⋙
         (Functor.whiskeringLeft _ _ _).obj (CategoryTheory.Over.pullback f).op :=
-      sorry -- homIso for partial adjunction `Over.pullback f ∂⊣ R.pushforward f`
+      -- homIso for partial adjunction `Over.pullback f ∂⊣ R.pushforward f`
+      pushforward.homIso.symm
     -- `Over (y(A)) (pullback f ⋙ Over.post yoneda (-), Over.forget ⋙ Over.post yoneda (⋆))`
+    _ ≅ Over.forget _ _ _ ⋙ (Over.post yoneda ⋙ yoneda ⋙
+        (Functor.whiskeringLeft _ _ _).obj ((Over.post yoneda).op)) ⋙
+        (Functor.whiskeringLeft _ _ _).obj (CategoryTheory.Over.pullback f).op :=
+      -- `Over.post yoneda` is fully faithful
+      Functor.isoWhiskerLeft _ (Functor.isoWhiskerRight postFF _)
     _ ≅ Over.forget _ _ _ ⋙ Over.post yoneda ⋙ yoneda ⋙ (Functor.whiskeringLeft _ _ _).obj
         (CategoryTheory.Over.pullback f ⋙ Over.post yoneda).op :=
-      sorry -- `Over.post yoneda` is fully faithful
+      Functor.isoWhiskerLeft _ (Functor.associator .. ≪≫ Functor.isoWhiskerLeft _
+        (Functor.isoWhiskerLeft _ ((Functor.whiskeringLeftObjCompIso ..).symm ≪≫
+        Functor.mapIso _ (Functor.opComp ..).symm)))
     -- `Over (y(A)) (pullback f ⋙ Over.post yoneda (-), Over.yoneda (⋆))`
     _ ≅ Over.yoneda R X ⋙ yoneda ⋙ (Functor.whiskeringLeft _ _ _).obj
         (CategoryTheory.Over.pullback f ⋙ Over.post yoneda).op :=
@@ -368,8 +382,7 @@ def pushforwardYonedaIso {T : Type u} [Category.{u} T]
         (Functor.whiskeringLeft _ _ _).obj (Over.post yoneda).op :=
       (Functor.associator ..).symm
 
-def pushforwardPullbackIso {T : Type u} [Category.{u} T]
-    (R : MorphismProperty T)
+def pushforwardPullbackIso {T : Type u} [Category.{u} T] {R : MorphismProperty T}
     [R.HasPullbacks] [R.IsStableUnderBaseChange]
     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
     [HasPullbacksAlong f] [HasPullbacksAlong g]
@@ -403,11 +416,6 @@ def pushforwardPullbackIso {T : Type u} [Category.{u} T]
     Functor.isoWhiskerLeft _ (pushforwardYonedaIso ..).symm
   _ ≅ (Over.pullback R ⊤ h ⋙ R.pushforward f) ⋙ Over.yoneda R Y := (Functor.associator _ _ _).symm
 
-/-
--- The remaining part of this file is an alternative definition of the iso,
--- which maybe is not necessary
-
-
 /-- Fixing a commutative square,
 ```
    Z - g → W
@@ -440,41 +448,47 @@ def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProp
   mateEquiv (pullbackPushforwardAdjunction R g) (pullbackPushforwardAdjunction R f)
     (pullbackPullbackTwoSquare _ _ _ _ sq)
 
-/--
-The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
-```
-      R.Over ⊤ Z - pushforward g → R.Over ⊤ W
-           |                           |
-pullback h |            ≅              | pullback k
-           V                           V
-      R.Over ⊤ X - pushforward f → R.Over ⊤ Y
-```
-when the commutativity
-condition is strengthened to a pullback condition.
-```
-   Z - g → W
-   ∧        ∧
- h |  (pb)  | k
-   |        |
-   X - f → Y
-```
-TODO: in what generality does this theorem hold?
-NOTE: we know it holds when for π-clans with `R = Q = the π-clan`
-([Joyal, Notes on Clans and Tribes, Cor 2.4.11](https://arxiv.org/pdf/1710.10238)).
-NOTE: we also know it holds in a category with pullbacks with `R = ⊤` and `Q = ExponentiableMaps`.
--/
-theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{max u v} T]
-    (R : MorphismProperty T)
-    [R.HasPullbacks] [R.IsStableUnderBaseChange]
-    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
-    [HasPullbacksAlong f] [HasPullbacksAlong g]
-    [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
-    [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g]
-    (pb : IsPullback h f g k) :
-    IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) := by
-  have eq : (pushforwardPullbackTwoSquare h f g k pb.w) =
-      (pushforwardPullbackIso R h f g k pb).hom :=
-    sorry
-  rw [eq]
-  infer_instance
--/
+-- TODO: currently this theorem is unnecessary,
+-- but it would be nice to show that these two definitions actually line up.
+-- `pushforwardPullbackTwoSquare` can be defined under more general conditions,
+-- without a pullback condition on the commuting square
+-- but constructing an isomorphism directly `pushforwardPullbackIso` is easier
+-- than showing `pushforwardPullbackTwoSquare` is an isomorphism.
+
+-- /--
+-- The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
+-- ```
+--       R.Over ⊤ Z - pushforward g → R.Over ⊤ W
+--            |                           |
+-- pullback h |            ≅              | pullback k
+--            V                           V
+--       R.Over ⊤ X - pushforward f → R.Over ⊤ Y
+-- ```
+-- when the commutativity
+-- condition is strengthened to a pullback condition.
+-- ```
+--    Z - g → W
+--    ∧        ∧
+--  h |  (pb)  | k
+--    |        |
+--    X - f → Y
+-- ```
+-- TODO: in what generality does this theorem hold?
+-- NOTE: we know it holds when for π-clans with `R = Q = the π-clan`
+-- ([Joyal, Notes on Clans and Tribes, Cor 2.4.11](https://arxiv.org/pdf/1710.10238)).
+-- NOTE: we also know it holds in a category with pullbacks with `R = ⊤` and `Q = ExponentiableMaps`.
+-- -/
+-- theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{u} T]
+--     (R : MorphismProperty T)
+--     [R.HasPullbacks] [R.IsStableUnderBaseChange]
+--     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
+--     [HasPullbacksAlong f] [HasPullbacksAlong g]
+--     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
+--     [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g]
+--     (pb : IsPullback h f g k) :
+--     IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) := by
+--   have eq : (pushforwardPullbackTwoSquare h f g k pb.w) =
+--       (pushforwardPullbackIso R h f g k pb).hom := by
+--     sorry
+--   rw [eq]
+--   infer_instance

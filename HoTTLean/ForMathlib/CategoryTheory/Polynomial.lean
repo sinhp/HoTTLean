@@ -542,11 +542,9 @@ def cartesianNatTrans {E' B' : C} (P : MvPoly R I O E B) (P' : MvPoly R I O E' B
   let cellLeft : TwoSquare (𝟭 (R.Over ⊤ I)) (MorphismProperty.Over.pullback R ⊤ P'.i)
       (MorphismProperty.Over.pullback R ⊤ P.i) (MorphismProperty.Over.pullback R ⊤ φ) :=
     (eqToIso (by simp [hφ, Functor.id_comp]) ≪≫ (MorphismProperty.Over.pullbackComp φ P'.i)).hom
-  have : IsIso (pushforwardPullbackTwoSquare (R := R) φ P.p P'.p δ pb.w) :=
-    pushforwardPullbackTwoSquare_isIso R φ P.p P'.p δ pb.w pb
   let cellMid : TwoSquare (MorphismProperty.Over.pullback R ⊤ φ)
     (R.pushforward P'.p) (R.pushforward P.p) (MorphismProperty.Over.pullback R ⊤ δ) :=
-    CategoryTheory.inv (pushforwardPullbackTwoSquare φ P.p P'.p δ pb.w)
+    (pushforwardPullbackIso φ P.p P'.p δ pb).inv
   let cellRight : TwoSquare (MorphismProperty.Over.pullback R ⊤ δ)
       (MorphismProperty.Over.map ⊤ P'.ho) (MorphismProperty.Over.map ⊤ P.ho) (𝟭 _) :=
     (pullbackMapTwoSquare R P.o δ (𝟙 _) P'.o P'.ho P.ho (by simp [hδ])) ≫

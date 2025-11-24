@@ -65,19 +65,6 @@ def overYonedaEquivPresheafOver :
   (overEquivPresheafCostructuredArrow (yoneda.obj A)).trans
   costructuredArrowYonedaEquivOver.op.congrLeft
 
--- @[simp]
--- lemma overYonedaEquivPresheafOver.functor_eq :
---     (overYonedaEquivPresheafOver (A := A)).functor =
---     (overEquivPresheafCostructuredArrow y(A)).functor ⋙
---     (Functor.whiskeringLeft _ _ _).obj inverse.op := by
---   dsimp only [overYonedaEquivPresheafOver, Equivalence.trans_functor,
---     Equivalence.op_inverse, costructuredArrowYonedaEquivOver_inverse]
---   sorry
-
--- lemma overYonedaEquivPresheafOver_symm_toAdjunction_homEquiv_apply (B : Over A) (Y) :
---     (overYonedaEquivPresheafOver.symm.toAdjunction.homEquiv (yoneda.obj B) Y) = sorry := by
---   sorry
-
 def overYonedaEquivPresheafOver.functorObjMkYonedaIso (B : Over A) :
     overYonedaEquivPresheafOver.functor.obj (Over.mk (yoneda.map B.hom)) ≅ yoneda.obj B :=
   calc overYonedaEquivPresheafOver.functor.obj (Over.mk (yoneda.map B.hom))
@@ -135,6 +122,7 @@ variable {C : Type u} [SmallCategory C] {A : C} {D : Type*} [Category D]
 
 open overYonedaEquivPresheafOver
 
+/-
 noncomputable def Over.yonedaIsoMk {X Y : Over (yoneda.obj A)}
     (α : (post yoneda).op ⋙ y(X) ≅ (post yoneda).op ⋙ y(Y)) :
     X ≅ Y :=
@@ -151,6 +139,7 @@ noncomputable def Over.yonedaIsoMk {X Y : Over (yoneda.obj A)}
       Functor.isoWhiskerRight (NatIso.op yonedaCompInverseIso.symm) _
   overYonedaEquivPresheafOver.functor.preimageIso
   (NatIso.yonedaMk (β X ≪≫ α ≪≫ (β Y).symm))
+-/
 
 /-- The natural hom-set bijection as an isomorphism of profunctors
 ```
@@ -208,30 +197,6 @@ def Over.yonedaNatIsoMk {F G : D ⥤ Over (yoneda.obj A)}
   -- an isomorphism `Psh(Over A) (y(-), F ⋙ functor (⋆)) ≅ Psh(Over A) (y(-), G ⋙ functor (⋆))`
   -- amounts to
   -- an isomorphism `Over (y(A)) (Over.post yoneda (-), F(⋆)) ≅ Over (y(A)) (Over.post yoneda (-), G(⋆))`
-
-
--- noncomputable def Over.yonedaIsoMk' {X Y : Over (yoneda.obj A)}
---     (e : (B : Over A) → ((mk (yoneda.map B.hom) ⟶ X)) ≃ (mk (yoneda.map B.hom) ⟶ Y))
---     (naturality : {B C : Over A} → (f : B ⟶ C) → (t : mk (yoneda.map B.hom) ⟶ X) →
---       sorry) :
---     X ≅ Y :=
---   overYonedaEquivPresheafOver.functor.preimageIso
---   (NatIso.yonedaMk' (fun {B} => by
---     calc (yoneda.obj B ⟶ overYonedaEquivPresheafOver.functor.obj X)
---     _ ≃ (overYonedaEquivPresheafOver.inverse.obj (yoneda.obj B) ⟶ X) :=
---       (overYonedaEquivPresheafOver.symm.toAdjunction.homEquiv _ _).symm
---     _ ≃ (Over.mk (yoneda.map B.hom) ⟶ X) :=
---       Iso.homCongr (overYonedaEquivPresheafOver.inverseObjApplyYonedaObjIso B) (Iso.refl _)
---     _ ≃ (Over.mk (yoneda.map B.hom) ⟶ Y) := e _
---     _ ≃ (overYonedaEquivPresheafOver.inverse.obj (yoneda.obj B) ⟶ Y) :=
---       Iso.homCongr (overYonedaEquivPresheafOver.inverseObjApplyYonedaObjIso B).symm (Iso.refl _)
---     _ ≃ (yoneda.obj B ⟶ overYonedaEquivPresheafOver.functor.obj Y) :=
---       overYonedaEquivPresheafOver.symm.toAdjunction.homEquiv _ _)
---   (by
---     intro B C f t
---     ext
---     simp
---     sorry))
 
 end
 

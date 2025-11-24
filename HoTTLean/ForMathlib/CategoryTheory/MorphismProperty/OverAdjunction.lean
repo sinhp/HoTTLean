@@ -332,6 +332,13 @@ lemma pushforward.homEquiv_comp_symm {X X' : Over S'} {Y : P.Over ⊤ S}
     homEquiv.symm ((CategoryTheory.Over.pullback q).map g ≫ f) :=
   Functor.partialRightAdjointHomEquiv_comp_symm ..
 
+def pushforward.homIso : Over.forget P ⊤ S ⋙ yoneda ⋙ (Functor.whiskeringLeft _ _ _).obj
+    (CategoryTheory.Over.pullback q).op ≅ P.pushforward q ⋙ Over.forget P ⊤ S' ⋙ yoneda :=
+  (NatIso.ofComponents
+  (fun Y => NatIso.ofComponents (fun X => homEquiv.toIso)
+  (fun {X Y} f => by ext; simp [homEquiv_comp]))
+  (fun {X Y} f => by ext; simp [homEquiv_map_comp])).symm
+
 end homEquiv
 
 section
