@@ -450,45 +450,50 @@ def pushforwardPullbackTwoSquare {T : Type u} [Category.{v} T] {R : MorphismProp
 
 -- TODO: currently this theorem is unnecessary,
 -- but it would be nice to show that these two definitions actually line up.
+-- We have both definitions because
 -- `pushforwardPullbackTwoSquare` can be defined under more general conditions,
 -- without a pullback condition on the commuting square
 -- but constructing an isomorphism directly `pushforwardPullbackIso` is easier
 -- than showing `pushforwardPullbackTwoSquare` is an isomorphism.
 
--- /--
--- The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
--- ```
---       R.Over ⊤ Z - pushforward g → R.Over ⊤ W
---            |                           |
--- pullback h |            ≅              | pullback k
---            V                           V
---       R.Over ⊤ X - pushforward f → R.Over ⊤ Y
--- ```
--- when the commutativity
--- condition is strengthened to a pullback condition.
--- ```
---    Z - g → W
---    ∧        ∧
---  h |  (pb)  | k
---    |        |
---    X - f → Y
--- ```
--- TODO: in what generality does this theorem hold?
--- NOTE: we know it holds when for π-clans with `R = Q = the π-clan`
--- ([Joyal, Notes on Clans and Tribes, Cor 2.4.11](https://arxiv.org/pdf/1710.10238)).
--- NOTE: we also know it holds in a category with pullbacks with `R = ⊤` and `Q = ExponentiableMaps`.
--- -/
--- theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{u} T]
---     (R : MorphismProperty T)
---     [R.HasPullbacks] [R.IsStableUnderBaseChange]
---     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
---     [HasPullbacksAlong f] [HasPullbacksAlong g]
---     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
---     [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g]
---     (pb : IsPullback h f g k) :
---     IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) := by
---   have eq : (pushforwardPullbackTwoSquare h f g k pb.w) =
---       (pushforwardPullbackIso R h f g k pb).hom := by
---     sorry
---   rw [eq]
---   infer_instance
+/-
+/--
+The Beck-Chevalley two-square `pushforwardPullbackTwoSquare` is a natural isomorphism
+```
+      R.Over ⊤ Z - pushforward g → R.Over ⊤ W
+           |                           |
+pullback h |            ≅              | pullback k
+           V                           V
+      R.Over ⊤ X - pushforward f → R.Over ⊤ Y
+```
+when the commutativity
+condition is strengthened to a pullback condition.
+```
+   Z - g → W
+   ∧        ∧
+ h |  (pb)  | k
+   |        |
+   X - f → Y
+```
+TODO: in what generality does this theorem hold?
+NOTE: we know it holds when for π-clans with `R = Q = the π-clan`
+([Joyal, Notes on Clans and Tribes, Cor 2.4.11](https://arxiv.org/pdf/1710.10238)).
+NOTE: we also know it holds in a category with pullbacks with `R = ⊤` and `Q = ExponentiableMaps`.
+-/
+theorem pushforwardPullbackTwoSquare_isIso {T : Type u} [Category.{u} T]
+    (R : MorphismProperty T)
+    [R.HasPullbacks] [R.IsStableUnderBaseChange]
+    {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)
+    [HasPullbacksAlong f] [HasPullbacksAlong g]
+    [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
+    [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g]
+    (pb : IsPullback h f g k) :
+    IsIso (pushforwardPullbackTwoSquare (R := R) h f g k pb.w) := by
+  have eq : (pushforwardPullbackTwoSquare h f g k pb.w) =
+      (pushforwardPullbackIso (R := R) h f g k pb).hom := by
+    ext A : 1
+    -- simp [pushforwardPullbackTwoSquare, pushforwardPullbackIso]
+    sorry
+  rw [eq]
+  infer_instance
+-/
