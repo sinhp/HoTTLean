@@ -73,22 +73,26 @@ def Over.pullback_obj_chosenTerminal [R.IsStableUnderBaseChange] [R.ContainsIden
 
 variable [R.HasPullbacks] [R.IsStableUnderBaseChange]
 
-@[simps]
-protected def Over.yoneda (X : C) : R.Over ⊤ X ⥤ CategoryTheory.Over y(X) where
-  obj A := .mk ym(A.hom)
-  map {A1 A2} f := CategoryTheory.Over.homMk ym(f.left)
+@[simp]
+protected abbrev Over.yoneda (X : C) : R.Over ⊤ X ⥤ CategoryTheory.Over y(X) :=
+  Over.forget _ _ _ ⋙ CategoryTheory.Over.post yoneda
 
-instance (X : C) : (Over.yoneda R X).Full where
-  map_surjective {A B} f :=
-  ⟨Over.homMk (yoneda.preimage f.left) (by
-    apply yoneda.map_injective; simpa using CategoryTheory.Over.w f),
-  by cat_disch⟩
+-- @[simps]
+-- protected def Over.yoneda (X : C) : R.Over ⊤ X ⥤ CategoryTheory.Over y(X) where
+--   obj A := .mk ym(A.hom)
+--   map {A1 A2} f := CategoryTheory.Over.homMk ym(f.left)
 
-instance (X : C) : (Over.yoneda R X).Faithful where
-  map_injective {A B} f f' hf := by
-    ext
-    apply yoneda.map_injective
-    exact Functor.congr_map (CategoryTheory.Over.forget _) hf
+-- instance (X : C) : (Over.yoneda R X).Full where
+--   map_surjective {A B} f :=
+--   ⟨Over.homMk (yoneda.preimage f.left) (by
+--     apply yoneda.map_injective; simpa using CategoryTheory.Over.w f),
+--   by cat_disch⟩
+
+-- instance (X : C) : (Over.yoneda R X).Faithful where
+--   map_injective {A B} f f' hf := by
+--     ext
+--     apply yoneda.map_injective
+--     exact Functor.congr_map (CategoryTheory.Over.forget _) hf
 
 variable (F : Psh C)
 
@@ -298,60 +302,128 @@ def pushforwardCompForget' {T : Type u} [Category.{v} T] [HasFiniteWidePullbacks
     (Functor.isoPartialRightAdjoint _ _ (Functor.rightAdjoint.partialRightAdjoint _))).symm
   _ ≅ Over.forget R ⊤ X ⋙ ExponentiableMorphism.pushforward f := Iso.refl _
 
+def pullbackPostYonedaIso {T : Type u} [Category.{v} T]
+    {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f] :
+    CategoryTheory.Over.pullback f ⋙ Over.post yoneda ≅
+    Over.post yoneda ⋙ CategoryTheory.Over.pullback ym(f) :=
+  NatIso.ofComponents
+  (fun A => CategoryTheory.Over.isoMk (PreservesPullback.iso yoneda A.hom f))
+  (fun {A B} g => by
+    apply (CategoryTheory.Over.forget _).map_injective
+    apply pullback.hom_ext <;> simp)
+
 def pullbackYonedaIso {T : Type u} [Category.{max u v} T]
     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     {X Y : T} (f : X ⟶ Y) : Over.pullback R ⊤ f ⋙ Over.yoneda R X ≅
     Over.yoneda R Y ⋙ CategoryTheory.Over.pullback ym(f) :=
   NatIso.ofComponents
-  (fun A => CategoryTheory.Over.isoMk (PreservesPullback.iso yoneda A.hom f)
-    (pullbackComparison_comp_snd yoneda A.hom f))
+  (fun A => CategoryTheory.Over.isoMk (PreservesPullback.iso yoneda A.hom f))
   (fun {A B} g => by
     apply (CategoryTheory.Over.forget _).map_injective
     apply pullback.hom_ext <;> simp)
 
--- APPROACH 1
-/-- Yoneda embedding preserves pushforward. -/
-def isPushforwardYonedaPushforwardObj {T : Type u} [Category.{max u v} T]
-    (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
-    {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
-    [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] (A : R.Over ⊤ X) :
-    IsPushforward ym(f) ((Over.yoneda R X).obj A) ((R.pushforward f ⋙ Over.yoneda R Y).obj A) :=
-  sorry
+-- -- APPROACH 1
+-- /-- Yoneda embedding preserves pushforward. -/
+-- def isPushforwardYonedaPushforwardObj {T : Type u} [Category.{max u v} T]
+--     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
+--     {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
+--     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] (A : R.Over ⊤ X) :
+--     IsPushforward ym(f) ((Over.yoneda R X).obj A) ((R.pushforward f ⋙ Over.yoneda R Y).obj A) :=
+--   sorry
 
--- APPROACH 2
-def pushforwardYonedaTwoSquare {T : Type u} [Category.{max u v} T]
-    (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
-    {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
-    [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] :
-    TwoSquare (R.pushforward f) (Over.yoneda R X) (Over.yoneda R Y)
-    (ExponentiableMorphism.pushforward ym(f)) :=
-  mateEquiv (pullbackPushforwardAdjunction R f) (ExponentiableMorphism.adj ym(f))
-    (pullbackYonedaIso ..).inv
+-- -- APPROACH 2
+-- def pushforwardYonedaTwoSquare {T : Type u} [Category.{max u v} T]
+--     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
+--     {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
+--     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] :
+--     TwoSquare (R.pushforward f) (Over.yoneda R X) (Over.yoneda R Y)
+--     (ExponentiableMorphism.pushforward ym(f)) :=
+--   mateEquiv (pullbackPushforwardAdjunction R f) (ExponentiableMorphism.adj ym(f))
+--     (pullbackYonedaIso ..).inv
 
--- APPROACH 2
-instance {T : Type u} [Category.{max u v} T]
-    (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
-    {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
-    [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] :
-  IsIso (R.pushforwardYonedaTwoSquare f) := by
-  rw [NatTrans.isIso_iff_isIso_app]
-  intro A
-  -- apply (config := {allowSynthFailures:= true}) (Over.forget_reflects_iso).reflects
-  simp [pushforwardYonedaTwoSquare, pullbackYonedaIso]
-  -- apply (CategoryTheory.forget_reflects_iso)
-  sorry
+-- -- APPROACH 2
+-- instance {T : Type u} [Category.{max u v} T]
+--     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
+--     {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
+--     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] :
+--   IsIso (R.pushforwardYonedaTwoSquare f) := by
+--   rw [NatTrans.isIso_iff_isIso_app]
+--   intro A
+--   -- apply (config := {allowSynthFailures:= true}) (Over.forget_reflects_iso).reflects
+--   simp [pushforwardYonedaTwoSquare, pullbackYonedaIso]
+--   -- apply (CategoryTheory.forget_reflects_iso)
+--   sorry
 
-def pushforwardYonedaIso {T : Type u} [Category.{max u v} T]
+def pushforwardYonedaIso {T : Type u} [Category.{u} T]
     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
     {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] :
     R.pushforward f ⋙ Over.yoneda R Y ≅
     Over.yoneda R X ⋙ ExponentiableMorphism.pushforward ym(f) :=
-  NatIso.ofComponents (fun A => overYonedaEquivPresheafOver.functor.preimageIso
-    (NatIso.yonedaMk (fun {B} => by
-      dsimp
-      sorry) sorry))
-  sorry
+  Over.yonedaNatIsoMk <|
+  -- `Over (y(A)) (Over.post yoneda (-), Over.yoneda (R.pushforward f (⋆)))`
+  calc (R.pushforward f ⋙ Over.yoneda R Y) ⋙ yoneda ⋙
+      (Functor.whiskeringLeft _ _ _).obj (Over.post yoneda).op
+    -- `Over (A) (-, Over.forget (R.pushforward f (⋆)))`
+    _ ≅ R.pushforward f ⋙ Over.forget _ _ _ ⋙ yoneda :=
+      sorry -- `Over.post yoneda` is fully faithful
+    -- `Over (A) (pullback f (-), Over.forget (⋆))`
+    _ ≅ Over.forget _ _ _ ⋙ yoneda ⋙
+        (Functor.whiskeringLeft _ _ _).obj (CategoryTheory.Over.pullback f).op :=
+      sorry -- homIso for partial adjunction `Over.pullback f ∂⊣ R.pushforward f`
+    -- `Over (y(A)) (pullback f ⋙ Over.post yoneda (-), Over.forget ⋙ Over.post yoneda (⋆))`
+    _ ≅ Over.forget _ _ _ ⋙ Over.post yoneda ⋙ yoneda ⋙ (Functor.whiskeringLeft _ _ _).obj
+        (CategoryTheory.Over.pullback f ⋙ Over.post yoneda).op :=
+      sorry -- `Over.post yoneda` is fully faithful
+    -- `Over (y(A)) (pullback f ⋙ Over.post yoneda (-), Over.yoneda (⋆))`
+    _ ≅ Over.yoneda R X ⋙ yoneda ⋙ (Functor.whiskeringLeft _ _ _).obj
+        (CategoryTheory.Over.pullback f ⋙ Over.post yoneda).op :=
+      (Functor.associator ..).symm
+    -- `Over (y(A)) (pullback ym(f) (-), pushforward ym(f) (Over.yoneda (⋆)))`
+    _ ≅ Over.yoneda R X ⋙ yoneda ⋙ (Functor.whiskeringLeft _ _ _).obj
+        (Over.post yoneda ⋙ CategoryTheory.Over.pullback ym(f)).op :=
+      -- `Over.post yoneda` preserves pullback
+      Functor.isoWhiskerLeft _ (Functor.isoWhiskerLeft _ (Functor.mapIso _
+        (NatIso.op (pullbackPostYonedaIso ..).symm)))
+    _ ≅ Over.yoneda R X ⋙ yoneda ⋙
+        (Functor.whiskeringLeft _ _ _).obj (CategoryTheory.Over.pullback ym(f)).op ⋙
+        (Functor.whiskeringLeft _ _ _).obj (Over.post yoneda).op :=
+      Functor.isoWhiskerLeft _ (Functor.isoWhiskerLeft _
+        (Functor.mapIso _ (Functor.opComp ..) ≪≫ Functor.whiskeringLeftObjCompIso ..))
+    -- `Over (y(A)) (Over.post yoneda (-), pushforward ym(f) (Over.yoneda (⋆)))`
+    _ ≅ Over.yoneda R X ⋙ ExponentiableMorphism.pushforward ym(f) ⋙ yoneda ⋙
+        (Functor.whiskeringLeft _ _ _).obj (Over.post yoneda).op :=
+    -- by homIso for adjunction `pullback ym(f) ⊣ pushforward ym(f)`
+      Functor.isoWhiskerLeft _ ((Functor.associator ..).symm ≪≫ (Functor.isoWhiskerRight
+        (ExponentiableMorphism.adj ym(f)).homIso _) ≪≫ Functor.associator ..)
+    _ ≅ (Over.yoneda R X ⋙ ExponentiableMorphism.pushforward ym(f)) ⋙ yoneda ⋙
+        (Functor.whiskeringLeft _ _ _).obj (Over.post yoneda).op :=
+      (Functor.associator ..).symm
+
+-- #check Adjunction.homIso
+-- def pushforwardYonedaIso' {T : Type u} [Category.{u} T]
+--     (R : MorphismProperty T) [R.HasPullbacks] [R.IsStableUnderBaseChange]
+--     {X Y : T} (f : X ⟶ Y) [HasPullbacksAlong f]
+--     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f] :
+--     R.pushforward f ⋙ Over.yoneda R Y ≅
+--     Over.yoneda R X ⋙ ExponentiableMorphism.pushforward ym(f) :=
+--   NatIso.ofComponents (fun A => Over.yonedaIsoMk (
+--     calc (Over.post yoneda).op ⋙ y((R.pushforward f ⋙ Over.forget _ _ _ ⋙ Over.post yoneda).obj A)
+--     _ ≅ y((R.pushforward f ⋙ Over.forget _ _ _).obj A) :=
+--       sorry -- `Over.post yoneda` is fully faithful
+--     _ ≅ (CategoryTheory.Over.pullback f).op ⋙ y((Over.forget _ _ _).obj A) :=
+--       sorry -- homEquiv for partial adjunction `Over.pullback f ∂⊣ R.pushforward f`
+--     _ ≅ (CategoryTheory.Over.pullback f ⋙ Over.post yoneda).op ⋙
+--         y((Over.yoneda R X).obj A) :=
+--       sorry -- `Over.post yoneda` is fully faithful
+--     _ ≅ (Over.post yoneda ⋙ CategoryTheory.Over.pullback ym(f)).op ⋙
+--         y((Over.yoneda R X).obj A) :=
+--       sorry  -- `Over.post yoneda` preserves pullback
+--     _ ≅ (Over.post yoneda).op ⋙
+--         y((Over.yoneda R X ⋙ ExponentiableMorphism.pushforward ym(f)).obj A) :=
+--       sorry  -- homEquiv for adjunction `pullback ym(f) ⊣ pushforward ym(f)`
+--     ))
+--   sorry
 
   -- APPROACH 1: directly define the isomorphism.
   -- NatIso.ofComponents (fun A => ((isPushforwardYonedaPushforwardObj ..).uniqueUpToIso
@@ -366,7 +438,7 @@ def pushforwardYonedaIso {T : Type u} [Category.{max u v} T]
    -- use PresheafCostructruedArrowYonedaOver to land in Psh (Over Y)
    -- then use `NatIso.yonedaMk`
 
-def pushforwardPullbackIso {T : Type u} [Category.{max u v} T]
+def pushforwardPullbackIso {T : Type u} [Category.{u} T]
     (R : MorphismProperty T)
     [R.HasPullbacks] [R.IsStableUnderBaseChange]
     {X Y Z W : T} (h : X ⟶ Z) (f : X ⟶ Y) (g : Z ⟶ W) (k : Y ⟶ W)

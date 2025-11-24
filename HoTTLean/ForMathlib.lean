@@ -533,42 +533,6 @@ lemma ofYoneda_isPullback {C : Type u} [Category.{v} C] {TL TR BL BR : C}
     · specialize h (some .right)
       exact h
 
-variable {C : Type u₁} [SmallCategory C] {F G : Cᵒᵖ ⥤ Type u₁}
-  (app : ∀ {X : C}, (yoneda.obj X ⟶ F) → (yoneda.obj X ⟶ G))
-  (naturality : ∀ {X Y : C} (f : X ⟶ Y) (α : yoneda.obj Y ⟶ F),
-    app (yoneda.map f ≫ α) = yoneda.map f ≫ app α)
-
-variable (F) in
-
-/--
-  A presheaf `F` on a small category `C` is isomorphic to
-  the hom-presheaf `Hom(y(•),F)`.
--/
-def yonedaIso : yoneda.op ⋙ yoneda.obj F ≅ F :=
-  NatIso.ofComponents (fun _ => Equiv.toIso yonedaEquiv)
-    (fun f => by ext : 1; dsimp; rw [yonedaEquiv_naturality'])
-
-/-- Build natural transformations between presheaves on a small category
-  by defining their action when precomposing by a morphism with
-  representable domain -/
-def NatTrans.yonedaMk : F ⟶ G :=
-  (yonedaIso F).inv ≫ .mk (fun _ => by exact app) ≫ (yonedaIso G).hom
-
-@[deprecated (since := "2025-11-20")] alias yonedaIsoMap := NatTrans.yonedaMk
-
-theorem NatTrans.yonedaMk_app {X : C} (α : yoneda.obj X ⟶ F) :
-    α ≫ yonedaMk app naturality = app α := by
-  rw [← yonedaEquiv.apply_eq_iff_eq, yonedaEquiv_comp]
-  simp [yonedaMk, yonedaIso]
-
-def NatIso.yonedaMk
-    (app : ∀ {X : C}, (yoneda.obj X ⟶ F) ≃ (yoneda.obj X ⟶ G))
-    (naturality : ∀ {X Y : C} (f : X ⟶ Y) (α : yoneda.obj Y ⟶ F),
-      app (yoneda.map f ≫ α) = yoneda.map f ≫ app α) :
-    F ≅ G :=
-  (yonedaIso F).symm ≪≫ NatIso.ofComponents (fun A => by exact Equiv.toIso app)
-    ≪≫ (yonedaIso G)
-
 namespace Functor
 
 theorem precomp_heq_of_heq_id {A B : Type u} {C : Type*} [Category.{v} A] [Category.{v} B] [Category C]
