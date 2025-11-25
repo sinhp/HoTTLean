@@ -963,22 +963,19 @@ when constructing a model it is convenient to know
 that `k` is some specific construction on-the-nose.
 -/
 structure IdIntro where
-  k : Ctx
-  k1 : k ⟶ M.Tm
-  k2 : k ⟶ M.Tm
-  isKernelPair : IsKernelPair M.tp k1 k2
-  Id : k ⟶ M.Ty
+  Id : M.ext M.tp ⟶ M.Ty
   refl : M.Tm ⟶ M.Tm
   refl_tp : refl ≫ M.tp =
-    (IsPullback.lift isKernelPair (𝟙 M.Tm) (𝟙 M.Tm) (by simp)) ≫ Id
+    ((M.disp_pullback M.tp).lift (𝟙 M.Tm) (𝟙 M.Tm) (by simp)) ≫ Id
 
 namespace IdIntro
 
 variable {M} (idIntro : IdIntro M) {Γ : Ctx}
 
-@[simps] def k2UvPoly : UvPoly R idIntro.k M.Tm :=
-  ⟨idIntro.k2, R.of_isPullback idIntro.isKernelPair M.morphismProperty⟩
+@[simps] def k2UvPoly : UvPoly R (M.ext M.tp) M.Tm :=
+  ⟨M.disp _, R.of_isPullback (M.disp_pullback M.tp) M.morphismProperty⟩
 
+#exit
 /-- The introduction rule for identity types.
 To minimize the number of arguments, we infer the type from the terms. -/
 def mkId (a0 a1 : Γ ⟶ M.Tm)
@@ -1140,9 +1137,9 @@ this may not be definitionally equal to the pullbacks we construct,
 for example using context extension.
 -/
 structure IdElimBase (ii : IdIntro M) where
-  i : Ctx
-  i1 : i ⟶ M.Tm
-  i2 : i ⟶ ii.k
+  i : Ctx -- TODO: replace i with `M.ext (ii.Id)` and remove this whole definition.
+  i1 : i ⟶ M.Tm -- M.var ..
+  i2 : i ⟶ ii.k -- M.disp ..
   i_isPullback : IsPullback i1 i2 M.tp ii.Id
 
 namespace IdElimBase
