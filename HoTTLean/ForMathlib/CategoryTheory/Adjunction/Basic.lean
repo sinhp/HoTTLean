@@ -8,6 +8,7 @@ open CategoryTheory.Functor NatIso Category
 universe v₁ v₂ v₃ u₁ u₂ u₃
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂}
 
+/-- The natural hom-set isomorphism `C(F(-),⋆) ≅ D(-,G(⋆))` given by an adjunction. -/
 def Adjunction.homIso [Category.{v₁} D] {F : C ⥤ D} {G : D ⥤ C} (adj : F ⊣ G) :
     yoneda ⋙ (Functor.whiskeringLeft _ _ _).obj (F.op) ≅ G ⋙ yoneda :=
   NatIso.ofComponents

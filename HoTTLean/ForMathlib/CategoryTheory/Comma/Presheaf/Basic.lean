@@ -175,7 +175,7 @@ def overYonedaEquivPresheafOver.homIso : overYonedaEquivPresheafOver.functor ⋙
       Functor.isoWhiskerLeft _ (Functor.mapIso _
         (NatIso.op overYonedaEquivPresheafOver.yonedaCompInverseIso.symm))
 
-/-- To show that `F ≅ G : D ⥤ Over (yoneda.obj A)`
+/-- To show that `F ≅ G : D ⥤ Over y(A)`
 it suffices to show the natural isomorphism of profunctors
 `Over (y(A)) (Over.post yoneda (-), F(⋆)) ≅ Over (y(A)) (Over.post yoneda (-), G(⋆))` -/
 def Over.yonedaNatIsoMk {F G : D ⥤ Over (yoneda.obj A)}

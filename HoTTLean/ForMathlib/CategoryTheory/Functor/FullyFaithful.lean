@@ -11,5 +11,6 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₁} D]
 
 variable {F : C ⥤ D} (hF : F.FullyFaithful)
 
+/-- The natural isomorphism of hom-sets `C(-,⋆) ≅ D(F(-),F(⋆))`. -/
 def homIso : yoneda ≅ F ⋙ yoneda ⋙ (Functor.whiskeringLeft _ _ _).obj F.op :=
   NatIso.ofComponents (fun X => NatIso.ofComponents (fun Y => hF.homEquiv.toIso))
