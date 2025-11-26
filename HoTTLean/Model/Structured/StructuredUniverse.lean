@@ -975,20 +975,20 @@ variable {M} (idIntro : IdIntro M) {Γ : Ctx}
 @[simps] def k2UvPoly : UvPoly R (M.ext M.tp) M.Tm :=
   ⟨M.disp _, R.of_isPullback (M.disp_pullback M.tp) M.morphismProperty⟩
 
-#exit
 /-- The introduction rule for identity types.
 To minimize the number of arguments, we infer the type from the terms. -/
 def mkId (a0 a1 : Γ ⟶ M.Tm)
     (a0_tp_eq_a1_tp : a0 ≫ M.tp = a1 ≫ M.tp) :
     Γ ⟶ M.Ty :=
-  idIntro.isKernelPair.lift a1 a0 (by rw [a0_tp_eq_a1_tp]) ≫ idIntro.Id
+  (UnstructuredUniverse.disp_pullback _ M.tp).lift a1 a0 (by rw [a0_tp_eq_a1_tp]) ≫
+  idIntro.Id
 
 theorem comp_mkId {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
     (a0 a1 : Γ ⟶ M.Tm) (eq : a0 ≫ M.tp = a1 ≫ M.tp) :
     σ ≫ mkId idIntro a0 a1 eq =
       mkId idIntro (σ ≫ a0) (σ ≫ a1) (by simp [eq]) := by
   simp [mkId]; rw [← Category.assoc]; congr 1
-  apply idIntro.isKernelPair.hom_ext <;> simp
+  apply  (UnstructuredUniverse.disp_pullback _ M.tp).hom_ext <;> simp
 
 def mkRefl (a : Γ ⟶ M.Tm) : Γ ⟶ M.Tm :=
   a ≫ idIntro.refl
@@ -1003,7 +1003,7 @@ theorem mkRefl_tp (a : Γ ⟶ M.Tm) :
   simp only [mkRefl, Category.assoc, idIntro.refl_tp, mkId]
   rw [← Category.assoc]
   congr 1
-  apply idIntro.isKernelPair.hom_ext <;> simp
+  apply  (UnstructuredUniverse.disp_pullback _ M.tp).hom_ext <;> simp
 
 /-- The context appearing in the motive for identity elimination `J`
   Γ ⊢ A
@@ -1028,7 +1028,7 @@ def reflSubst (a : Γ ⟶ M.Tm) : Γ ⟶ idIntro.motiveCtx a :=
   M.substCons (M.substCons (𝟙 Γ) (a ≫ M.tp) a (by simp)) _ (idIntro.mkRefl a) (by
     simp only [mkRefl_tp, mkId, ← Category.assoc]
     congr 1
-    apply idIntro.isKernelPair.hom_ext <;> simp)
+    apply  (UnstructuredUniverse.disp_pullback _ M.tp).hom_ext <;> simp)
 
 @[reassoc]
 theorem comp_reflSubst' {Γ Δ} (σ : Δ ⟶ Γ) (a : Γ ⟶ M.Tm) :
@@ -1042,15 +1042,15 @@ lemma comp_reflSubst (a : Γ ⟶ M.Tm) {Δ} (σ : Δ ⟶ Γ) :
     reflSubst idIntro (σ ≫ a) ≫ idIntro.motiveSubst σ a = σ ≫ reflSubst idIntro a := by
   simp [comp_reflSubst']
 
-def toK (ii : IdIntro M) (a : Γ ⟶ M.Tm) : (M.ext (a ≫ M.tp)) ⟶ ii.k :=
-  ii.isKernelPair.lift (M.var _) ((M.disp _) ≫ a) (by simp)
+def toK (a : Γ ⟶ M.Tm) : (M.ext (a ≫ M.tp)) ⟶ M.ext M.tp :=
+   (UnstructuredUniverse.disp_pullback _ M.tp).lift (M.var _) ((M.disp _) ≫ a) (by simp)
 
-lemma toK_comp_k1 (ii : IdIntro M) (a : Γ ⟶ M.Tm) : ii.toK a ≫ ii.k1 = M.var _ := by
+lemma toK_comp_k1 (a : Γ ⟶ M.Tm) : IdIntro.toK a ≫ M.var M.tp = M.var _ := by
   simp [toK]
 
 lemma ext_a_tp_isPullback (ii : IdIntro M) (a : Γ ⟶ M.Tm) :
-    IsPullback (ii.toK a) (M.disp _) ii.k2 a :=
-  IsPullback.of_right' (M.disp_pullback _) ii.isKernelPair
+    IsPullback (IdIntro.toK a) (M.disp _) (M.disp M.tp) a :=
+  IsPullback.of_right' (M.disp_pullback _) (M.disp_pullback M.tp)
 
 end IdIntro
 
@@ -1139,13 +1139,13 @@ for example using context extension.
 structure IdElimBase (ii : IdIntro M) where
   i : Ctx -- TODO: replace i with `M.ext (ii.Id)` and remove this whole definition.
   i1 : i ⟶ M.Tm -- M.var ..
-  i2 : i ⟶ ii.k -- M.disp ..
+  i2 : i ⟶ M.ext M.tp -- M.disp ..
   i_isPullback : IsPullback i1 i2 M.tp ii.Id
 
 namespace IdElimBase
 variable {ii : IdIntro M} (ie : IdElimBase ii)
 
-@[simps] def i2UvPoly : UvPoly R ie.i ii.k :=
+@[simps] def i2UvPoly : UvPoly R ie.i (M.ext M.tp) :=
   ⟨ie.i2, R.of_isPullback ie.i_isPullback M.morphismProperty⟩
 
 /-- The comparison map `M.tm ⟶ i` induced by the pullback universal property of `i`.
@@ -1164,7 +1164,7 @@ diag |            |
 -/
 def comparison : M.Tm ⟶ ie.i :=
   ie.i_isPullback.lift ii.refl
-  (IsPullback.lift ii.isKernelPair (𝟙 M.Tm) (𝟙 M.Tm) (by simp))
+  (IsPullback.lift (M.disp_pullback M.tp) (𝟙 M.Tm) (𝟙 M.Tm) (by simp))
   ii.refl_tp
 
 @[simp]
@@ -1172,12 +1172,12 @@ lemma comparison_comp_i1 : ie.comparison ≫ ie.i1 = ii.refl := by
   simp [comparison]
 
 @[simp, reassoc]
-lemma comparison_comp_i2_comp_k1 : ie.comparison ≫ ie.i2 ≫ ii.k1 =
+lemma comparison_comp_i2_comp_k1 : ie.comparison ≫ ie.i2 ≫ M.var M.tp =
     𝟙 _ := by
   simp [comparison]
 
 @[simp, reassoc]
-lemma comparison_comp_i2_comp_k2 : ie.comparison ≫ ie.i2 ≫ ii.k2 =
+lemma comparison_comp_i2_comp_k2 : ie.comparison ≫ ie.i2 ≫ M.disp M.tp =
     𝟙 _ := by
   simp [comparison]
 
@@ -1188,12 +1188,12 @@ which is defined by the composition of (maps informally thought of as) context e
 This is the signature for a polynomial functor `iUvPoly` on the presheaf category `Ctx`.
 -/
 abbrev iUvPoly : UvPoly R ie.i M.Tm :=
-  ie.i2UvPoly.vcomp ii.k2UvPoly
+  ie.i2UvPoly.vcomp IdIntro.k2UvPoly
 
-lemma iUvPoly_morphismProperty : R (ie.i2 ≫ ii.k2) := by
+lemma iUvPoly_morphismProperty : R (ie.i2 ≫ M.disp M.tp) := by
   apply R.comp_mem
   · exact R.of_isPullback ie.i_isPullback M.morphismProperty
-  · exact R.of_isPullback ii.isKernelPair M.morphismProperty
+  · exact R.of_isPullback (M.disp_pullback M.tp) M.morphismProperty
 
 instance : R.HasPushforwardsAlong ie.iUvPoly.p := by
   apply MorphismProperty.HasPushforwards.hasPushforwardsAlong (Q := R)
@@ -1506,7 +1506,7 @@ def reflCase : Γ ⟶ (UvPoly.id R M.Tm).functor.obj N.Tm :=
 -- TODO: consider generalizing
 -- TODO: consider showing UvPoly on identity `(P_𝟙_Y X)` is isomorphic to product `Y × X`
 
-#exit
+
 variable (ie) in
 /-- The variable `C` is the motive for elimination,
 This gives a map `(a, C) : Γ ⟶ iFunctor Ty`
