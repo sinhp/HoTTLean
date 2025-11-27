@@ -46,7 +46,7 @@ hott0 def Identity.toEquiv₀₀ {A B : Type} : Identity A B → Σ (f : A → B
   fun h => ⟨transport₀ h, isEquiv₀₀_transport₀ h⟩
 
 hott0 def isProp₀ (A : Type) : Type :=
-  ∀ (a a' : A) (h h' : Identity a a'), Identity h h'
+  ∀ (a a' : A), Identity a a'
 
 hott0 def isSet₀ (A : Type) : Type :=
   ∀ (a b : A), isProp₀ (Identity a b)
