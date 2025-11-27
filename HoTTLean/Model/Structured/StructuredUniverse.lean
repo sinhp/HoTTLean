@@ -1048,9 +1048,20 @@ def toK (a : Γ ⟶ M.Tm) : (M.ext (a ≫ M.tp)) ⟶ M.ext M.tp :=
 lemma toK_comp_k1 (a : Γ ⟶ M.Tm) : IdIntro.toK a ≫ M.var M.tp = M.var _ := by
   simp [toK]
 
+-- why does this not use ii?
 lemma ext_a_tp_isPullback (ii : IdIntro M) (a : Γ ⟶ M.Tm) :
     IsPullback (IdIntro.toK a) (M.disp _) (M.disp M.tp) a :=
   IsPullback.of_right' (M.disp_pullback _) (M.disp_pullback M.tp)
+
+def toPolymorphicIdIntro :
+    M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse where
+  Id :=
+    have := idIntro -- TODO: remove
+    sorry
+  Id_comp := sorry
+  refl := sorry
+  refl_comp := sorry
+  refl_tp := sorry
 
 end IdIntro
 
@@ -1065,7 +1076,7 @@ end IdIntro
 -- Note that the universe/model `N` for the motive `C` is different from the universe `M` that the
 -- identity type lives in.
 -- -/
-protected structure Id' (i : IdIntro M) (N : StructuredUniverse R) where
+/- protected structure Id' (i : IdIntro M) (N : StructuredUniverse R) where
   j {Γ} (a : Γ ⟶ M.Tm) (C : IdIntro.motiveCtx _ a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
     (r_tp : r ≫ N.tp = (i.reflSubst a) ≫ C) :
     i.motiveCtx a ⟶ N.Tm
@@ -1079,9 +1090,9 @@ protected structure Id' (i : IdIntro M) (N : StructuredUniverse R) where
       simp [r_tp, IdIntro.comp_reflSubst'_assoc])
   reflSubst_j {Γ} (a : Γ ⟶ M.Tm) (C : IdIntro.motiveCtx _ a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
     (r_tp : r ≫ N.tp = (i.reflSubst a) ≫ C) :
-    (i.reflSubst a) ≫ j a C r r_tp = r
+    (i.reflSubst a) ≫ j a C r r_tp = r -/
 
--- namespace Id'
+-- namespace PolymorphicIdElim
 
 -- variable {M} {N : StructuredUniverse R} {ii : M.IdIntro} (i : M.Id' ii N) {Γ : Ctx} (a : Γ ⟶ M.Tm)
 --   (C : ii.motiveCtx a ⟶ N.Ty) (r : Γ ⟶ N.Tm)
@@ -1157,10 +1168,8 @@ variable {M}
 --   i2 : i ⟶ M.ext M.tp -- M.disp ..
 --   i_isPullback : IsPullback i1 i2 M.tp ii.Id
 
-namespace IdElimBase
-variable {ii : IdIntro M} --(ie : IdElimBase ii)
-
-
+namespace IdIntro
+variable (ii : IdIntro M) --(ie : IdElimBase ii)
 
 @[simps] def i2UvPoly : UvPoly R (M.ext ii.Id) (M.ext M.tp) :=
   ⟨M.disp ii.Id, R.of_isPullback (M.disp_pullback _) M.morphismProperty⟩
@@ -1185,16 +1194,16 @@ def comparison : M.Tm ⟶ M.ext ii.Id :=
   ii.refl_tp
 
 @[simp]
-lemma comparison_comp_i1 : comparison ≫ M.var ii.Id = ii.refl := by
+lemma comparison_comp_i1 : comparison ii ≫ M.var ii.Id = ii.refl := by
   simp [comparison]
 
 @[simp, reassoc]
-lemma comparison_comp_i2_comp_k1 : comparison ≫ M.disp ii.Id ≫ M.var M.tp =
+lemma comparison_comp_i2_comp_k1 : comparison ii ≫ M.disp ii.Id ≫ M.var M.tp =
     𝟙 _ := by
   simp [comparison]
 
 @[simp, reassoc]
-lemma comparison_comp_i2_comp_k2 : comparison ≫ M.disp ii.Id ≫ M.disp M.tp =
+lemma comparison_comp_i2_comp_k2 : ii.comparison ≫ M.disp ii.Id ≫ M.disp M.tp =
     𝟙 _ := by
   simp [comparison]
 
@@ -1205,7 +1214,7 @@ which is defined by the composition of (maps informally thought of as) context e
 This is the signature for a polynomial functor `iUvPoly` on the presheaf category `Ctx`.
 -/
 abbrev iUvPoly : UvPoly R (M.ext ii.Id) M.Tm :=
-  i2UvPoly.vcomp IdIntro.k2UvPoly
+  (i2UvPoly ii).vcomp IdIntro.k2UvPoly
 
 -- lemma iUvPoly_morphismProperty : R (ie.i2 ≫ M.disp M.tp) := by
 --   apply R.comp_mem
@@ -1287,7 +1296,7 @@ def reflCase : Γ ⟶ (UvPoly.id R M.Tm).functor.obj N.Tm :=
 
 end reflCase
 
-open IdElimBase IdIntro
+open IdIntro
 
 section Equiv
 
@@ -1463,7 +1472,9 @@ end
 
 end Equiv
 
-end IdElimBase
+end IdIntro
+
+open IdIntro
 
 /-- In the high-tech formulation by Richard Garner and Steve Awodey:
 The full structure interpreting the natural model semantics for identity types
@@ -1497,25 +1508,25 @@ Here we are thinking
 This witnesses the elimination principle for identity types since
 we can take `J (y.p.C;x.r) := c`.
 -/
-structure Id {ii : IdIntro M} (N : StructuredUniverse R) where
+structure Id (ii : IdIntro M) (N : StructuredUniverse R) where
   weakPullback : WeakPullback
-    (IdElimBase.verticalNatTrans.app N.Tm)
-    ((IdElimBase.iFunctor (ii:= ii)).map N.tp)
+    (verticalNatTrans.app N.Tm)
+    ((iFunctor (ii:= ii)).map N.tp)
     ((UvPoly.id R M.Tm).functor.map N.tp)
-    (IdElimBase.verticalNatTrans.app N.Ty)
+    (verticalNatTrans.app N.Ty)
 
 -- TODO fix the proof that `StructuredUniverse.Id` is equivalent to
 -- `UnstructuredUniverse.PolymorphicIdElim`
 
 namespace Id
 
-variable {N : StructuredUniverse R} {ii : IdIntro M}  (i :Id N)
+variable {N : StructuredUniverse R} {ii : IdIntro M}  (i : Id ii N)
 
 variable {Γ Δ : Ctx} (σ : Δ ⟶ Γ) (a : Γ ⟶ M.Tm)
   (C : (ii.motiveCtx a) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
   (r_tp : r ≫ N.tp = (ii.reflSubst a) ≫ C)
 
-open IdElimBase IdIntro
+open IdIntro
 
 lemma reflCase_aux : IsPullback (𝟙 Γ) a a (UvPoly.id R M.Tm).p :=
   have : IsIso (UvPoly.id R M.Tm).p := by simp; infer_instance
@@ -1682,20 +1693,28 @@ def endPtSubst : Γ ⟶ ii.motiveCtx a :=
     · simp)
 
 /-- `Id` is equivalent to `Id` (one half). -/
-def toId' : M.Id' ii N where
-  j := i.j
-  j_tp := i.j_tp
-  comp_j := i.comp_j
-  reflSubst_j := i.reflSubst_j
+def toUnstructured : M.toUnstructuredUniverse.PolymorphicIdElim
+    ii.toPolymorphicIdIntro N.toUnstructuredUniverse where
+  j := sorry --i.j
+  j_tp := sorry -- i.j_tp
+  comp_j := sorry --i.comp_j
+  reflSubst_j := sorry -- i.reflSubst_j
 
 end Id
 
-namespace Id'
+def IdIntro.ofUnstructured
+    (i : M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse) : M.IdIntro :=
+  have := i -- TODO remove
+  sorry
 
-variable {ii : IdIntro M}  {N : Universe Ctx} (i : M.Id' ii N)
+namespace Id
 
-open IdIntro IdElimBase
+variable {N : StructuredUniverse R}
+  (i : M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse)
 
+open IdIntro
+
+/-
 variable {Γ} (ar : y(Γ) ⟶ (UvPoly.id M.Tm).functor.obj N.Tm)
   (aC : y(Γ) ⟶ ie.iFunctor.obj N.Ty)
   (hrC : ar ≫ (UvPoly.id M.Tm).functor.map N.tp =
@@ -1807,8 +1826,12 @@ lemma comp_lift {Δ} (σ : Δ ⟶ Γ) : ym(σ) ≫ lift i ar aC hrC =
       slice_lhs 2 3 => rw [← toI_comp_i2 ie]
       simp [toI_comp_left]
     · simp [motiveSubst, substWk]
+-/
 
-def toId : M.Id ie N where
+
+
+def ofUnstructured (ie : M.toUnstructuredUniverse.PolymorphicIdElim i N.toUnstructuredUniverse) :
+    M.Id (IdIntro.ofUnstructured i) N where
   __ := ie
   weakPullback := RepPullbackCone.WeakPullback.mk
     ((IdElimBase.verticalNatTrans ie).naturality _).symm
@@ -1817,8 +1840,6 @@ def toId : M.Id ie N where
     (fun s => lift_snd i s.fst s.snd s.condition)
     (fun s _ σ => comp_lift i s.fst s.snd s.condition σ)
 
-end Id'
+end Id
 
-end Universe
-
-end StructuredModel
+end StructuredUniverse
