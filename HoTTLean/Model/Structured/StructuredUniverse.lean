@@ -1262,9 +1262,10 @@ Tm ----> i
     VV
     Tm
 -/
-def verticalNatTrans : iFunctor (ii:= ii) ⟶ (UvPoly.id R M.Tm).functor :=
-    UvPoly.verticalNatTrans (UvPoly.id R M.Tm) iUvPoly
-  comparison (by simp [iUvPoly])
+def verticalNatTrans : iFunctor ii ⟶ (UvPoly.id R M.Tm).functor :=
+    --let f := UvPoly.id R M.Tm
+    UvPoly.verticalNatTrans (UvPoly.id R M.Tm) (iUvPoly ii)
+  (comparison ii) (by simp [iUvPoly])
 
 section reflCase
 
@@ -1344,9 +1345,9 @@ def toI : (ii.motiveCtx a) ⟶ M.ext ii.Id :=
   (M.disp_pullback ii.Id).lift (M.var _) ((M.disp _) ≫ toK a)
   (by rw [(M.disp_pullback _).w]; simp [IdIntro.mkId, toK])
 
-lemma toI_comp_i1 : toI a ≫ M.var ii.Id = M.var _ := by simp [toI]
+lemma toI_comp_i1 : toI ii a ≫ M.var ii.Id = M.var _ := by simp [toI]
 
-lemma toI_comp_i2 : toI a ≫ M.disp ii.Id = (M.disp _) ≫ toK a :=
+lemma toI_comp_i2 : toI ii a ≫ M.disp ii.Id = (M.disp _) ≫ toK a :=
   by simp [toI]
 
 -- lemma toI_comp_left {Δ} (σ : Δ ⟶ Γ) : toI ie (σ ≫ a) =
@@ -1358,36 +1359,36 @@ lemma toI_comp_i2 : toI a ≫ M.disp ii.Id = (M.disp _) ≫ toK a :=
 
 
 theorem motiveCtx_isPullback :
-    IsPullback (toI a) (M.disp _) (M.disp ii.Id) (toK a) :=
+    IsPullback (toI ii a) (M.disp _) (M.disp ii.Id) (toK a) :=
   IsPullback.of_right' (M.disp_pullback _) (M.disp_pullback _)
 
 theorem motiveCtx_isPullback' :
-    IsPullback (toI a) ((M.disp (ii.mkId ((M.disp (a ≫ M.tp)) ≫ a)
-      (M.var (a ≫ M.tp)) (by simp))) ≫ (M.disp (a ≫ M.tp))) (iUvPoly).p a :=
-  IsPullback.paste_vert (motiveCtx_isPullback a)
+    IsPullback (toI ii a) ((M.disp (ii.mkId ((M.disp (a ≫ M.tp)) ≫ a)
+      (M.var (a ≫ M.tp)) (by simp))) ≫ (M.disp (a ≫ M.tp))) (iUvPoly ii).p a :=
+  IsPullback.paste_vert (motiveCtx_isPullback ii a)
     (ii.ext_a_tp_isPullback a)
 
 def equivMk (x : (ii.motiveCtx a) ⟶ X) : Γ ⟶ (iFunctor (ii:= ii)).obj X :=
-  UvPoly.Equiv.mk' a (motiveCtx_isPullback' a).flip x
+  UvPoly.Equiv.mk' a (motiveCtx_isPullback' ii a).flip x
 
 def equivFst (pair : Γ ⟶ (iFunctor (ii:=ii)).obj X) :
     Γ ⟶ M.Tm :=
   UvPoly.Equiv.fst pair
 
-lemma equivFst_comp_left (pair : Γ ⟶ (iFunctor (ii:= ii)).obj X)
+lemma equivFst_comp_left (pair : Γ ⟶ (iFunctor ii).obj X)
     {Δ} (σ : Δ ⟶ Γ) :
-    equivFst (σ ≫ pair) = σ ≫ equivFst pair := by
+    equivFst ii (σ ≫ pair) = σ ≫ equivFst ii pair := by
   dsimp [equivFst]
   rw [UvPoly.Equiv.fst_comp_left]
 
 def equivSnd (pair : Γ ⟶ (iFunctor (ii:= ii)).obj X) :
-    (ii.motiveCtx (equivFst pair)) ⟶ X :=
-  UvPoly.Equiv.snd' pair (motiveCtx_isPullback' _).flip
+    (ii.motiveCtx (equivFst ii pair)) ⟶ X :=
+  UvPoly.Equiv.snd' pair (motiveCtx_isPullback' ii _).flip
 
-lemma equivSnd_comp_left (pair : Γ ⟶ iFunctor.obj X)
+lemma equivSnd_comp_left (pair : Γ ⟶ (iFunctor ii).obj X)
     {Δ} (σ : Δ ⟶ Γ) :
-    equivSnd (σ ≫ pair) =
-    eqToHom (by simp [equivFst_comp_left]) ≫ ii.motiveSubst σ _ ≫ equivSnd pair := by
+    equivSnd ii (σ ≫ pair) =
+    eqToHom (by simp [equivFst_comp_left ii]) ≫ ii.motiveSubst σ _ ≫ equivSnd ii pair := by
   sorry
   -- dsimp only [equivSnd]
   -- let a := ie.equivFst pair
@@ -1510,10 +1511,10 @@ we can take `J (y.p.C;x.r) := c`.
 -/
 structure Id (ii : IdIntro M) (N : StructuredUniverse R) where
   weakPullback : WeakPullback
-    (verticalNatTrans.app N.Tm)
+    ((verticalNatTrans ii).app N.Tm)
     ((iFunctor (ii:= ii)).map N.tp)
     ((UvPoly.id R M.Tm).functor.map N.tp)
-    (verticalNatTrans.app N.Ty)
+    ((verticalNatTrans ii).app N.Ty)
 
 -- TODO fix the proof that `StructuredUniverse.Id` is equivalent to
 -- `UnstructuredUniverse.PolymorphicIdElim`
@@ -1568,7 +1569,7 @@ Ty <-- y(motiveCtx) ----> i
 --instance : MorphismProperty.IsMultiplicative R := sorry
 instance : MorphismProperty.IsMultiplicative R := sorry
 abbrev motive : Γ ⟶ (iFunctor (ii:= ii)).obj N.Ty :=
-  equivMk a C
+  equivMk ii a C
 
 -- lemma motive_comp_left : σ ≫ motive a C =
 --     motive  (σ ≫ a) ((ii.motiveSubst σ a) ≫ C) := by
@@ -1591,8 +1592,8 @@ instance : HasPullbacks Ctx := sorry
 def lift : Γ ⟶ (iFunctor (ii:= ii)).obj N.Tm :=
   i.weakPullback.coherentLift (reflCase a r) (motive a C) (by
     dsimp only [motive, equivMk, verticalNatTrans, reflCase]
-    rw [UvPoly.mk'_comp_verticalNatTrans_app (UvPoly.id R M.Tm) iUvPoly comparison
-      _ N.Ty a (motiveCtx_isPullback' a).flip C (reflCase_aux a),
+    rw [UvPoly.mk'_comp_verticalNatTrans_app (UvPoly.id R M.Tm) (iUvPoly ii) (comparison ii)
+      _ N.Ty a (motiveCtx_isPullback' ii a).flip C (reflCase_aux a),
       UvPoly.Equiv.mk'_comp_right, r_tp, reflSubst]
     congr
     apply (M.disp_pullback _).hom_ext
@@ -1621,13 +1622,13 @@ lemma lift_comp_left {Δ} (σ : Δ ⟶ Γ) : i.lift (σ ≫ a) ((ii.motiveSubst 
   --   · simp
   -- · rw [motive_comp_left]
 
-lemma equivFst_lift_eq : equivFst (i.lift a C r r_tp) = a :=
-  calc equivFst (i.lift a C r r_tp)
-  _ = equivFst (i.lift a C r r_tp ≫ iFunctor.map N.tp) := by
-    dsimp [IdElimBase.equivFst]
+lemma equivFst_lift_eq : equivFst ii (i.lift a C r r_tp) = a :=
+  calc equivFst ii (i.lift a C r r_tp)
+  _ = equivFst ii (i.lift a C r r_tp ≫ (iFunctor ii).map N.tp) := by
+    dsimp [IdIntro.equivFst]
     rw [UvPoly.Equiv.fst_comp_right]
   _ = _ := by
-    dsimp [lift, motive, IdElimBase.equivFst, IdElimBase.equivMk]
+    dsimp [lift, motive, IdIntro.equivFst, IdIntro.equivMk]
     rw [WeakPullback.coherentLift_snd, UvPoly.Equiv.fst_mk']
 
 /-- The elimination rule for identity types.
@@ -1638,14 +1639,14 @@ lemma equivFst_lift_eq : equivFst (i.lift a C r r_tp) = a :=
 -/
 --equivFst_lift_eq
 def j : (ii.motiveCtx a) ⟶ N.Tm :=
-  eqToHom (by rw[equivFst_lift_eq]) ≫ equivSnd (i.lift a C r r_tp)
+  eqToHom (by rw[equivFst_lift_eq ]) ≫ equivSnd ii (i.lift a C r r_tp (ii:= ii))
 
 /-- Typing for elimination rule `J` -/
 lemma j_tp : j i a C r r_tp ≫ N.tp = C := by
-  simp only [j, Category.assoc, IdElimBase.equivSnd, ← UvPoly.Equiv.snd'_comp_right]
+  simp only [j, Category.assoc, IdIntro.equivSnd, ← UvPoly.Equiv.snd'_comp_right]
   -- FIXME: `transparency := .default` is like `erw` and should be avoided
   rw! (transparency := .default) [WeakPullback.coherentLift_snd]
-  simp only [IdElimBase.equivMk]
+  simp only [IdIntro.equivMk]
   rw! [equivFst_lift_eq]
   simp
 
@@ -1833,12 +1834,13 @@ lemma comp_lift {Δ} (σ : Δ ⟶ Γ) : ym(σ) ≫ lift i ar aC hrC =
 def ofUnstructured (ie : M.toUnstructuredUniverse.PolymorphicIdElim i N.toUnstructuredUniverse) :
     M.Id (IdIntro.ofUnstructured i) N where
   __ := ie
-  weakPullback := RepPullbackCone.WeakPullback.mk
-    ((IdElimBase.verticalNatTrans ie).naturality _).symm
-    (fun s => lift i s.fst s.snd s.condition)
-    (fun s => lift_fst i s.fst s.snd s.condition)
-    (fun s => lift_snd i s.fst s.snd s.condition)
-    (fun s _ σ => comp_lift i s.fst s.snd s.condition σ)
+  weakPullback := sorry
+    -- RepPullbackCone.WeakPullback.mk
+    -- ((IdIntro.verticalNatTrans sorry ).naturality _).symm
+    -- (fun s => lift i s.fst s.snd s.condition)
+    -- (fun s => lift_fst i s.fst s.snd s.condition)
+    -- (fun s => lift_snd i s.fst s.snd s.condition)
+    -- (fun s _ σ => comp_lift i s.fst s.snd s.condition σ)
 
 end Id
 
