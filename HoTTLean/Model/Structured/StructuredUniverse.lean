@@ -1371,7 +1371,7 @@ theorem motiveCtx_isPullback' :
 def equivMk (x : (ii.motiveCtx a) ⟶ X) : Γ ⟶ (iFunctor (ii:= ii)).obj X :=
   UvPoly.Equiv.mk' a (motiveCtx_isPullback' ii a).flip x
 
-def equivFst (pair : Γ ⟶ (iFunctor (ii:=ii)).obj X) :
+def equivFst (pair : Γ ⟶ (iFunctor ii).obj X) :
     Γ ⟶ M.Tm :=
   UvPoly.Equiv.fst pair
 
@@ -1567,7 +1567,7 @@ Ty <-- y(motiveCtx) ----> i
 ```
 -/
 --instance : MorphismProperty.IsMultiplicative R := sorry
-instance : MorphismProperty.IsMultiplicative R := sorry
+--instance : MorphismProperty.IsMultiplicative R := sorry
 abbrev motive : Γ ⟶ (iFunctor (ii:= ii)).obj N.Ty :=
   equivMk ii a C
 
@@ -1588,8 +1588,13 @@ abbrev motive : Γ ⟶ (iFunctor (ii:= ii)).obj N.Ty :=
 --       slice_rhs 1 2 => rw [← ie.toI_comp_i2]
 --       simp
 
-instance : HasPullbacks Ctx := sorry
-def lift : Γ ⟶ (iFunctor (ii:= ii)).obj N.Tm :=
+instance : HasPullbacksAlong ((UvPoly.id R M.Tm).functor.map N.tp) :=
+
+sorry
+instance {X} (f: X ⟶ _) : HasPullback ((UvPoly.id R M.Tm).functor.map N.tp) f := by
+ apply hasPullback_symmetry
+
+def lift : Γ ⟶ (iFunctor ii).obj N.Tm :=
   i.weakPullback.coherentLift (reflCase a r) (motive a C) (by
     dsimp only [motive, equivMk, verticalNatTrans, reflCase]
     rw [UvPoly.mk'_comp_verticalNatTrans_app (UvPoly.id R M.Tm) (iUvPoly ii) (comparison ii)
@@ -1613,6 +1618,8 @@ lemma lift_comp_left {Δ} (σ : Δ ⟶ Γ) : i.lift (σ ≫ a) ((ii.motiveSubst 
   sorry
   -- congr 1
   -- · dsimp [reflCase]
+  --   --have e:= UvPoly.Equiv.mk'_comp_left
+  --   rw [UvPoly.Equiv.mk'_comp_left (σ := σ) (H':=reflCase_aux a)]
   --   rw [UvPoly.Equiv.mk'_comp_left (UvPoly.id _ M.Tm) N.Tm a (reflCase_aux a) r σ _ rfl
   --     (reflCase_aux (σ ≫ a))]
   --   congr 2
@@ -1696,7 +1703,9 @@ def endPtSubst : Γ ⟶ ii.motiveCtx a :=
 /-- `Id` is equivalent to `Id` (one half). -/
 def toUnstructured : M.toUnstructuredUniverse.PolymorphicIdElim
     ii.toPolymorphicIdIntro N.toUnstructuredUniverse where
-  j := sorry --i.j
+  j a a_tp C c e := by
+    #check i.j
+    sorry --i.j
   j_tp := sorry -- i.j_tp
   comp_j := sorry --i.comp_j
   reflSubst_j := sorry -- i.reflSubst_j
@@ -1711,33 +1720,37 @@ def IdIntro.ofUnstructured
 namespace Id
 
 variable {N : StructuredUniverse R}
-  (i : M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse)
-
+  (ii : M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse)
+  (i : M.Id (IdIntro.ofUnstructured ii) N)
 open IdIntro
 
-/-
-variable {Γ} (ar : y(Γ) ⟶ (UvPoly.id M.Tm).functor.obj N.Tm)
-  (aC : y(Γ) ⟶ ie.iFunctor.obj N.Ty)
-  (hrC : ar ≫ (UvPoly.id M.Tm).functor.map N.tp =
-    aC ≫ (verticalNatTrans ie).app N.Ty)
+--ie |-> (IdIntro.ofUnstructured ii)
+
+variable {Γ} (ar : (Γ) ⟶ (UvPoly.id R M.Tm).functor.obj N.Tm)
+  (aC : (Γ) ⟶ (iFunctor ((IdIntro.ofUnstructured ii))).obj N.Ty)
+  (hrC : ar ≫ (UvPoly.id R M.Tm).functor.map N.tp =
+    aC ≫ (verticalNatTrans (IdIntro.ofUnstructured ii)).app N.Ty)
 
 include hrC in
-lemma fst_eq_fst : UvPoly.Equiv.fst _ _ ar = ie.equivFst aC :=
+lemma fst_eq_fst : UvPoly.Equiv.fst ar = (IdIntro.ofUnstructured ii).equivFst aC :=
   calc _
-  _ = UvPoly.Equiv.fst _ _ (ar ≫ (UvPoly.id M.Tm).functor.map N.tp) := by
+  _ = UvPoly.Equiv.fst (ar ≫ (UvPoly.id R M.Tm).functor.map N.tp) := by
     rw [UvPoly.Equiv.fst_comp_right]
-  _ = UvPoly.Equiv.fst _ _  (aC ≫ (IdElimBase.verticalNatTrans ie).app N.Ty) := by
+  _ = UvPoly.Equiv.fst (aC ≫ (verticalNatTrans (IdIntro.ofUnstructured ii)).app N.Ty) := by
     rw [hrC]
   _ = _ := by
-    rw [ie.equivFst_verticalNatTrans_app]
+    sorry
+    --rw [equivFst_verticalNatTrans_app]
 
-abbrev motive : y(ii.motiveCtx (ie.equivFst aC)) ⟶ N.Ty :=
-  ie.equivSnd aC
+-- abbrev motive1 : (ii.motiveCtx ((IdIntro.ofUnstructured ii).equivFst aC)) ⟶ N.Ty :=
+--   ie.equivSnd aC
 
-lemma comp_motive {Δ} (σ : Δ ⟶ Γ) : motive (ym(σ) ≫ aC) =
-    ym(ii.motiveSubst σ (ie.equivFst aC)) ≫ motive aC := by
-  simp only [motive, equivSnd_comp_left ie aC σ]
+-- lemma comp_motive {Δ} (σ : Δ ⟶ Γ) : motive ((σ) ≫ aC) =
+--     ym(ii.motiveSubst σ (equivFst aC)) ≫ motive aC := by
+--   simp only [motive, equivSnd_comp_left ie aC σ]
 
+
+/-
 abbrev reflCase : y(Γ) ⟶ N.Tm := UvPoly.Equiv.snd' _ _ ar (Id.reflCase_aux _)
 
 lemma comp_reflCase {Δ} (σ : Δ ⟶ Γ) : reflCase (ym(σ) ≫ ar) = ym(σ) ≫ reflCase ar := by
@@ -1782,65 +1795,93 @@ lemma reflCase_comp_tp : reflCase ar ≫ N.tp =
       slice_lhs 2 3 => rw [← ie.toI_comp_i2]
       simp
     · simp
-
-def lift : y(Γ) ⟶ (IdElimBase.iFunctor ie).obj N.Tm :=
-  ie.equivMk (ie.equivFst aC) (i.j (ie.equivFst aC) (motive aC)
-   (reflCase ar) (reflCase_comp_tp ar aC hrC))
-
-lemma lift_fst : lift i ar aC hrC ≫ ie.verticalNatTrans.app N.Tm = ar := by
-  dsimp only [lift]
-  rw [equivMk_comp_verticalNatTrans_app]
-  apply UvPoly.Equiv.ext' (UvPoly.id M.Tm) N.Tm (by convert reflCase_aux (ie.equivFst aC); simp)
-  · rw! [i.reflSubst_j]
-    simp [reflCase, fst_eq_fst ar aC hrC]
-  · simp [fst_eq_fst ar aC hrC]
-
-lemma lift_snd : lift i ar aC hrC ≫ ie.iFunctor.map N.tp = aC := by
-  dsimp only [lift, equivMk]
-  rw [UvPoly.Equiv.mk'_comp_right]
-  apply UvPoly.Equiv.ext' ie.iUvPoly N.Ty
-  · rw! [i.j_tp]
-    rw [UvPoly.Equiv.snd'_mk']
-    simp [motive, equivSnd]
-  · simp only [UvPoly.Equiv.fst_mk', iUvPoly_p]
-    exact (ie.motiveCtx_isPullback' _).flip
-  · simp [equivFst]
-
-lemma comp_lift {Δ} (σ : Δ ⟶ Γ) : ym(σ) ≫ lift i ar aC hrC =
-    lift i (ym(σ) ≫ ar) (ym(σ) ≫ aC) (by simp [hrC]) := by
-  dsimp [lift, equivMk]
-  rw [UvPoly.Equiv.mk'_comp_left ie.iUvPoly N.Tm (ie.equivFst aC) _
-    (i.j (ie.equivFst aC) (motive aC) (reflCase ar) _) ym(σ) _ rfl
-    (by simp only [iUvPoly_p]; exact (ie.motiveCtx_isPullback' _).flip)]
-  congr 1
-  have h := i.comp_j σ (ie.equivFst aC) _ _ (reflCase_comp_tp ar aC hrC)
-  rw! (castMode := .all) [← comp_motive, ← comp_reflCase, ← equivFst_comp_left] at h
-  rw [← h]
-  congr 1
-  simp only [iUvPoly_p, Category.assoc]
-  apply (M.disp_pullback _).hom_ext
-  · simp [toI_comp_left, ← toI_comp_i1 ie]
-  · apply (M.disp_pullback _).hom_ext
-    · slice_rhs 3 4 => rw [← toK_comp_k1 ii]
-      slice_rhs 2 3 => rw [← toI_comp_i2 ie]
-      slice_lhs 3 4 => rw [← toK_comp_k1 ii]
-      slice_lhs 2 3 => rw [← toI_comp_i2 ie]
-      simp [toI_comp_left]
-    · simp [motiveSubst, substWk]
 -/
+namespace ofUnstructured
+#check  ar
+def lift : Γ ⟶ (iFunctor (IdIntro.ofUnstructured ii)).obj N.Tm :=
+  equivMk (IdIntro.ofUnstructured ii) (equivFst (IdIntro.ofUnstructured ii) aC)
+  (by
+   fapply i.j
+   · sorry
+   · have a : Γ ⟶ (UvPoly.id R M.Tm) @ N.Tm := ar
+     have a1 : Γ ⟶  M.Tm := UvPoly.Equiv.fst a
+     have a2:= UvPoly.Equiv.snd a
+     -- (pullback.lift (𝟙 _) a1 ≫ a2)
+     exact (pullback.lift (𝟙 _) (UvPoly.Equiv.fst a) ≫ UvPoly.Equiv.snd a)
+     --apply UvPoly.Equiv.fst (E := N.Tm) (B := N.Tm) sorry
+   · sorry)
+
+   --sorry)
+  #check i.j
+  -- (i.j sorry _ sorry sorry)
+  --  (i.j (equivFst (IdIntro.ofUnstructured ii) aC)
+  --  (motive aC)
+  --  (reflCase ar) (reflCase_comp_tp ar aC hrC))
+
+-- lemma lift_fst : lift i ar aC hrC ≫ ie.verticalNatTrans.app N.Tm = ar := by
+--   dsimp only [lift]
+--   rw [equivMk_comp_verticalNatTrans_app]
+--   apply UvPoly.Equiv.ext' (UvPoly.id M.Tm) N.Tm (by convert reflCase_aux (ie.equivFst aC); simp)
+--   · rw! [i.reflSubst_j]
+--     simp [reflCase, fst_eq_fst ar aC hrC]
+--   · simp [fst_eq_fst ar aC hrC]
+
+-- lemma lift_snd : lift i ar aC hrC ≫ ie.iFunctor.map N.tp = aC := by
+--   dsimp only [lift, equivMk]
+--   rw [UvPoly.Equiv.mk'_comp_right]
+--   apply UvPoly.Equiv.ext' ie.iUvPoly N.Ty
+--   · rw! [i.j_tp]
+--     rw [UvPoly.Equiv.snd'_mk']
+--     simp [motive, equivSnd]
+--   · simp only [UvPoly.Equiv.fst_mk', iUvPoly_p]
+--     exact (ie.motiveCtx_isPullback' _).flip
+--   · simp [equivFst]
+
+-- lemma comp_lift {Δ} (σ : Δ ⟶ Γ) : ym(σ) ≫ lift i ar aC hrC =
+--     lift i (ym(σ) ≫ ar) (ym(σ) ≫ aC) (by simp [hrC]) := by
+--   dsimp [lift, equivMk]
+--   rw [UvPoly.Equiv.mk'_comp_left ie.iUvPoly N.Tm (ie.equivFst aC) _
+--     (i.j (ie.equivFst aC) (motive aC) (reflCase ar) _) ym(σ) _ rfl
+--     (by simp only [iUvPoly_p]; exact (ie.motiveCtx_isPullback' _).flip)]
+--   congr 1
+--   have h := i.comp_j σ (ie.equivFst aC) _ _ (reflCase_comp_tp ar aC hrC)
+--   rw! (castMode := .all) [← comp_motive, ← comp_reflCase, ← equivFst_comp_left] at h
+--   rw [← h]
+--   congr 1
+--   simp only [iUvPoly_p, Category.assoc]
+--   apply (M.disp_pullback _).hom_ext
+--   · simp [toI_comp_left, ← toI_comp_i1 ie]
+--   · apply (M.disp_pullback _).hom_ext
+--     · slice_rhs 3 4 => rw [← toK_comp_k1 ii]
+--       slice_rhs 2 3 => rw [← toI_comp_i2 ie]
+--       slice_lhs 3 4 => rw [← toK_comp_k1 ii]
+--       slice_lhs 2 3 => rw [← toI_comp_i2 ie]
+--       simp [toI_comp_left]
+--     · simp [motiveSubst, substWk]
 
 
 
-def ofUnstructured (ie : M.toUnstructuredUniverse.PolymorphicIdElim i N.toUnstructuredUniverse) :
-    M.Id (IdIntro.ofUnstructured i) N where
+end ofUnstructured
+def ofUnstructured (ie : M.toUnstructuredUniverse.PolymorphicIdElim ii N.toUnstructuredUniverse) :
+    M.Id (IdIntro.ofUnstructured ii) N where
   __ := ie
-  weakPullback := sorry
+  weakPullback := {
+    w := sorry
+    lift {Γ}:= sorry
+    lift_fst' := sorry
+    lift_snd' := sorry
+  }
     -- RepPullbackCone.WeakPullback.mk
-    -- ((IdIntro.verticalNatTrans sorry ).naturality _).symm
-    -- (fun s => lift i s.fst s.snd s.condition)
+    -- ((IdIntro.verticalNatTrans sorry).naturality _).symm
+    -- (fun s => lift i s.fst sorry s.snd s.condition)
+    -- sorry
+    -- sorry
+    -- sorry
+    -- (fun s => lift i s.fst sorry s.snd s.condition)
     -- (fun s => lift_fst i s.fst s.snd s.condition)
     -- (fun s => lift_snd i s.fst s.snd s.condition)
     -- (fun s _ σ => comp_lift i s.fst s.snd s.condition σ)
+
 
 end Id
 
