@@ -1703,9 +1703,24 @@ def endPtSubst : Γ ⟶ ii.motiveCtx a :=
 /-- `Id` is equivalent to `Id` (one half). -/
 def toUnstructured : M.toUnstructuredUniverse.PolymorphicIdElim
     ii.toPolymorphicIdIntro N.toUnstructuredUniverse where
-  j a a_tp C c e := by
-    #check i.j
-    sorry --i.j
+  j {Γ A} a a_tp C c e := by
+    let w := M.disp_pullback (ii.mkId (M.disp (a ≫ M.tp) ≫ a) (M.var _) (by simp))
+
+    let iso: ii.toPolymorphicIdIntro.motiveCtx a a_tp ⟶ ii.motiveCtx a := by
+      fapply (w.lift (W:= ii.toPolymorphicIdIntro.motiveCtx a a_tp) )
+      · apply (M.var ((ii.toPolymorphicIdIntro).weakenId a a_tp))
+      · convert (M.disp ((ii.toPolymorphicIdIntro).weakenId a a_tp))
+      · simp
+        sorry
+    have f1 : ii.motiveCtx a ⟶ N.Tm := by
+      fapply i.j
+      · sorry
+      · sorry
+      · sorry
+    exact (iso ≫ f1)
+    --   sorry
+    --#check i.j
+    -- sorry --i.j
   j_tp := sorry -- i.j_tp
   comp_j := sorry --i.comp_j
   reflSubst_j := sorry -- i.reflSubst_j
