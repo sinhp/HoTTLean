@@ -538,30 +538,6 @@ variable {C : Type u₁} [SmallCategory C] {F G : Cᵒᵖ ⥤ Type u₁}
   (naturality : ∀ {X Y : C} (f : X ⟶ Y) (α : yoneda.obj Y ⟶ F),
     app (yoneda.map f ≫ α) = yoneda.map f ≫ app α)
 
-variable (F) in
-/--
-  A presheaf `F` on a small category `C` is isomorphic to
-  the hom-presheaf `Hom(y(•),F)`.
--/
-def yonedaIso : yoneda.op ⋙ yoneda.obj F ≅ F :=
-  NatIso.ofComponents (fun _ => Equiv.toIso yonedaEquiv)
-    (fun f => by ext : 1; dsimp; rw [yonedaEquiv_naturality'])
-
-def yonedaIsoMap : yoneda.op ⋙ yoneda.obj F ⟶ yoneda.op ⋙ yoneda.obj G where
-  app _ := app
-  naturality _ _ _ := by ext : 1; apply naturality
-
-/-- Build natural transformations between presheaves on a small category
-  by defining their action when precomposing by a morphism with
-  representable domain -/
-def NatTrans.yonedaMk : F ⟶ G :=
-  (yonedaIso F).inv ≫ yonedaIsoMap app naturality ≫ (yonedaIso G).hom
-
-theorem NatTrans.yonedaMk_app {X : C} (α : yoneda.obj X ⟶ F) :
-    α ≫ yonedaMk app naturality = app α := by
-  rw [← yonedaEquiv.apply_eq_iff_eq, yonedaEquiv_comp]
-  simp [yonedaMk, yonedaIso, yonedaIsoMap]
-
 namespace Functor
 
 theorem precomp_heq_of_heq_id {A B : Type u} {C : Type*} [Category.{v} A] [Category.{v} B] [Category C]
@@ -623,14 +599,6 @@ lemma Discrete.functor_eq {X C : Type*} [Category C] {F : Discrete X ⥤ C} :
     cases x ; rcases f with ⟨⟨h⟩⟩
     cases h
     simp
-
-lemma Discrete.functor_ext {X C : Type*} [Category C] (F G : Discrete X ⥤ C)
-    (h : ∀ x : X, F.obj ⟨x⟩ = G.obj ⟨x⟩) :
-    F = G :=
-  calc F
-    _ = Discrete.functor (fun x => F.obj ⟨x⟩) := Discrete.functor_eq
-    _ = Discrete.functor (fun x => G.obj ⟨x⟩) := Discrete.functor_ext' h
-    _ = G := Discrete.functor_eq.symm
 
 lemma Discrete.hext {X Y : Type u} (a : Discrete X) (b : Discrete Y) (hXY : X ≍ Y)
     (hab : a.1 ≍ b.1) : a ≍ b := by
