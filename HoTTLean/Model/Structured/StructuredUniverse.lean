@@ -972,6 +972,30 @@ namespace IdIntro
 
 variable {M} (idIntro : IdIntro M) {Γ : Ctx}
 
+abbrev endpts (a0 a1:Γ ⟶ M.Tm) (h: a0 ≫ M.tp = a1 ≫ M.tp): Γ ⟶ M.ext M.tp :=
+   (M.disp_pullback M.tp).lift a0 a1 h
+
+def toPolymorphicIdIntro :
+    M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse where
+  Id a0 a1 a0_tp a1_tp :=
+    --have := idIntro -- TODO: remove
+    endpts a0 a1 (by simp[a0_tp,a1_tp]) ≫ idIntro.Id
+  Id_comp  σ A a0 a1 a0_tp a1_tp:= by
+   simp only[←Category.assoc]
+   congr 1
+   apply IsPullback.hom_ext (hP:= (M.disp_pullback M.tp))
+   · simp
+   simp
+  refl a _ := a ≫ idIntro.refl
+  refl_comp σ A a h := by simp
+  refl_tp a a_tp := by
+   simp[Category.assoc,idIntro.refl_tp]
+   simp[←Category.assoc]
+   congr 1
+   apply IsPullback.hom_ext (hP:= (M.disp_pullback M.tp))
+   · simp
+   simp
+
 @[simps] def k2UvPoly : UvPoly R (M.ext M.tp) M.Tm :=
   ⟨M.disp _, R.of_isPullback (M.disp_pullback M.tp) M.morphismProperty⟩
 
@@ -1053,15 +1077,6 @@ lemma ext_a_tp_isPullback (ii : IdIntro M) (a : Γ ⟶ M.Tm) :
     IsPullback (IdIntro.toK a) (M.disp _) (M.disp M.tp) a :=
   IsPullback.of_right' (M.disp_pullback _) (M.disp_pullback M.tp)
 
-def toPolymorphicIdIntro :
-    M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse where
-  Id :=
-    have := idIntro -- TODO: remove
-    sorry
-  Id_comp := sorry
-  refl := sorry
-  refl_comp := sorry
-  refl_tp := sorry
 
 end IdIntro
 
@@ -1623,6 +1638,24 @@ abbrev toWeakpullback : Γ ⟶ iiM.iFunctor.obj N.Tm :=
 
 /-M.ext (endpts (M.disp A ≫ a) (M.var A) ⋯ ≫ iiM.Id) =
   pullback (UvPoly.Equiv.fst (toWeakpullback M N iiM iMN)) (M.disp iiM.Id ≫ M.disp M.tp)-/
+
+/-construct the pullback
+
+-/
+#check endpts
+instance TmTm : IsPullback  (M.disp M.tp) (M.var M.tp)  M.tp M.tp := (M.disp_pullback M.tp).flip
+instance GammaATmTm:
+  IsPullback (M.disp A) (endpts (M.var A) (M.disp A ≫ a) (by simp[a_tp])) a (M.disp M.tp) := by
+   fapply CategoryTheory.IsPullback.flip
+   fapply CategoryTheory.IsPullback.of_right (t:= (M.disp_pullback M.tp))
+          (h₁₁:= (endpts  (M.var A) (M.disp A ≫ a) (by simp[a_tp]))) (h₂₁ := a)
+   · convert_to
+     IsPullback (M.var A) (M.disp A) M.tp A
+     · rw![← a_tp]
+       simp
+     exact (M.disp_pullback A)
+   simp
+
 
 def j : toUnstructuredmotiveCtx _ iiM a a_tp ⟶ N.Tm  := by
    have s := UvPoly.Equiv.snd (toWeakpullback M N iiM iMN) (Γ := Γ)
