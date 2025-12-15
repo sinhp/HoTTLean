@@ -1588,12 +1588,116 @@ abbrev motive : Γ ⟶ (iFunctor (ii:= ii)).obj N.Ty :=
 --       slice_rhs 1 2 => rw [← ie.toI_comp_i2]
 --       simp
 
+
+#check Model.UnstructuredUniverse.PolymorphicIdIntro.motiveCtx
+
+section
+variables (M : StructuredUniverse R)  (M': StructuredUniverse R)
+ (N: StructuredUniverse R) (iiM: IdIntro M) {Γ: Ctx} {A:Γ ⟶ M.Ty} (a:Γ ⟶ M.Tm)
+(a_tp:  a ≫ M.tp = A) (iMN: Id iiM N)
+#check toPolymorphicIdIntro
+
+abbrev toUnstructuredmotiveCtx : Ctx :=
+   UnstructuredUniverse.PolymorphicIdIntro.motiveCtx (A:= A)
+   (toPolymorphicIdIntro iiM) a (by simp[a_tp])
+
+/-def j : (ii.motiveCtx a) ⟶ N.Tm :=
+  eqToHom (by rw[equivFst_lift_eq ]) ≫ equivSnd ii (i.lift a C r r_tp (ii:= ii))
+-/
+
+#check Id
+instance: HasPullback ((UvPoly.id R M.Tm).functor.map N.tp)
+    ((verticalNatTrans (M:=M) iiM).app N.Ty) := sorry
+
+abbrev comparison : pullback ((UvPoly.id R M.Tm).functor.map N.tp)
+    ((verticalNatTrans iiM).app N.Ty) ⟶ iiM.iFunctor.obj N.Tm:= sorry
+
+/-def equivSnd (pair : Γ ⟶ (iFunctor (ii:= ii)).obj X) :
+    (ii.motiveCtx (equivFst ii pair)) ⟶ X :=
+  UvPoly.Equiv.snd' pair (motiveCtx_isPullback' ii _).flip
+-/
+
+abbrev toWeakpullback : Γ ⟶ iiM.iFunctor.obj N.Tm :=
+  iMN.weakPullback.lift (W:=Γ) sorry sorry sorry
+  --sorry ≫ comparison M N iiM
+
+/-M.ext (endpts (M.disp A ≫ a) (M.var A) ⋯ ≫ iiM.Id) =
+  pullback (UvPoly.Equiv.fst (toWeakpullback M N iiM iMN)) (M.disp iiM.Id ≫ M.disp M.tp)-/
+
+def j : toUnstructuredmotiveCtx _ iiM a a_tp ⟶ N.Tm  := by
+   have s := UvPoly.Equiv.snd (toWeakpullback M N iiM iMN) (Γ := Γ)
+   convert s
+   dsimp[toUnstructuredmotiveCtx,toPolymorphicIdIntro]
+   sorry
+   --sorry ≫ comparison M N iiM
+
+  --eqToHom (by rw[equivFst_lift_eq ]) ≫ equivSnd ii (i.lift a C r r_tp (ii:= ii))
+
+def toUnstructured : M.toUnstructuredUniverse.PolymorphicIdElim
+    iiM.toPolymorphicIdIntro N.toUnstructuredUniverse where
+      j :=
+       sorry
+      comp_j := sorry
+      j_tp := sorry
+      reflSubst_j := sorry
+end
+
+-- def toUnstructured : M.toUnstructuredUniverse.PolymorphicIdElim
+--     ii.toPolymorphicIdIntro N.toUnstructuredUniverse where
+--   j {Γ A} a a_tp C c e := by
+--     let w := M.disp_pullback (ii.mkId (M.disp (a ≫ M.tp) ≫ a) (M.var _) (by simp))
+
+--     let iso: ii.toPolymorphicIdIntro.motiveCtx a a_tp ⟶ ii.motiveCtx a := by
+--       fapply (w.lift (W:= ii.toPolymorphicIdIntro.motiveCtx a a_tp) )
+--       · apply (M.var ((ii.toPolymorphicIdIntro).weakenId a a_tp))
+--       · convert (M.disp ((ii.toPolymorphicIdIntro).weakenId a a_tp))
+--       · simp
+--         sorry
+--     have f1 : ii.motiveCtx a ⟶ N.Tm := by
+--       fapply i.j
+--       · sorry
+--       · sorry
+--       · sorry
+--     exact (iso ≫ f1)
+--     --   sorry
+--     --#check i.j
+--     -- sorry --i.j
+--   j_tp := sorry -- i.j_tp
+--   comp_j := sorry --i.comp_j
+--   reflSubst_j := sorry -- i.reflSubst_j
+
+end Id
+
+def IdIntro.ofUnstructured
+    (i : M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse) : M.IdIntro :=
+  have := i -- TODO remove
+  sorry
+
+namespace Id
+
+variable {N : StructuredUniverse R}
+  (ii : M.toUnstructuredUniverse.PolymorphicIdIntro M.toUnstructuredUniverse)
+  (i : M.Id (IdIntro.ofUnstructured ii) N)
+open IdIntro
+
+--ie |-> (IdIntro.ofUnstructured ii)
+
+variable {Γ} (ar : (Γ) ⟶ (UvPoly.id R M.Tm).functor.obj N.Tm)
+  (aC : (Γ) ⟶ (iFunctor ((IdIntro.ofUnstructured ii))).obj N.Ty)
+  (hrC : ar ≫ (UvPoly.id R M.Tm).functor.map N.tp =
+    aC ≫ (verticalNatTrans (IdIntro.ofUnstructured ii)).app N.Ty)
+
+
 instance : HasPullbacksAlong ((UvPoly.id R M.Tm).functor.map N.tp) :=
 
 sorry
 instance {X} (f: X ⟶ _) : HasPullback ((UvPoly.id R M.Tm).functor.map N.tp) f := by
  apply hasPullback_symmetry
 
+
+
+
+#exit
 def lift : Γ ⟶ (iFunctor ii).obj N.Tm :=
   i.weakPullback.coherentLift (reflCase a r) (motive a C) (by
     dsimp only [motive, equivMk, verticalNatTrans, reflCase]
