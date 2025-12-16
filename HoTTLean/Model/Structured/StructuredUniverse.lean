@@ -1645,9 +1645,20 @@ abbrev toWeakpullback : Γ ⟶ iiM.iFunctor.obj N.Tm :=
 #check endpts
 instance TmTmPb : IsPullback  (M.disp M.tp) (M.var M.tp)  M.tp M.tp := (M.disp_pullback M.tp).flip
 
+-- instance GammaATmTmPb :
+--   IsPullback (M.disp A) (endpts (M.var A) (M.disp A ≫ a) (by simp[a_tp])) a (M.disp M.tp) := by
+--    fapply CategoryTheory.IsPullback.flip
+--    fapply CategoryTheory.IsPullback.of_right (t:= (M.disp_pullback M.tp))
+--           (h₁₁:= (endpts  (M.var A) (M.disp A ≫ a) (by simp[a_tp]))) (h₂₁ := a)
+--    · convert_to
+--      IsPullback (M.var A) (M.disp A) M.tp A
+--      · rw![← a_tp]
+--        simp
+--      exact (M.disp_pullback A)
+--    simp
+
 instance GammaATmTmPb :
-  IsPullback (M.disp A) (endpts (M.var A) (M.disp A ≫ a) (by simp[a_tp])) a (M.disp M.tp) := by
-   fapply CategoryTheory.IsPullback.flip
+  IsPullback (endpts (M.var A) (M.disp A ≫ a) (by simp[a_tp])) (M.disp A) (M.disp M.tp) a := by
    fapply CategoryTheory.IsPullback.of_right (t:= (M.disp_pullback M.tp))
           (h₁₁:= (endpts  (M.var A) (M.disp A ≫ a) (by simp[a_tp]))) (h₂₁ := a)
    · convert_to
@@ -1688,6 +1699,11 @@ instance mtcxToUniversalIdPb:
     simp
   simp
 
+instance mtcxToTmPb : IsPullback
+  (mtcxToUniversalId M iiM a a_tp)
+  (M.disp (toTmTm M a a_tp ≫ iiM.Id) ≫ M.disp A)
+  (M.disp iiM.Id ≫ M.disp M.tp)
+  a := IsPullback.paste_vert (mtcxToUniversalIdPb M iiM a a_tp) (GammaATmTmPb M a a_tp)
 
 --instance mtcxPb : IsPullback (M.disp iiM.Id) (M.var iiM.Id) iiM.Id M.tp
 def j : toUnstructuredmotiveCtx _ iiM a a_tp ⟶ N.Tm  := by
