@@ -1643,8 +1643,9 @@ abbrev toWeakpullback : Γ ⟶ iiM.iFunctor.obj N.Tm :=
 
 -/
 #check endpts
-instance TmTm : IsPullback  (M.disp M.tp) (M.var M.tp)  M.tp M.tp := (M.disp_pullback M.tp).flip
-instance GammaATmTm:
+instance TmTmPb : IsPullback  (M.disp M.tp) (M.var M.tp)  M.tp M.tp := (M.disp_pullback M.tp).flip
+
+instance GammaATmTmPb :
   IsPullback (M.disp A) (endpts (M.var A) (M.disp A ≫ a) (by simp[a_tp])) a (M.disp M.tp) := by
    fapply CategoryTheory.IsPullback.flip
    fapply CategoryTheory.IsPullback.of_right (t:= (M.disp_pullback M.tp))
@@ -1656,7 +1657,39 @@ instance GammaATmTm:
      exact (M.disp_pullback A)
    simp
 
+abbrev toTmTm: M.ext A ⟶ M.ext M.tp := (endpts  (M.var A) (M.disp A ≫ a) (by simp[a_tp]))
 
+instance TmTmIdPb : IsPullback  (M.var iiM.Id)  (M.disp iiM.Id) M.tp iiM.Id  :=
+  (M.disp_pullback iiM.Id)
+
+
+--YX: can we hide the by simp?
+--how can we attribute an assumption, say a_tp, to local simp?
+instance mtcxPb  : IsPullback (X:= M.Tm) (Y:= M.ext A)
+  (M.var (toTmTm M a (by simp[a_tp]) ≫ iiM.Id))  (M.disp (toTmTm M a (by simp[a_tp]) ≫ iiM.Id))
+   M.tp (toTmTm M a (by simp[a_tp]) ≫ iiM.Id)  :=
+  (M.disp_pullback (toTmTm M a (by simp[a_tp]) ≫ iiM.Id))
+
+--can we specify the parameter as M being implicit, iiM being explicit?
+abbrev mtcxToUniversalId : M.ext (Γ:= M.ext A) (toTmTm (Γ := Γ) M a a_tp ≫ iiM.Id) ⟶ M.ext iiM.Id :=
+  (TmTmIdPb M iiM).flip.lift
+  (W := M.ext (toTmTm (Γ := Γ) M a a_tp ≫ iiM.Id))
+  (M.disp (toTmTm M a a_tp ≫ iiM.Id) ≫ toTmTm M a a_tp)
+  (M.var (toTmTm M a a_tp ≫ iiM.Id))
+  (by simp)
+  --(M.disp (toTmTm M a sorry ≫ iiM.Id) ≫ toTmTm M a sorry)
+
+
+instance mtcxToUniversalIdPb:
+ IsPullback (mtcxToUniversalId M iiM a a_tp) (M.disp (toTmTm M a a_tp ≫ iiM.Id)) (M.disp iiM.Id)
+ (endpts (M.var A) (M.disp A ≫ a) (by simp[a_tp])) := by
+  fapply CategoryTheory.IsPullback.of_right (t:= TmTmIdPb M iiM)
+  · convert (mtcxPb M iiM a a_tp)
+    simp
+  simp
+
+
+--instance mtcxPb : IsPullback (M.disp iiM.Id) (M.var iiM.Id) iiM.Id M.tp
 def j : toUnstructuredmotiveCtx _ iiM a a_tp ⟶ N.Tm  := by
    have s := UvPoly.Equiv.snd (toWeakpullback M N iiM iMN) (Γ := Γ)
    convert s
