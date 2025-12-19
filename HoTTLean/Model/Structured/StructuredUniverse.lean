@@ -5,7 +5,7 @@ import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 import HoTTLean.ForMathlib.CategoryTheory.WeakPullback
 import HoTTLean.ForMathlib.CategoryTheory.Polynomial
 import HoTTLean.Model.Unstructured.UnstructuredUniverse
-
+import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts
 universe v u
 
 noncomputable section
@@ -1647,6 +1647,11 @@ instance TmTmPb : IsPullback  (M.disp M.tp) (M.var M.tp)  M.tp M.tp := (M.disp_p
 --        simp
 --      exact (M.disp_pullback A)
 --    simp
+instance :  HasBinaryProduct M.Tm M.Ty := sorry
+
+instance prodIdPb : IsPullback (Limits.prod.fst)
+                               (𝟙 (CategoryTheory.Limits.prod M.Tm M.Ty)) (𝟙 M.Tm) (Limits.prod.fst)
+                               := sorry
 
 instance GammaATmTmPb :
   IsPullback (endpts (M.var A) (M.disp A ≫ a) (by simp[a_tp])) (M.disp A) (M.disp M.tp) a := by
@@ -1702,26 +1707,60 @@ abbrev toWeakpullback1 (r : Γ ⟶ N.Tm) : Γ ⟶ (UvPoly.id R M.Tm).functor.obj
 abbrev toWeakpullback2  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) :
   Γ ⟶ iiM.iFunctor.obj N.Ty :=
   UvPoly.Equiv.mk' a (mtcxToTmPb M iiM a a_tp).flip C
+/-
+def reflSubst (a : Γ ⟶ M.Tm) : Γ ⟶ idIntro.motiveCtx a :=
+  M.substCons (M.substCons (𝟙 Γ) (a ≫ M.tp) a (by simp)) _ (idIntro.mkRefl a) (by
+    simp only [mkRefl_tp, mkId, ← Category.assoc]
+    congr 1
+    apply  (UnstructuredUniverse.disp_pullback _ M.tp).hom_ext <;> simp)
 
-abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm):
+-/
+#check IdIntro.refl
+abbrev reflSubst: Γ ⟶  M.ext (toTmTm M a a_tp ≫ iiM.Id) :=
+ (M.disp_pullback (toTmTm M a a_tp ≫ iiM.Id)).lift (W:= Γ)
+ (a ≫ iiM.refl)
+ ((M.disp_pullback A).lift (W:= Γ)
+   a (𝟙 _) (by simp[a_tp]))
+   (by
+     simp[Category.assoc,iiM.refl_tp]
+     simp[← Category.assoc]
+     congr 1
+     apply (M.disp_pullback _).hom_ext <;> simp[])
+
+
+abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+(r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
   Γ ⟶ iiM.iFunctor.obj N.Tm :=
   iMN.weakPullback.lift (W:=Γ) (toWeakpullback1 M N a r) (toWeakpullback2 M N iiM a a_tp C)
   (by
     dsimp[toWeakpullback1,toWeakpullback2]
+    have H := mtcxToTmPb M iiM a a_tp
+    apply UvPoly.Equiv.ext'
+     (H:= by convert (idPb M a).flip
+             simp[UvPoly.Equiv.fst_comp_right])
+    · rw![UvPoly.Equiv.snd'_comp_right (H := by convert (idPb M a).flip
+                                                simp[])]
+      simp[]
+      simp[r_tp]
+      sorry
     sorry)
 
 
 --instance mtcxPb : IsPullback (M.disp iiM.Id) (M.var iiM.Id) iiM.Id M.tp
 def j (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm) :
    toUnstructuredmotiveCtx _ iiM a a_tp ⟶ N.Tm  := by
-   let pair := (toWeakpullback  (Γ := Γ)  M N iiM a a_tp iMN)
-   have s := UvPoly.Equiv.snd' (R:=R) (P:= iUvPoly iiM) (toWeakpullback (Γ := Γ) M N iiM a a_tp iMN C r)
+   --let pair := (toWeakpullback  (Γ := Γ)  M N iiM a a_tp iMN)
+   have s := UvPoly.Equiv.snd' (R:=R) (P:= iUvPoly iiM)
+    (toWeakpullback (Γ := Γ) M N iiM a a_tp iMN C r)
     (by convert (mtcxToTmPb M iiM a a_tp).flip
+        simp[toWeakpullback]
+
         sorry --simp[toWeakpullback]
         )
    convert s
-   dsimp[toUnstructuredmotiveCtx,toPolymorphicIdIntro]
-   sorry
+   --dsimp[toUnstructuredmotiveCtx,toPolymorphicIdIntro]
+   --simp[toTmTm]
+   --sorry
    --sorry ≫ comparison M N iiM
 
   --eqToHom (by rw[equivFst_lift_eq ]) ≫ equivSnd ii (i.lift a C r r_tp (ii:= ii))

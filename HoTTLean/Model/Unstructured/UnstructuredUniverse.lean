@@ -390,7 +390,7 @@ lemma refl_tp' : i.refl a a_tp ≫ U1.tp = i.Id a a a_tp a_tp := refl_tp ..
 `Γ.(x : A) ⊢ Id(a,x) : U1.Ty` -/
 @[simp]
 abbrev weakenId : U0.ext A ⟶ U1.Ty :=
-  i.Id (A := U0.disp A ≫ A) (U0.disp A ≫ a) (U0.var A) (by cat_disch) (by cat_disch)
+  i.Id (A := U0.disp A ≫ A)  (U0.var A) (U0.disp A ≫ a) (by cat_disch) (by cat_disch)
 
 lemma weakenId_comp : i.weakenId (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) =
     U0.substWk σ A ≫ i.weakenId a a_tp := by
