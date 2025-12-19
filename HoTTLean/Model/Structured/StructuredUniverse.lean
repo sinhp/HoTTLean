@@ -1747,13 +1747,15 @@ abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ 
 
 
 --instance mtcxPb : IsPullback (M.disp iiM.Id) (M.var iiM.Id) iiM.Id M.tp
-def j (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm) :
+def j (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+   (r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
    toUnstructuredmotiveCtx _ iiM a a_tp ⟶ N.Tm  := by
    --let pair := (toWeakpullback  (Γ := Γ)  M N iiM a a_tp iMN)
    have s := UvPoly.Equiv.snd' (R:=R) (P:= iUvPoly iiM)
-    (toWeakpullback (Γ := Γ) M N iiM a a_tp iMN C r)
+    (toWeakpullback (Γ := Γ) M N iiM a a_tp iMN C r r_tp)
     (by convert (mtcxToTmPb M iiM a a_tp).flip
         simp[toWeakpullback]
+        --simp[toWeakpullback]
 
         sorry --simp[toWeakpullback]
         )
