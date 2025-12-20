@@ -1727,7 +1727,7 @@ abbrev reflSubst: Γ ⟶  M.ext (toTmTm M a a_tp ≫ iiM.Id) :=
      congr 1
      apply (M.disp_pullback _).hom_ext <;> simp[])
 
-
+--(UvPoly.id R M.Tm).p = iiM.comparison ≫ iiM.iUvPoly.p lemma?
 abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
 (r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
   Γ ⟶ iiM.iFunctor.obj N.Tm :=
@@ -1742,7 +1742,37 @@ abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ 
                                                 simp[])]
       simp[]
       simp[r_tp]
+      simp[verticalNatTrans]
+      #check UvPoly.mk'_comp_verticalNatTrans_app
+      have p: IsPullback (M.disp (toTmTm M a a_tp ≫ iiM.Id) ≫ M.disp A)
+               (mtcxToUniversalId M iiM a a_tp) a
+               (M.disp iiM.Id ≫ M.disp M.tp) := H.flip
+      have h : (UvPoly.id R M.Tm).p = iiM.comparison ≫ iiM.iUvPoly.p := by
+        simp only [UvPoly.id_p, UvPoly.vcomp_p, i2UvPoly_p, k2UvPoly_p, comparison_comp_i2_comp_k2]
+      have e:= UvPoly.mk'_comp_verticalNatTrans_app (X:= N.Ty) (P:= UvPoly.id R M.Tm) (Q:= iiM.iUvPoly)
+        (ρ := iiM.comparison) (h:= h) (b:= a) (H:= H.flip) (x:=C) (H':= (idPb M a).flip)
+      rw![e]
+      simp
+      congr 1
+      simp[reflSubst]
+      fapply  (M.disp_pullback _).hom_ext
+      · --have e1 :
+        simp[]
+        have e1 : M.var (toTmTm M a a_tp ≫ iiM.Id) =
+         (mtcxToUniversalId M iiM a a_tp) ≫ M.var iiM.Id := by simp only [IsPullback.lift_snd]
+        rw[e1]
+        simp only[←Category.assoc]
+        simp
+      simp
       sorry
+        --(H:= by convert (idPb M a).flip)
+      -- have e1:= UvPoly.mk'_comp_verticalNatTrans_app (H := p)
+      -- rw![UvPoly.mk'_comp_verticalNatTrans_app]
+      -- simp[UvPoly.Equiv.snd',UvPoly.Equiv.snd ,MvPoly.Equiv.snd]
+
+      -- --UvPoly.fst_verticalNatTrans_app
+      -- sorry
+
     sorry)
 
 
