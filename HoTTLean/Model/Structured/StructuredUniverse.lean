@@ -1756,15 +1756,30 @@ abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ 
       congr 1
       simp[reflSubst]
       fapply  (M.disp_pullback _).hom_ext
-      · --have e1 :
-        simp[]
+      · simp[]
         have e1 : M.var (toTmTm M a a_tp ≫ iiM.Id) =
          (mtcxToUniversalId M iiM a a_tp) ≫ M.var iiM.Id := by simp only [IsPullback.lift_snd]
         rw[e1]
         simp only[←Category.assoc]
         simp
       simp
-      sorry
+      fapply  (M.disp_pullback _).hom_ext
+      · simp
+        have e2: M.var A = toTmTm M a a_tp ≫ M.var M.tp := by simp
+        convert_to
+         a = (H.flip).lift (𝟙 Γ) (a ≫ iiM.comparison) (by simp) ≫ M.disp (toTmTm M a a_tp ≫ iiM.Id)
+           ≫ toTmTm M a a_tp ≫ M.var M.tp
+        · simp[← e2] --this convert_to should not be here, what can I do?
+        · have e3 : M.disp (toTmTm M a a_tp ≫ iiM.Id) ≫ toTmTm M a a_tp =
+                    mtcxToUniversalId M iiM a a_tp ≫ M.disp iiM.Id := by simp
+          convert_to
+           a = (H.flip).lift (𝟙 Γ) (a ≫ iiM.comparison) (by simp) ≫ (M.disp (toTmTm M a a_tp ≫ iiM.Id)
+           ≫ toTmTm M a a_tp ) ≫ M.var M.tp
+          · simp
+          · rw[e3]
+            simp only[← Category.assoc]
+            simp
+      · sorry
         --(H:= by convert (idPb M a).flip)
       -- have e1:= UvPoly.mk'_comp_verticalNatTrans_app (H := p)
       -- rw![UvPoly.mk'_comp_verticalNatTrans_app]
