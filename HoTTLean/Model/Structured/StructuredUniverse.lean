@@ -1728,33 +1728,32 @@ abbrev reflSubst: Γ ⟶  M.ext (toTmTm M a a_tp ≫ iiM.Id) :=
      apply (M.disp_pullback _).hom_ext <;> simp[])
 
 --(UvPoly.id R M.Tm).p = iiM.comparison ≫ iiM.iUvPoly.p lemma?
+--previously why could you use coherentLift...?
+--can certainly compose with the lift to from the pb, but the API there requires Ctx to have all pbs
+/-
+   have h : (UvPoly.id R M.Tm).p = iiM.comparison ≫ iiM.iUvPoly.p := by
+        simp only [UvPoly.id_p, UvPoly.vcomp_p, i2UvPoly_p, k2UvPoly_p, comparison_comp_i2_comp_k2]
+-/
+--instance : HasPullbacks Ctx:=sorry
+
 abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
 (r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
   Γ ⟶ iiM.iFunctor.obj N.Tm :=
-  iMN.weakPullback.lift (W:=Γ) (toWeakpullback1 M N a r) (toWeakpullback2 M N iiM a a_tp C)
+  iMN.weakPullback.coherentLift (W:=Γ) (toWeakpullback1 M N a r) (toWeakpullback2 M N iiM a a_tp C)
   (by
-    dsimp[toWeakpullback1,toWeakpullback2]
+    dsimp[toWeakpullback1,toWeakpullback2,verticalNatTrans]
     have H := mtcxToTmPb M iiM a a_tp
+    have e:= UvPoly.mk'_comp_verticalNatTrans_app (X:= N.Ty) (P:= UvPoly.id R M.Tm) (Q:= iiM.iUvPoly)
+        (ρ := iiM.comparison) (h:= by simp) (b:= a) (H:= H.flip) (x:=C) (H':= (idPb M a).flip)
     apply UvPoly.Equiv.ext'
      (H:= by convert (idPb M a).flip
              simp[UvPoly.Equiv.fst_comp_right])
     · rw![UvPoly.Equiv.snd'_comp_right (H := by convert (idPb M a).flip
                                                 simp[])]
-      simp[]
-      simp[r_tp]
-      simp[verticalNatTrans]
-      #check UvPoly.mk'_comp_verticalNatTrans_app
-      -- have p: IsPullback (M.disp (toTmTm M a a_tp ≫ iiM.Id) ≫ M.disp A)
-      --          (mtcxToUniversalId M iiM a a_tp) a
-      --          (M.disp iiM.Id ≫ M.disp M.tp) := H.flip
-      have h : (UvPoly.id R M.Tm).p = iiM.comparison ≫ iiM.iUvPoly.p := by
-        simp only [UvPoly.id_p, UvPoly.vcomp_p, i2UvPoly_p, k2UvPoly_p, comparison_comp_i2_comp_k2]
-      have e:= UvPoly.mk'_comp_verticalNatTrans_app (X:= N.Ty) (P:= UvPoly.id R M.Tm) (Q:= iiM.iUvPoly)
-        (ρ := iiM.comparison) (h:= h) (b:= a) (H:= H.flip) (x:=C) (H':= (idPb M a).flip)
+      simp only [UvPoly.Equiv.snd'_mk',r_tp]
       rw![e]
-      simp
+      simp only [UvPoly.vcomp_p, i2UvPoly_p, k2UvPoly_p, UvPoly.Equiv.snd'_mk']
       congr 1
-      simp[reflSubst]
       fapply  (M.disp_pullback _).hom_ext
       · simp[]
         have e1 : M.var (toTmTm M a a_tp ≫ iiM.Id) =
@@ -1762,7 +1761,7 @@ abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ 
         rw[e1]
         simp only[←Category.assoc]
         simp
-      simp
+      simp?
       fapply  (M.disp_pullback _).hom_ext
       · simp
         have e2: M.var A = toTmTm M a a_tp ≫ M.var M.tp := by simp
@@ -1778,46 +1777,38 @@ abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ 
           · simp
           · rw[e3]
             simp only[← Category.assoc]
-            simp
+            simp only [IsPullback.lift_snd, Category.assoc, comparison_comp_i2_comp_k1,
+              Category.comp_id]
       · simp
-        --(H:= by convert (idPb M a).flip)
-      -- have e1:= UvPoly.mk'_comp_verticalNatTrans_app (H := p)
-      -- rw![UvPoly.mk'_comp_verticalNatTrans_app]
-      -- simp[UvPoly.Equiv.snd',UvPoly.Equiv.snd ,MvPoly.Equiv.snd]
-
-      -- --UvPoly.fst_verticalNatTrans_app
-      -- sorry
-    simp[verticalNatTrans]
-    have h : (UvPoly.id R M.Tm).p = iiM.comparison ≫ iiM.iUvPoly.p := by
-        simp only [UvPoly.id_p, UvPoly.vcomp_p, i2UvPoly_p, k2UvPoly_p, comparison_comp_i2_comp_k2]
-    have e:= UvPoly.mk'_comp_verticalNatTrans_app (X:= N.Ty) (P:= UvPoly.id R M.Tm) (Q:= iiM.iUvPoly)
-        (ρ := iiM.comparison) (h:= h) (b:= a) (H:= H.flip) (x:=C) (H':= (idPb M a).flip)
     rw![e]--repeat from  1790-1794
     simp only [UvPoly.vcomp_p, i2UvPoly_p, k2UvPoly_p, UvPoly.Equiv.fst_mk']
     simp only [UvPoly.Equiv.fst_comp_right, UvPoly.Equiv.fst_mk']
     )
+--UvPoly.Equiv.fst_mk'
+/-
+@[simp]
+lemma coherentLift_fst [HasPullback f g] : wp.coherentLift a b h ≫ fst = a := by
+  simp [coherentLift]
+  -/
+lemma j_aux (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+    (r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
+ UvPoly.Equiv.fst (toWeakpullback M N iiM a a_tp iMN C r r_tp) = a := by
+  have e: UvPoly.Equiv.fst (toWeakpullback M N iiM a a_tp iMN C r r_tp) =
+          UvPoly.Equiv.fst (toWeakpullback M N iiM a a_tp iMN C r r_tp ≫
+          (iFunctor iiM).map N.tp ):= by
+          rw[UvPoly.Equiv.fst_comp_right]
+  simp only [e, WeakPullback.coherentLift_snd, UvPoly.Equiv.fst_mk']
 
 
 --instance mtcxPb : IsPullback (M.disp iiM.Id) (M.var iiM.Id) iiM.Id M.tp
 def j (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
    (r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
    toUnstructuredmotiveCtx _ iiM a a_tp ⟶ N.Tm  := by
-   --let pair := (toWeakpullback  (Γ := Γ)  M N iiM a a_tp iMN)
    have s := UvPoly.Equiv.snd' (R:=R) (P:= iUvPoly iiM)
     (toWeakpullback (Γ := Γ) M N iiM a a_tp iMN C r r_tp)
     (by convert (mtcxToTmPb M iiM a a_tp).flip
-        simp[toWeakpullback]
-        --simp[toWeakpullback]
-
-        sorry --simp[toWeakpullback]
-        )
+        apply j_aux)
    convert s
-   --dsimp[toUnstructuredmotiveCtx,toPolymorphicIdIntro]
-   --simp[toTmTm]
-   --sorry
-   --sorry ≫ comparison M N iiM
-
-  --eqToHom (by rw[equivFst_lift_eq ]) ≫ equivSnd ii (i.lift a C r r_tp (ii:= ii))
 
 def toUnstructured : M.toUnstructuredUniverse.PolymorphicIdElim
     iiM.toPolymorphicIdIntro N.toUnstructuredUniverse where
