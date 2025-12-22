@@ -1736,8 +1736,10 @@ abbrev reflSubst: Γ ⟶  M.ext (toTmTm M a a_tp ≫ iiM.Id) :=
 -/
 --instance : HasPullbacks Ctx:=sorry
 
-abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
-(r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
+variables (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
+   (r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C)
+
+abbrev toWeakpullback :
   Γ ⟶ iiM.iFunctor.obj N.Tm :=
   iMN.weakPullback.coherentLift (W:=Γ) (toWeakpullback1 M N a r) (toWeakpullback2 M N iiM a a_tp C)
   (by
@@ -1790,8 +1792,7 @@ abbrev toWeakpullback  (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ 
 lemma coherentLift_fst [HasPullback f g] : wp.coherentLift a b h ≫ fst = a := by
   simp [coherentLift]
   -/
-lemma j_aux (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
-    (r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
+lemma j_aux :
  UvPoly.Equiv.fst (toWeakpullback M N iiM a a_tp iMN C r r_tp) = a := by
   have e: UvPoly.Equiv.fst (toWeakpullback M N iiM a a_tp iMN C r r_tp) =
           UvPoly.Equiv.fst (toWeakpullback M N iiM a a_tp iMN C r r_tp ≫
@@ -1801,8 +1802,7 @@ lemma j_aux (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
 
 
 --instance mtcxPb : IsPullback (M.disp iiM.Id) (M.var iiM.Id) iiM.Id M.tp
-def j (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
-   (r_tp : r ≫ N.tp = reflSubst M iiM a a_tp ≫ C):
+def j :
    toUnstructuredmotiveCtx _ iiM a a_tp ⟶ N.Tm  := by
    have s := UvPoly.Equiv.snd' (R:=R) (P:= iUvPoly iiM)
     (toWeakpullback (Γ := Γ) M N iiM a a_tp iMN C r r_tp)
@@ -1810,13 +1810,42 @@ def j (C: M.ext (toTmTm M a a_tp ≫ iiM.Id) ⟶ N.Ty) (r : Γ ⟶ N.Tm)
         apply j_aux)
    convert s
 
-def toUnstructured : M.toUnstructuredUniverse.PolymorphicIdElim
+
+--need a lemma for comp of reflsubst
+lemma comp_j {Δ} (σ : Δ ⟶ Γ):
+    j M N iiM (σ ≫ a) (by simp[Category.assoc,a_tp]) iMN
+     (iiM.toPolymorphicIdIntro.motiveSubst σ a a_tp rfl ≫ C)
+     (σ ≫ r) (by simp[Category.assoc, r_tp];sorry) =
+    iiM.toPolymorphicIdIntro.motiveSubst σ a a_tp rfl ≫
+    j M N iiM a a_tp iMN C r r_tp := by
+
+     sorry
+
+/-
+def j : (ii.motiveCtx a) ⟶ N.Tm :=
+  eqToHom (by rw[equivFst_lift_eq ]) ≫ equivSnd ii (i.lift a C r r_tp (ii:= ii))
+
+/-- Typing for elimination rule `J` -/
+lemma j_tp : j i a C r r_tp ≫ N.tp = C := by
+  simp only [j, Category.assoc, IdIntro.equivSnd, ← UvPoly.Equiv.snd'_comp_right]
+  -- FIXME: `transparency := .default` is like `erw` and should be avoided
+  rw! (transparency := .default) [WeakPullback.coherentLift_snd]
+  simp only [IdIntro.equivMk]
+  rw! [equivFst_lift_eq]
+  simp
+-/
+lemma j_tp : j M N iiM a a_tp iMN C r r_tp ≫ N.tp = C := by
+  dsimp[j]--free from eqToHom compared from the previous version, is that a progress?
+  simp[← UvPoly.Equiv.snd'_comp_right]
+
+def toUnstructured :
+    M.toUnstructuredUniverse.PolymorphicIdElim
     iiM.toPolymorphicIdIntro N.toUnstructuredUniverse where
-      j :=
-       sorry
+      j {Γ A} a a_tp C r r_tp := j M N iiM a a_tp iMN C r r_tp--how can I manage it to just write j?
       comp_j := sorry
-      j_tp := sorry
+      j_tp := by simp[j_tp]
       reflSubst_j := sorry
+
 end
 
 -- def toUnstructured : M.toUnstructuredUniverse.PolymorphicIdElim
