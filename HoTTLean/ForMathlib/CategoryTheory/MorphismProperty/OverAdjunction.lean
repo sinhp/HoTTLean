@@ -480,7 +480,7 @@ lemma pullback.homEquiv_symm_comp {X : Over S} {Y Y' : P.Over ⊤ S'}
   · simp
   · simp
 
-lemma pullback.homEquiv_comp_symm {X X' : Over S} {Y : P.Over ⊤ S'}
+lemma pullback.comp_homEquiv_symm {X X' : Over S} {Y : P.Over ⊤ S'}
     (f : (CategoryTheory.Over.map i).obj X' ⟶ Y.toComma) (g : X ⟶ X') :
     g ≫ (homEquiv i).symm f =
     (homEquiv i).symm ((CategoryTheory.Over.map i).map g ≫ f) := by

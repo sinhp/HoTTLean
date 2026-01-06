@@ -1,4 +1,5 @@
 import HoTTLean.ForMathlib.CategoryTheory.Clan
+import HoTTLean.ForMathlib.CategoryTheory.Comma.Over.Basic
 
 universe v u v₁ u₁
 
@@ -98,13 +99,13 @@ lemma homEquiv_symm_comp {X : Over B} {Y Y' : R.Over ⊤ I}
   erw [pushforward.homEquiv_symm_comp, pullback.homEquiv_symm_comp]
   rfl
 
-lemma homEquiv_comp_symm {X X' : Over B} {Y : R.Over ⊤ I}
+lemma comp_homEquiv_symm {X X' : Over B} {Y : R.Over ⊤ I}
     (f : (leftAdjoint i p).obj X' ⟶ Y.toComma) (g : X ⟶ X') :
     g ≫ (homEquiv i p).symm f =
     (homEquiv i p).symm ((leftAdjoint i p).map g ≫ f) := by
   unfold homEquiv
   simp
-  erw [pushforward.homEquiv_comp_symm, pullback.homEquiv_comp_symm]
+  erw [pushforward.homEquiv_comp_symm, pullback.comp_homEquiv_symm]
   rfl
 
 /-- The counit of the partial adjunction is given by evaluating the equivalence of
@@ -116,7 +117,7 @@ def counit :
   app _ := homEquiv i p (𝟙 _)
   naturality X Y f := by
     apply (homEquiv i p).symm.injective
-    conv => left; erw [← homEquiv_comp_symm]
+    conv => left; erw [← comp_homEquiv_symm]
     conv => right; erw [← homEquiv_symm_comp]
     simp
 
@@ -151,13 +152,31 @@ def partialRightAdjointMap {E' : T} (i' : E' ⟶ I) (p' : E' ⟶ B)
     [R.IsStableUnderPushforwardsAlong p'] (ρ)
     (hi : i = ρ ≫ i') (hρ : p = ρ ≫ p') :
     partialRightAdjoint (R := R) i' p' ⟶ partialRightAdjoint i p :=
-  let cellLeftIso : Over.pullback R ⊤ i' ⋙ Over.pullback R ⊤ ρ ≅ Over.pullback R ⊤ i :=
-    (Over.pullbackComp ρ i').symm ≪≫ eqToIso (by rw [hi])
-  let cellLeft : TwoSquare (Over.pullback R ⊤ i') (𝟭 _) (Over.pullback R ⊤ ρ) (Over.pullback R ⊤ i) :=
-    ((Over.pullbackComp ρ i').symm ≪≫ eqToIso (by simp [hi, Functor.id_comp])).hom
+  -- let cellLeftIso : Over.pullback R ⊤ i' ⋙ Over.pullback R ⊤ ρ ≅ Over.pullback R ⊤ i :=
+  --   (Over.pullbackComp ρ i').symm ≪≫ eqToIso (by rw [hi])
+  let cellLeft : TwoSquare (Over.pullback R ⊤ i') (𝟭 _)
+      (Over.pullback R ⊤ ρ) (Over.pullback R ⊤ i) :=
+    ((Functor.leftUnitor _) ≪≫ Over.pullbackCongr hi ≪≫ (Over.pullbackComp ρ i')).symm.hom
   let cellRight := pushforwardPullbackTwoSquare (R := R) ρ p p' (𝟙 _) (by simp [← hρ])
   Functor.whiskerLeft (partialRightAdjoint i' p') (Over.pullbackId R ⊤ B).inv ≫
   cellLeft.hComp cellRight
+
+lemma partialRightAdjointMap_obj {E' : T} (i' : E' ⟶ I) (p' : E' ⟶ B)
+    [HasPullbacksAlong p'] [R.HasPushforwardsAlong p']
+    [R.IsStableUnderPushforwardsAlong p'] (ρ)
+    (hi : i = ρ ≫ i') (hρ : p = ρ ≫ p') (X : R.Over ⊤ I) :
+    Comma.Hom.hom ((partialRightAdjointMap i p i' p' ρ hi hρ).app X) = sorry := by
+  simp [partialRightAdjointMap]
+  -- apply (homEquiv i p).injective
+  -- simp [Functor.comp_obj, - EmbeddingLike.apply_eq_iff_eq, homEquiv, Trans.trans,
+  --   partialRightAdjointMap]
+  -- ext
+  -- simp only [CategoryTheory.Over.map_obj_left, CategoryTheory.Over.pullback_obj_left,
+  --   pullback.homEquiv_apply_left]
+  -- congr 3
+  -- ext
+  -- apply partialRightAdjoint.homEquiv
+  sorry
 
 end PolynomialPartialAdjunction
 
@@ -379,7 +398,7 @@ def snd (pair : Γ ⟶ (P @ X).toComma) : sndDom pair ⟶ X.toComma :=
 
 lemma snd_eq (pair : Γ ⟶ (P @ X).toComma) : snd pair =
     (leftAdjoint P.i P.p).map (Over.homMk (pair.left)) ≫ sndProj P X := by
-  erw [Equiv.apply_eq_iff_eq_symm_apply, ← homEquiv_comp_symm]
+  erw [Equiv.apply_eq_iff_eq_symm_apply, ← comp_homEquiv_symm]
   simp [sndProj, counit]
 
 def mk (f : Over B) (hf : Γ = (Over.map P.o).obj f)
@@ -396,7 +415,7 @@ lemma snd_mk (f : Over B) (hf : Γ = (Over.map P.o).obj f)
     (s : (leftAdjoint P.i P.p).obj f ⟶ X.toComma) : snd (mk f hf s) =
     eqToHom (by simp) ≫ s := calc snd (mk f hf s)
   _ = (leftAdjoint P.i P.p).map (eqToHom (fst_mk f hf s)) ≫ s := by
-    erw [Equiv.apply_eq_iff_eq_symm_apply, ← homEquiv_comp_symm]
+    erw [Equiv.apply_eq_iff_eq_symm_apply, ← comp_homEquiv_symm]
     ext
     simp [mk]
   _ = eqToHom _ ≫ s := by
@@ -411,7 +430,7 @@ lemma map_fst (pair : Γ ⟶ (P @ X).toComma) : (Over.map P.o).obj (fst pair) = 
   congr
 
 @[simp]
-lemma eta (pair : Γ ⟶ (P @ X).toComma) : mk (fst pair) (by simp) (snd pair) = pair := by
+lemma mk_fst_snd (pair : Γ ⟶ (P @ X).toComma) : mk (fst pair) (by simp) (snd pair) = pair := by
   ext
   simp [mk, snd]
 
@@ -472,25 +491,42 @@ def verticalNatTrans {F : C} (P : MvPoly R I O E B) (Q : MvPoly R I O F B)
   (eqToHom (by rw! [ho]))) ≫
   (Functor.associator _ _ _).hom
 
+lemma verticalNatTrans_hom {F : C} (P : MvPoly R I O E B) (Q : MvPoly R I O F B)
+    [HasPullbacksAlong P.p] [R.HasPushforwardsAlong P.p] [R.IsStableUnderPushforwardsAlong P.p]
+    [HasPullbacksAlong Q.p] [R.HasPushforwardsAlong Q.p] [R.IsStableUnderPushforwardsAlong Q.p]
+    (ρ : E ⟶ F) (hi : P.i = ρ ≫ Q.i) (hp : P.p = ρ ≫ Q.p) (ho : P.o = Q.o) (X) :
+    ((verticalNatTrans P Q ρ hi hp ho).app X).hom = sorry := by
+  -- simp [verticalNatTrans, partialRightAdjointMap, pushforwardPullbackTwoSquare]
+  -- erw [id_comp]
+  sorry
+
 section
 
 variable {F} (Q : MvPoly R I O F B) [HasPullbacksAlong Q.p] [R.HasPushforwardsAlong Q.p]
     [R.IsStableUnderPushforwardsAlong Q.p]
     (ρ : E ⟶ F) (hi : P.i = ρ ≫ Q.i) (hp : P.p = ρ ≫ Q.p) (ho : P.o = Q.o)
 
-lemma fst_verticalNatTrans_app {Γ} {X} (pair : Γ ⟶ (Q @ X).toComma) :
-    Equiv.fst (pair ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom) = Equiv.fst pair := by
-  -- simp [verticalNatTrans, partialRightAdjointMap]
-  -- erw [Category.id_comp]
-  -- dsimp [Equiv.fst]
-  -- congr 1
-  sorry
+def fstVerticalNatTransAppIso {Γ} {X} (pair : Γ ⟶ (Q @ X).toComma) :
+    Equiv.fst (pair ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom) ≅ Equiv.fst pair :=
+  Over.isoMk (Iso.refl _) (by simp [Equiv.fst, verticalNatTrans]; erw [id_comp])
 
--- lemma snd'_verticalNatTrans_app {Γ} {X} (pair : Γ ⟶ (Q @ X).toComma) :
---     Equiv.snd (pair ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom) =
---     --(H.lift f' (g' ≫ ρ) (by simp [H'.w, h])) ≫
---     sorry ≫ Equiv.snd pair := by
---   sorry
+lemma fst_verticalNatTrans_app {Γ} {X} (pair : Γ ⟶ (Q @ X).toComma) :
+    Equiv.fst (pair ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom) = Equiv.fst pair :=
+  Over.ext_of_iso (fstVerticalNatTransAppIso P Q ρ hi hp ho pair) rfl rfl
+
+lemma snd_verticalNatTrans_app {Γ} {X} (pair : Γ ⟶ (Q @ X).toComma) :
+    Equiv.snd (pair ≫ ((verticalNatTrans P Q ρ hi hp ho).app X).hom) =
+    Over.homMk (pullback.map _ _ _ _ (fstVerticalNatTransAppIso P Q ρ hi hp ho pair).hom.left
+      ρ (𝟙 _) (by cat_disch) (by cat_disch)) ≫ Equiv.snd pair := by
+  simp [Equiv.snd]
+  -- rw [Over.homMk_comp]
+  -- rw [homEquiv_comp]
+  -- rw [comp_homEquiv_symm]
+  -- rw [Equiv.snd_eq]
+  -- rw [Equiv.snd_eq]
+  -- dsimp [sndProj, counit]
+  -- simp
+  sorry
 
 -- lemma mk'_comp_verticalNatTrans_app {Γ : Over O} {X : R.Over ⊤ I} (f : Over B)
 --     (hf : Γ = (Over.map Q.o.1).obj f) (s : (leftAdjoint Q.i.1 Q.p).obj f ⟶ X.toComma) :
@@ -1048,13 +1084,13 @@ theorem snd_comp_right (pair : Γ ⟶ P @ X) (f : X ⟶ Y) : snd (pair ≫ P.fun
   ext <;> simp
 
 @[simp]
-lemma eta (pair : Γ ⟶ P @ X) :
+lemma mk_fst_snd (pair : Γ ⟶ P @ X) :
     mk (fst pair) (snd pair) = pair := by
-  have := MvPoly.Equiv.eta (P := P.mvPoly) (Γ := Over.mk (isTerminal.from Γ)) (homMk pair)
+  have := MvPoly.Equiv.mk_fst_snd (P := P.mvPoly) (Γ := Over.mk (isTerminal.from Γ)) (homMk pair)
   exact congr_arg CommaMorphism.left this
 
 @[simp]
-lemma eta' (pair : Γ ⟶ P @ X)
+lemma mk'_fst_snd' (pair : Γ ⟶ P @ X)
     {pb f1 f2} (H : IsPullback (P := pb) f1 f2 (fst pair) P.p) :
     mk' (fst pair) H (snd' pair H) = pair := by
   simp only [mk', snd']
@@ -1065,7 +1101,7 @@ lemma ext' {pair₁ pair₂ : Γ ⟶ P @ X}
     (h1 : fst pair₁ = fst pair₂)
     (h2 : snd' pair₁ H = snd' pair₂ (by rwa [h1] at H)) :
     pair₁ = pair₂ := by
-  rw [← eta' pair₁ H, ← eta' pair₂ (by rwa [h1] at H), h2]
+  rw [← mk'_fst_snd' pair₁ H, ← mk'_fst_snd' pair₂ (by rwa [h1] at H), h2]
   rw! [h1]
 
 /-- Switch the selected pullback `pb` used in `UvPoly.Equiv.mk'` with a different pullback `pb'`. -/
@@ -1238,7 +1274,7 @@ lemma snd_mk (b : Γ ⟶ B) (e : Γ ⟶ E) (he : e ≫ P.p = b)
   simp [mk, snd]
 
 @[simp]
-lemma eta (triple : Γ ⟶ compDom P P') {pb} (f : pb ⟶ Γ) (g : pb ⟶ E)
+lemma mk_fst_snd (triple : Γ ⟶ compDom P P') {pb} (f : pb ⟶ Γ) (g : pb ⟶ E)
     (H : IsPullback f g (base triple) P.p) (b' : pb ⟶ B')
     (hbase' : b' = Equiv.snd' (triple ≫ (P.comp P').p) H) :
     mk (base triple) (fst triple) (fst_comp_p ..) f g H b' (snd triple) (by
@@ -1249,7 +1285,7 @@ lemma eta (triple : Γ ⟶ compDom P P') {pb} (f : pb ⟶ Γ) (g : pb ⟶ E)
   apply pullback.hom_ext
   · ext
     · simp [mk]
-      conv => right; rw [← Equiv.eta'
+      conv => right; rw [← Equiv.mk'_fst_snd'
         (triple ≫ pullback.fst (P.sndProj B') P'.p ≫ pullback.fst (P.fstProj B') P.p) H]
       congr
     · simp [mk, fst]
@@ -1262,8 +1298,8 @@ lemma ext (triple triple' : Γ ⟶ compDom P P')
     (H : IsPullback f g (fst triple ≫ P.p) P.p)
     (hd : dependent triple f g H = dependent triple' f g (by rwa [← hfst])) :
     triple = triple' := by
-  rw [← eta triple f g (by convert H; simp [fst_comp_p]) (dependent triple f g H) rfl,
-    ← eta triple' f g (by rwa [← fst_comp_p, ← hfst])
+  rw [← mk_fst_snd triple f g (by convert H; simp [fst_comp_p]) (dependent triple f g H) rfl,
+    ← mk_fst_snd triple' f g (by rwa [← fst_comp_p, ← hfst])
     (dependent triple' f g (by rwa [← hfst])) rfl]
   have : base triple = base triple' := by
     rw [← fst_comp_p, ← fst_comp_p, hfst]
