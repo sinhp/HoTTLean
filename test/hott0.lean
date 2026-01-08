@@ -50,11 +50,15 @@ hott0 def isEquiv₀₀_transport₀ {A B : Type} (h : Identity A B) : isEquiv�
 hott0 def Identity.toEquiv₀₀ {A B : Type} : Identity A B → Σ (f : A → B), isEquiv₀₀ f :=
   fun h => ⟨transport₀ h, isEquiv₀₀_transport₀ h⟩
 
-hott0 def isProp₀ (A : Type) : Type :=
-  ∀ (a a' : A) (h h' : Identity a a'), Identity h h'
+hott0
+  /-- The type `A` is (-1)-truncated. -/
+  def isProp₀ (A : Type) : Type :=
+    ∀ (a a' : A), Identity a a'
 
-hott0 def isSet₀ (A : Type) : Type :=
-  ∀ (a b : A), isProp₀ (Identity a b)
+hott0
+  /-- The type `A` is 0-truncated. -/
+  def isSet₀ (A : Type) : Type :=
+    ∀ (a b : A), isProp₀ (Identity a b)
 
 hott0
   /-- The univalence axiom for sets. See HoTT book, Axiom 2.10.3. -/
