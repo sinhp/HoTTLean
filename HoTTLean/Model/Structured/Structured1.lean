@@ -141,9 +141,6 @@ def motiveCtx : Ctx := IdCommon.motiveCtx (mkId i (U.disp (a ≫ U.tp) ≫ a) (U
 
 abbrev toTmTm : U.ext A ⟶ U.ext U.tp :=
  U.substCons (U.disp A ≫ a) U.tp (U.var A) (by simp[a_tp])
- --(U.disp_pullback U.tp).lift (U.var A) (U.disp A ≫ a) (by simp[a_tp])
---(endpts (U.var A) (U.disp A ≫ a) (by simp[a_tp]))
---todo: what is it in terms of substCons?
 
 def motiveSubst {Δ} (σ : Δ ⟶ Γ)  :
     motiveCtx (σ ≫ a) i ⟶ motiveCtx a i := by
@@ -152,12 +149,9 @@ def motiveSubst {Δ} (σ : Δ ⟶ Γ)  :
   simp[motiveCtx];
   congr 1
   · simp[a_tp]
-  · --simp[← i.Id_comp]
-    subst a_tp
+  · subst a_tp
     rw![Category.assoc]
-    simp[heq_eq_eq]
-    simp[mkId]
-    simp[← Category.assoc]
+    simp[heq_eq_eq,mkId,← Category.assoc]
     congr 1
   · subst a_tp
     simp[motiveCtx,mkId,substCons]
@@ -170,9 +164,7 @@ def reflSubst : Γ ⟶ motiveCtx a i := by
     (by simp[i.refl_tp]
         simp[← Category.assoc]
         congr 1
-        apply (U.disp_pullback _).hom_ext
-        · simp
-        simp
+        apply (U.disp_pullback _).hom_ext <;> simp
       )
   subst a_tp
   simp[motiveCtx]
@@ -191,36 +183,32 @@ lemma reflSubst_comp_motiveSubst  {Δ} (σ : Δ ⟶ Γ) :
     (by simp[i.refl_tp]
         simp[← Category.assoc]
         congr 1
-        apply (disp_pullback ..).hom_ext <;> simp --toTmTm + endpts not good API, perhaps stick to substCons
+        apply (disp_pullback ..).hom_ext <;> simp
         ) σ
   convert e <;> simp[motiveCtx]
-  · congr 1
-    simp[mkId]
-    subst a_tp
+  · subst a_tp
     congr 1
-    --do not think mkId is good design either, without lemmas
   · subst a_tp
     congr 1
     · simp--this is assoc...
-    simp[mkId]
-    simp[← Category.assoc]
-    congr 1
-    · simp
-    rw![Category.assoc]
-    simp[heq_eq_eq]
-    apply (disp_pullback ..).hom_ext <;> simp
+    · simp[mkId,← Category.assoc]
+      congr 1
+      · simp
+      rw![Category.assoc]
+      simp[heq_eq_eq]
+      apply (disp_pullback ..).hom_ext <;> simp
   · simp[mkId]
     rw![a_tp]
     simp[substCons]
-  · simp[substWk,substCons]
-    rw![a_tp]
+  · subst a_tp
+    simp[substWk,substCons]
     congr! 1
     simp[← Category.assoc]
     congr 1
     apply (disp_pullback ..).hom_ext  <;> simp
-  · simp[mkId]
-    rw![a_tp]
-    simp[substCons]
+  · subst a_tp
+    simp[mkId,substCons]
+
 
 
 end StructuredId
