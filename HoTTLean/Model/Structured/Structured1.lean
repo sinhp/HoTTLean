@@ -49,20 +49,21 @@ end IdCommon
 
 namespace UnstructuredId
 variable {Ctx : Type u} [Category Ctx] {U0 U1: Model.UnstructuredUniverse Ctx}
-{Γ: Ctx} (A: Γ ⟶ U0.Ty) (a: Γ ⟶ U0.Tm)  (a_tp : a ≫ U0.tp = A)
+{Γ: Ctx} {A: Γ ⟶ U0.Ty} (a: Γ ⟶ U0.Tm)  (a_tp : a ≫ U0.tp = A)
 (i : PolymorphicIdIntro U0 U1)
 
 def motiveCtx : Ctx := IdCommon.motiveCtx (i.weakenId a a_tp)
 
 def motiveSubst {Δ} (σ : Δ ⟶ Γ) :
-    motiveCtx (σ ≫ A) (σ ≫ a) (by cat_disch) i ⟶ motiveCtx A a a_tp i := by
+    motiveCtx (A:= σ ≫ A) (σ ≫ a) (by simp[a_tp,Category.assoc]) i ⟶ motiveCtx a a_tp i := by
    convert
     IdCommon.motiveSubst (i.weakenId a a_tp) σ
    simp[motiveCtx];
-   congr
+   congr 1
    simp[← i.Id_comp]
 
-def reflSubst : Γ ⟶ i.motiveCtx a a_tp :=
+
+def reflSubst : Γ ⟶ motiveCtx a a_tp i:=
  IdCommon.reflSubst a a_tp (i.weakenId a a_tp) (i.refl a a_tp)
  (by simp[← i.Id_comp])
 
@@ -70,32 +71,33 @@ abbrev IdTy := (i.weakenId a a_tp)
 
 @[reassoc (attr := simp)]
 lemma reflSubst_comp_motiveSubst  {Δ} (σ : Δ ⟶ Γ) :
-    reflSubst (σ ≫ A) (σ ≫ a) (by simp[a_tp]) i ≫ motiveSubst A a a_tp i σ  =
-    σ ≫ reflSubst A a a_tp i := by
+    reflSubst (A:= σ ≫ A) (σ ≫ a) (by simp[a_tp]) i ≫ motiveSubst a a_tp i σ  =
+    σ ≫ reflSubst (A:= A) a a_tp i := by
   simp[reflSubst,motiveSubst]
   have e :=
     IdCommon.reflSubst_comp_motiveSubst a a_tp (i.weakenId a a_tp) (i.refl a a_tp)
     (by simp[← i.Id_comp]) σ
-  convert e <;> simp[←i.Id_comp,←i.refl_comp,a_tp]
+  convert e <;> simp[←i.Id_comp,←i.refl_comp,a_tp,motiveCtx]
+
 
 structure PolymorphicIdElim (U2 : UnstructuredUniverse Ctx) where
   (j : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
-    (C : motiveCtx A a a_tp i ⟶ U2.Ty) (c : Γ ⟶ U2.Tm),
-    (c ≫ U2.tp = (reflSubst A a a_tp i) ≫ C) → (motiveCtx A a a_tp i ⟶ U2.Tm))
+    (C : motiveCtx a a_tp i ⟶ U2.Ty) (c : Γ ⟶ U2.Tm),
+    (c ≫ U2.tp = (reflSubst a a_tp i) ≫ C) → (motiveCtx a a_tp i ⟶ U2.Tm))
   (comp_j : ∀ {Γ Δ} (σ : Δ ⟶ Γ) {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm)
-    (a_tp : a ≫ U0.tp = A) (C : motiveCtx A a a_tp i ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
-    (c_tp : c ≫ U2.tp = (reflSubst A a a_tp i) ≫ C),
-    j (σ ≫ a) (by cat_disch) (motiveSubst A a a_tp i σ ≫ C) (σ ≫ c)
+    (a_tp : a ≫ U0.tp = A) (C : motiveCtx a a_tp i ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
+    (c_tp : c ≫ U2.tp = (reflSubst a a_tp i) ≫ C),
+    j (σ ≫ a) (by cat_disch) (motiveSubst a a_tp i σ ≫ C) (σ ≫ c)
       (by simp[c_tp]) =
-    motiveSubst A a a_tp i σ ≫ j a a_tp C c c_tp)
+    motiveSubst a a_tp i σ ≫ j a a_tp C c c_tp)
   (j_tp : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
-    (C : motiveCtx A a a_tp i ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
-    (c_tp : c ≫ U2.tp = (reflSubst A a a_tp i) ≫ C),
+    (C : motiveCtx a a_tp i ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
+    (c_tp : c ≫ U2.tp = (reflSubst a a_tp i) ≫ C),
     j a a_tp C c c_tp ≫ U2.tp = C)
   (reflSubst_j : ∀ {Γ} {A : Γ ⟶ U0.Ty} (a : Γ ⟶ U0.Tm) (a_tp : a ≫ U0.tp = A)
-    (C : motiveCtx A a a_tp i ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
-    (c_tp : c ≫ U2.tp = (reflSubst A a a_tp i) ≫ C),
-    reflSubst A a a_tp i ≫ j a a_tp C c c_tp = c)
+    (C : motiveCtx a a_tp i ⟶ U2.Ty) (c : Γ ⟶ U2.Tm)
+    (c_tp : c ≫ U2.tp = (reflSubst a a_tp i) ≫ C),
+    reflSubst a a_tp i ≫ j a a_tp C c c_tp = c)
 
 
 end UnstructuredId
