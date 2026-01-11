@@ -67,7 +67,7 @@ def reflSubst : Γ ⟶ motiveCtx a a_tp i:=
  IdCommon.reflSubst a a_tp (i.weakenId a a_tp) (i.refl a a_tp)
  (by simp[← i.Id_comp])
 
-abbrev IdTy := (i.weakenId a a_tp)
+--abbrev IdTy := (i.weakenId a a_tp)
 
 @[reassoc (attr := simp)]
 lemma reflSubst_comp_motiveSubst  {Δ} (σ : Δ ⟶ Γ) :
@@ -105,7 +105,7 @@ end UnstructuredId
 
 namespace StructuredId
 variable {Ctx : Type u} [Category Ctx] {U: Model.UnstructuredUniverse Ctx}
-{Γ: Ctx} (A: Γ ⟶ U.Ty) (a: Γ ⟶ U.Tm)  (a_tp : a ≫ U.tp = A)
+{Γ: Ctx} {A: Γ ⟶ U.Ty} (a: Γ ⟶ U.Tm)  (a_tp : a ≫ U.tp = A)
 
 structure IdIntro (M: Model.UnstructuredUniverse Ctx) where
   Id : M.ext M.tp ⟶ M.Ty
@@ -143,14 +143,14 @@ def motiveCtx : Ctx := IdCommon.motiveCtx (mkId i (U.disp (a ≫ U.tp) ≫ a) (U
 abbrev endpts (a0 a1:Γ ⟶ U.Tm) (h: a0 ≫ U.tp = a1 ≫ U.tp): Γ ⟶ U.ext U.tp :=
    (U.disp_pullback U.tp).lift a0 a1 h
 
-
+#check substCons
 abbrev toTmTm : U.ext A ⟶ U.ext U.tp := (endpts (U.var A) (U.disp A ≫ a) (by simp[a_tp]))
-
+--todo: what is it in terms of substCons?
 
 def motiveSubst {Δ} (σ : Δ ⟶ Γ)  :
     motiveCtx (σ ≫ a) i ⟶ motiveCtx a i := by
   convert
-    IdCommon.motiveSubst (toTmTm A a a_tp ≫ i.Id) σ
+    IdCommon.motiveSubst (toTmTm  a a_tp ≫ i.Id) σ
   simp[motiveCtx];
   congr 1
   · simp[a_tp]
@@ -173,7 +173,7 @@ def motiveSubst {Δ} (σ : Δ ⟶ Γ)  :
 
 def reflSubst : Γ ⟶ motiveCtx a i := by
   convert
-   IdCommon.reflSubst a a_tp (toTmTm A a a_tp ≫ i.Id) (a ≫ i.refl)
+   IdCommon.reflSubst a a_tp (toTmTm a a_tp ≫ i.Id) (a ≫ i.refl)
     (by simp[i.refl_tp]
         simp[← Category.assoc]
         congr 1
@@ -185,6 +185,48 @@ def reflSubst : Γ ⟶ motiveCtx a i := by
   congr 1
   subst a_tp
   simp[mkId]
+
+-- Q: how to make i the first explicit argument and enable writing i.motiveCtx?
+--stupid long proof
+@[reassoc (attr := simp)]
+lemma reflSubst_comp_motiveSubst  {Δ} (σ : Δ ⟶ Γ) :
+    reflSubst (A:= σ ≫ A) (σ ≫ a) (by simp[a_tp]) i ≫ motiveSubst a a_tp i σ  =
+    σ ≫ reflSubst (A:= A) a a_tp i := by
+  simp[reflSubst,motiveSubst]
+  have e :=
+    IdCommon.reflSubst_comp_motiveSubst a a_tp (toTmTm a a_tp ≫ i.Id) (a ≫ i.refl)
+    (by simp[toTmTm,endpts,i.refl_tp]
+        simp[← Category.assoc]
+        congr 1
+        apply (disp_pullback ..).hom_ext <;> simp --toTmTm + endpts not good API, perhaps stick to substCons
+        ) σ
+  convert e <;> simp[motiveCtx]
+  · congr 1
+    simp[toTmTm,endpts,mkId]
+    subst a_tp
+    congr 1
+    --do not think mkId is good design either, without lemmas
+  · subst a_tp
+    congr 1
+    · simp--this is assoc...
+    simp[mkId,toTmTm,endpts]
+    simp[← Category.assoc]
+    congr 1
+    · simp
+    simp[substWk]
+    rw![Category.assoc]
+    simp[heq_eq_eq]
+    apply (disp_pullback ..).hom_ext <;> simp
+  · simp[mkId,toTmTm,endpts]
+    rw![a_tp]
+  · simp[substWk,toTmTm,endpts,substCons]
+    rw![a_tp]
+    congr! 1
+    simp[← Category.assoc]
+    congr 1
+    apply (disp_pullback ..).hom_ext  <;> simp
+  · simp[mkId,toTmTm,endpts]
+    rw![a_tp]
 
 
 end StructuredId
