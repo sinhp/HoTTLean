@@ -139,18 +139,9 @@ theorem comp_mkRefl {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (a : Γ ⟶ U.Tm) :
 
 def motiveCtx : Ctx := IdCommon.motiveCtx (mkId i (U.disp (a ≫ U.tp) ≫ a) (U.var _) (by simp))
 
-
-abbrev endpts (a0 a1:Γ ⟶ U.Tm) (h: a0 ≫ U.tp = a1 ≫ U.tp): Γ ⟶ U.ext U.tp :=
-   (U.disp_pullback U.tp).lift a0 a1 h
-
-#check substCons
-/-def substCons {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty)
-    (t : Δ ⟶ M.Tm) (t_tp : t ≫ M.tp = σ ≫ A) :
-    Δ ⟶ M.ext A :=
-  (M.disp_pullback A).lift t σ t_tp
--/
 abbrev toTmTm : U.ext A ⟶ U.ext U.tp :=
- (U.disp_pullback U.tp).lift (U.var A) (U.disp A ≫ a) (by simp[a_tp])
+ U.substCons (U.disp A ≫ a) U.tp (U.var A) (by simp[a_tp])
+ --(U.disp_pullback U.tp).lift (U.var A) (U.disp A ≫ a) (by simp[a_tp])
 --(endpts (U.var A) (U.disp A ≫ a) (by simp[a_tp]))
 --todo: what is it in terms of substCons?
 
@@ -168,14 +159,9 @@ def motiveSubst {Δ} (σ : Δ ⟶ Γ)  :
     simp[mkId]
     simp[← Category.assoc]
     congr 1
-    apply (U.disp_pullback _).hom_ext
-    · simp
-    · simp
-  · simp[motiveCtx]
-    congr 1
-    subst a_tp
-    simp[heq_eq_eq]
-    simp[mkId]
+  · subst a_tp
+    simp[motiveCtx,mkId,substCons]
+
 
 
 def reflSubst : Γ ⟶ motiveCtx a i := by
@@ -188,10 +174,10 @@ def reflSubst : Γ ⟶ motiveCtx a i := by
         · simp
         simp
       )
+  subst a_tp
   simp[motiveCtx]
   congr 1
-  subst a_tp
-  simp[mkId]
+
 
 -- Q: how to make i the first explicit argument and enable writing i.motiveCtx?
 --stupid long proof
@@ -220,12 +206,12 @@ lemma reflSubst_comp_motiveSubst  {Δ} (σ : Δ ⟶ Γ) :
     simp[← Category.assoc]
     congr 1
     · simp
-    simp[substWk]
     rw![Category.assoc]
     simp[heq_eq_eq]
     apply (disp_pullback ..).hom_ext <;> simp
   · simp[mkId]
     rw![a_tp]
+    simp[substCons]
   · simp[substWk,substCons]
     rw![a_tp]
     congr! 1
@@ -234,6 +220,7 @@ lemma reflSubst_comp_motiveSubst  {Δ} (σ : Δ ⟶ Γ) :
     apply (disp_pullback ..).hom_ext  <;> simp
   · simp[mkId]
     rw![a_tp]
+    simp[substCons]
 
 
 end StructuredId
