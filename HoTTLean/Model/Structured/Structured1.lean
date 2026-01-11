@@ -144,7 +144,14 @@ abbrev endpts (a0 a1:Γ ⟶ U.Tm) (h: a0 ≫ U.tp = a1 ≫ U.tp): Γ ⟶ U.ext U
    (U.disp_pullback U.tp).lift a0 a1 h
 
 #check substCons
-abbrev toTmTm : U.ext A ⟶ U.ext U.tp := (endpts (U.var A) (U.disp A ≫ a) (by simp[a_tp]))
+/-def substCons {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty)
+    (t : Δ ⟶ M.Tm) (t_tp : t ≫ M.tp = σ ≫ A) :
+    Δ ⟶ M.ext A :=
+  (M.disp_pullback A).lift t σ t_tp
+-/
+abbrev toTmTm : U.ext A ⟶ U.ext U.tp :=
+ (U.disp_pullback U.tp).lift (U.var A) (U.disp A ≫ a) (by simp[a_tp])
+--(endpts (U.var A) (U.disp A ≫ a) (by simp[a_tp]))
 --todo: what is it in terms of substCons?
 
 def motiveSubst {Δ} (σ : Δ ⟶ Γ)  :
@@ -195,21 +202,21 @@ lemma reflSubst_comp_motiveSubst  {Δ} (σ : Δ ⟶ Γ) :
   simp[reflSubst,motiveSubst]
   have e :=
     IdCommon.reflSubst_comp_motiveSubst a a_tp (toTmTm a a_tp ≫ i.Id) (a ≫ i.refl)
-    (by simp[toTmTm,endpts,i.refl_tp]
+    (by simp[i.refl_tp]
         simp[← Category.assoc]
         congr 1
         apply (disp_pullback ..).hom_ext <;> simp --toTmTm + endpts not good API, perhaps stick to substCons
         ) σ
   convert e <;> simp[motiveCtx]
   · congr 1
-    simp[toTmTm,endpts,mkId]
+    simp[mkId]
     subst a_tp
     congr 1
     --do not think mkId is good design either, without lemmas
   · subst a_tp
     congr 1
     · simp--this is assoc...
-    simp[mkId,toTmTm,endpts]
+    simp[mkId]
     simp[← Category.assoc]
     congr 1
     · simp
@@ -217,15 +224,15 @@ lemma reflSubst_comp_motiveSubst  {Δ} (σ : Δ ⟶ Γ) :
     rw![Category.assoc]
     simp[heq_eq_eq]
     apply (disp_pullback ..).hom_ext <;> simp
-  · simp[mkId,toTmTm,endpts]
+  · simp[mkId]
     rw![a_tp]
-  · simp[substWk,toTmTm,endpts,substCons]
+  · simp[substWk,substCons]
     rw![a_tp]
     congr! 1
     simp[← Category.assoc]
     congr 1
     apply (disp_pullback ..).hom_ext  <;> simp
-  · simp[mkId,toTmTm,endpts]
+  · simp[mkId]
     rw![a_tp]
 
 
