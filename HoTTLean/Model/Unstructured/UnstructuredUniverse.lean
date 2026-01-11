@@ -216,6 +216,13 @@ theorem sec_apply_comp_var {Γ : Ctx} (A : Γ ⟶ M.Ty)
     M.sec A (s ≫ M.var A) (by rw [Category.assoc, var_tp, ← Category.assoc, s_tp]; simp) = s := by
   apply substCons_apply_comp_var _ _ _ _ s_tp
 
+lemma sec_substWk {Δ Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A)  (σ : Δ ⟶ Γ) :
+  σ ≫ M.sec A a a_tp = M.sec (σ ≫ A) (σ ≫ a) (by simp[a_tp]) ≫
+  M.substWk σ A (σ ≫ A) rfl := by
+   simp[substWk,sec]
+
+
+
 structure PolymorphicSigma (U0 U1 U2 : UnstructuredUniverse Ctx) where
   (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
   (Sig_comp : ∀ {Γ Δ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) {σA} (eq) (B : U0.ext A ⟶ U1.Ty),
