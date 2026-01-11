@@ -403,6 +403,11 @@ lemma weakenId_comp : i.weakenId (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) =
     U0.substWk σ A ≫ i.weakenId a a_tp := by
   simp [← Id_comp]
 
+lemma sec_weakenId :
+    i.refl a a_tp ≫ U1.tp = U0.sec A a a_tp ≫ i.weakenId a a_tp := by
+  simp[← i.Id_comp]
+
+
 /-- Given `Γ ⊢ a : A` this is the context `Γ.(x : A).(h:Id(a,x))` -/
 @[simp]
 abbrev motiveCtx : Ctx :=
