@@ -488,7 +488,7 @@ def verticalNatTrans {F : C} (P : MvPoly R I O E B) (Q : MvPoly R I O F B)
     Q.functor ⟶ P.functor :=
   (Functor.associator _ _ _).inv ≫
   ((PolynomialPartialAdjunction.partialRightAdjointMap P.i P.p Q.i Q.p ρ hi hp) ◫
-  (eqToHom (by rw! [ho]))) ≫
+  (NatTrans.mk (fun X => MorphismProperty.Over.homMk (by exact 𝟙 _)))) ≫
   (Functor.associator _ _ _).hom
 
 lemma verticalNatTrans_hom {F : C} (P : MvPoly R I O E B) (Q : MvPoly R I O F B)
@@ -496,7 +496,7 @@ lemma verticalNatTrans_hom {F : C} (P : MvPoly R I O E B) (Q : MvPoly R I O F B)
     [HasPullbacksAlong Q.p] [R.HasPushforwardsAlong Q.p] [R.IsStableUnderPushforwardsAlong Q.p]
     (ρ : E ⟶ F) (hi : P.i = ρ ≫ Q.i) (hp : P.p = ρ ≫ Q.p) (ho : P.o = Q.o) (X) :
     ((verticalNatTrans P Q ρ hi hp ho).app X).hom = sorry := by
-  -- simp [verticalNatTrans, partialRightAdjointMap, pushforwardPullbackTwoSquare]
+  simp [verticalNatTrans]
   -- erw [id_comp]
   sorry
 

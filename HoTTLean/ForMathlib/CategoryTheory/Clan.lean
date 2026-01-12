@@ -488,11 +488,11 @@ lemma pushforwardPullbackTwoSquare_app {T : Type u} [Category.{v} T] {R : Morphi
     [R.HasPushforwardsAlong f] [R.IsStableUnderPushforwardsAlong f]
     [R.HasPushforwardsAlong g] [R.IsStableUnderPushforwardsAlong g]
     (A : R.Over ⊤ Z) :
-    (pushforwardPullbackTwoSquare h f g k sq).app A = sorry := by
+    Comma.Hom.hom ((pushforwardPullbackTwoSquare h f g k sq).app A) = sorry := by
   simp [pushforwardPullbackTwoSquare]
   -- apply ((pullbackPushforwardAdjunction R f).homEquiv _ _).symm.injective
-  ext
-  simp
+  -- ext : 1
+  -- · simp [Comma.Hom.hom, TwoSquare.natTrans]
   -- erw [commaCategory.id]
   -- simp [- EmbeddingLike.apply_eq_iff_eq, pullbackPushforwardAdjunction]
   -- rw [pushforward.homEquiv_map_comp]
@@ -500,6 +500,7 @@ lemma pushforwardPullbackTwoSquare_app {T : Type u} [Category.{v} T] {R : Morphi
   -- erw [Category.id_comp]
   -- apply (pushforwardPullbackAdjunction.homEquiv i p).injective
   sorry
+  -- · sorry
 
 -- TODO: currently this theorem is unnecessary,
 -- but it would be nice to show that these two definitions actually line up.
