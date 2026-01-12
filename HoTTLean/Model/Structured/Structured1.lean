@@ -31,19 +31,17 @@ def reflSubst (IdTy: U0.ext A ⟶ U1.Ty) (reflTm: Γ ⟶ U1.Tm)
   U1.substCons (sec U0 A a (by simp[a_tp])) IdTy reflTm
   (by simp[reflTmTy])
 
---lemma reflSubst_var
-
 @[reassoc (attr := simp)]
 lemma reflSubst_comp_motiveSubst
   (IdTy: U0.ext A ⟶ U1.Ty) (reflTm: Γ ⟶ U1.Tm)
   (reflTmTy: reflTm ≫ U1.tp = sec U0 A a (by simp[a_tp]) ≫ IdTy)
   {Δ} (σ : Δ ⟶ Γ) :
     reflSubst (A:= σ ≫ A) (σ ≫ a) (by simp[a_tp]) (substWk U0 σ A ≫ IdTy) (σ ≫ reflTm)
-    (by simp[reflTmTy]
-        simp[← Category.assoc,sec_substWk]) ≫
+    (by simp[← comp_sec_assoc _ a_tp, reflTmTy]) ≫
     motiveSubst IdTy σ =
     σ ≫ reflSubst a a_tp IdTy reflTm reflTmTy := by
-  apply (disp_pullback ..).hom_ext <;> simp[reflSubst,motiveSubst,sec_substWk]
+  apply (disp_pullback ..).hom_ext <;> simp[reflSubst,motiveSubst,
+    ← comp_sec _ a_tp ]
 
 end IdCommon
 

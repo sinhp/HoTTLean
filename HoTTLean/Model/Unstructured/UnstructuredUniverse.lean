@@ -193,6 +193,8 @@ lemma var_comp {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) : M.var (σ ≫ 
 def sec {Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) : Γ ⟶ M.ext A :=
   M.substCons (𝟙 Γ) A a (by simp [a_tp])
 
+variable {M}
+
 @[reassoc (attr := simp)]
 theorem sec_disp {Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) :
     M.sec A a a_tp ≫ M.disp A = 𝟙 _ := by
@@ -203,12 +205,22 @@ theorem sec_var {Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.t
     M.sec A a a_tp ≫ M.var A = a := by
   simp [sec]
 
+/-
+          σ
+  Δ  ------------> Γ
+  |                |
+sec (σ ≫ a)        | sec a
+  |                |
+  V                V
+  Δ.(σ ≫ A) ----> Γ.A
+           σ.a
+-/
 @[reassoc]
-theorem comp_sec {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ M.Ty) (σA) (eq : σ ≫ A = σA)
-    (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) :
-    σ ≫ M.sec A a a_tp = M.sec σA (σ ≫ a) (by simp [eq, a_tp]) ≫ M.substWk σ A _ eq := by
-  apply (M.disp_pullback _).hom_ext <;>
-    simp [sec, substWk]
+theorem comp_sec {Δ Γ : Ctx} (σ : Δ ⟶ Γ) {A : Γ ⟶ M.Ty} {a : Γ ⟶ M.Tm} (a_tp : a ≫ M.tp = A)
+    (σA := σ ≫ A) (eq : σ ≫ A = σA := by rfl)
+    (σa := σ ≫ a) (eq' : σ ≫ a = σa := by rfl) :
+    σ ≫ M.sec A a a_tp = M.sec σA σa (by simp [eq, a_tp, ← eq']) ≫ M.substWk σ A _ eq := by
+  apply (M.disp_pullback _).hom_ext <;> simp [sec, substWk, eq']
 
 @[reassoc (attr := simp)]
 theorem sec_apply_comp_var {Γ : Ctx} (A : Γ ⟶ M.Ty)
@@ -216,12 +228,9 @@ theorem sec_apply_comp_var {Γ : Ctx} (A : Γ ⟶ M.Ty)
     M.sec A (s ≫ M.var A) (by rw [Category.assoc, var_tp, ← Category.assoc, s_tp]; simp) = s := by
   apply substCons_apply_comp_var _ _ _ _ s_tp
 
-lemma sec_substWk {Δ Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A)  (σ : Δ ⟶ Γ) :
-  σ ≫ M.sec A a a_tp = M.sec (σ ≫ A) (σ ≫ a) (by simp[a_tp]) ≫
-  M.substWk σ A (σ ≫ A) rfl := by
-   simp[substWk,sec]
-
-
+-- lemma sec_substWk {Δ Γ : Ctx} (A : Γ ⟶ M.Ty) (a : Γ ⟶ M.Tm) (a_tp : a ≫ M.tp = A) (σ : Δ ⟶ Γ) :
+--     M.sec (σ ≫ A) (σ ≫ a) (by simp[a_tp]) ≫ M.substWk σ A (σ ≫ A) rfl = σ ≫ M.sec A a a_tp := by
+--   simp[substWk,sec]
 
 structure PolymorphicSigma (U0 U1 U2 : UnstructuredUniverse Ctx) where
   (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.Ty))
@@ -306,15 +315,15 @@ def mk' (Sig : ∀ {Γ} {A : Γ ⟶ U0.Ty}, (U0.ext A ⟶ U1.Ty) → (Γ ⟶ U2.
     · simp [← assoc_disp]
   fst_pair B a a_tp b b_tp := by
     simp only [← Category.assoc]
-    rw [sec_apply_comp_var _ _ _ (by simp [assoc_disp])]
+    rw [sec_apply_comp_var _ _ (by simp [assoc_disp])]
     simp
   snd_pair B a a_tp b b_tp := by
     simp only [← Category.assoc]
-    rw [sec_apply_comp_var _ _ _ (by simp [assoc_disp])]
+    rw [sec_apply_comp_var _ _ (by simp [assoc_disp])]
     simp
   eta B s s_tp := by
     simp only [← Category.assoc]
-    rw! [sec_apply_comp_var _ _ _ (by simp [← assoc_disp])]
+    rw! [sec_apply_comp_var _ _ (by simp [← assoc_disp])]
     rw [U1.substCons_apply_comp_var _ _ _ (by simp)]
     simp
 
@@ -397,16 +406,15 @@ lemma refl_tp' : i.refl a a_tp ≫ U1.tp = i.Id a a a_tp a_tp := refl_tp ..
 `Γ.(x : A) ⊢ Id(a,x) : U1.Ty` -/
 @[simp]
 abbrev weakenId : U0.ext A ⟶ U1.Ty :=
-  i.Id (A := U0.disp A ≫ A)  (U0.var A) (U0.disp A ≫ a) (by cat_disch) (by cat_disch)
+  i.Id (A := U0.disp A ≫ A) (U0.disp A ≫ a) (U0.var A) (by cat_disch) (by cat_disch)
 
 lemma weakenId_comp : i.weakenId (A := σ ≫ A) (σ ≫ a) (by simp [a_tp]) =
     U0.substWk σ A ≫ i.weakenId a a_tp := by
   simp [← Id_comp]
 
-lemma sec_weakenId :
+lemma refl_tp_eq_sec_weakenId :
     i.refl a a_tp ≫ U1.tp = U0.sec A a a_tp ≫ i.weakenId a a_tp := by
   simp[← i.Id_comp]
-
 
 /-- Given `Γ ⊢ a : A` this is the context `Γ.(x : A).(h:Id(a,x))` -/
 @[simp]

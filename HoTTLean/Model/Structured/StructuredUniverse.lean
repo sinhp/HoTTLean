@@ -484,7 +484,7 @@ theorem comp_mkApp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
         (σ ≫ f) (by simp [f_tp, comp_mkPi (eq := eq)])
         (σ ≫ a) (by simp [a_tp, eq]) := by
   unfold mkApp; rw [← Category.assoc,
-    comp_sec (eq := eq), Category.assoc, comp_unLam (eq := eq)]
+    comp_sec σ a_tp _ eq, Category.assoc, comp_unLam (eq := eq)]
 
 @[simp]
 theorem mkLam_unLam {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : (U0.ext A) ⟶ U1.Ty)
@@ -1668,7 +1668,6 @@ instance GammaATmTmPb :
 
 instance TmTmIdPb : IsPullback  (M.var iiM.Id)  (M.disp iiM.Id) M.tp iiM.Id  :=
   (M.disp_pullback iiM.Id)
-
 
 --YX: can we hide the by simp?
 --how can we attribute an assumption, say a_tp, to local simp?
