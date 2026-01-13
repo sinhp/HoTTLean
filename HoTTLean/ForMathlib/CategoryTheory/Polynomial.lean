@@ -761,6 +761,22 @@ def vcomp [R.IsStableUnderComposition] {A B C} (P : UvPoly R A B) (Q : UvPoly R 
     UvPoly R A C :=
   ⟨ P.p ≫ Q.p, R.comp_mem _ _ P.morphismProperty Q.morphismProperty ⟩
 
+/-- With sufficient theory, this lemma can be generalised: the π-clan conditions
+`[R.HasPushforwards R] (hP : R P.p) (hQ : R Q.p)`
+are unnecessary.-/
+lemma hasPushforwardsAlong_vcomp [R.HasPushforwards R] {A B C}
+    {P : UvPoly R A B} {Q : UvPoly R B C} (hP : R P.p) (hQ : R Q.p) :
+    R.HasPushforwardsAlong (vcomp P Q).p :=
+  HasPushforwards.hasPushforwardsAlong _ (R.comp_mem _ _ hP hQ)
+
+/-- With sufficient theory, this lemma can be generalised: the π-clan conditions
+`[R.IsStableUnderPushforwards R] (hP : R P.p) (hQ : R Q.p)`
+are unnecessary.-/
+lemma isStableUnderPushforwardsAlong_vcomp [R.IsStableUnderPushforwards R] {A B C}
+    {P : UvPoly R A B} {Q : UvPoly R B C} (hP : R P.p) (hQ : R Q.p) :
+    R.IsStableUnderPushforwardsAlong (vcomp P Q).p :=
+  IsStableUnderPushforwards.of_isPushforward _ (R.comp_mem _ _ hP hQ)
+
 variable {B}
 
 /-- The fstProjection morphism from `∑ b : B, X ^ (E b)` to `B` again. -/
