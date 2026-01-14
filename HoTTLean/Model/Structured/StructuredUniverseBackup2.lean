@@ -1372,82 +1372,21 @@ In the following lemmas we will have
 and `endpoint = a : Γ → Tm`. -/
 def endpoint : Γ ⟶ U0.Tm := UvPoly.Equiv.fst toIUvPolyTy
 
-/--
-`toExtTp` is the substitution,
-`toExtId` is the substitution,
-`toExtTpPb` is the pullback square,
-and `toExtIdPb` is the pullback square in the following
-```
-      Γ ---------- a --------------> Tm
-      |                               |
-      |                               |disp
-      |                               |
-      V                               V
-Γ.(x:A).(p:Id(a,x)) --- toExtId ----> U1.ext ii.Id
-      |                               |
-      |           (toExtIdPb)         |disp
-      |                               |
-      V                               V
-Γ.(x:A) ------------- toExtTp ------> U0.ext U0.tp
-      |                               |
-      |           (toExtTpPb)         |disp
-      |                               |
-      V                               V
-      Γ ---------- a --------------> Tm
-```
-The pullback `toExtIdPb'` is the vertical pasting of `toExtIdPb` and `toExtTpPb`
--/
-abbrev toExtTp : U0.ext (endpoint toIUvPolyTy ≫ U0.tp) ⟶ U0.ext U0.tp :=
-  endpts (U0.disp _ ≫ endpoint toIUvPolyTy) (U0.var _) (by simp)
-
-@[simp]
-lemma toExtTp_Id : toExtTp toIUvPolyTy ≫ (ofUnstructured ii).Id =
-    ii.Id (U0.disp (endpoint toIUvPolyTy ≫ U0.tp) ≫
-    endpoint toIUvPolyTy) (U0.var _) rfl (by simp) := by
-  simp [ofUnstructured, ofUnstructured.IdApp]
-
-@[inherit_doc toExtTp]
-abbrev toExtId : ii.motiveCtx (endpoint toIUvPolyTy) rfl ⟶ U1.ext (ofUnstructured ii).Id :=
-  (U1.disp_pullback _).lift (U1.var _) (U1.disp _ ≫ toExtTp toIUvPolyTy) (by simp)
-
-@[inherit_doc toExtTp]
-lemma toExtTpPb : IsPullback (toExtTp toIUvPolyTy) (U0.disp _) (U0.disp _) (endpoint toIUvPolyTy) :=
-  CategoryTheory.IsPullback.of_right (by simpa using U0.disp_pullback _) (by simp)
-  (U0.disp_pullback _)
-
-@[inherit_doc toExtTp]
-lemma toExtIdPb : IsPullback (toExtId toIUvPolyTy) (U1.disp _) (U1.disp _) (toExtTp toIUvPolyTy) :=
-  CategoryTheory.IsPullback.of_right (by simpa using U1.disp_pullback _)
-  (by simp) (U1.disp_pullback (ofUnstructured ii).Id)
-
-lemma toExtIdPb' : IsPullback (toExtId toIUvPolyTy) (U1.disp _ ≫ U0.disp _)
-    (U1.disp _ ≫ U0.disp U0.tp) (endpoint toIUvPolyTy) :=
-  IsPullback.paste_vert (toExtIdPb toIUvPolyTy) (toExtTpPb toIUvPolyTy)
-
 -- TODO: maybe move `toUnstructured.toExtIdPb'` out of its current namespace,
 -- since it is general enough to used here
 def motive : ii.motiveCtx (endpoint toIUvPolyTy) rfl ⟶ U2.Ty :=
-  UvPoly.Equiv.snd' toIUvPolyTy (toExtIdPb' toIUvPolyTy).flip
+  UvPoly.Equiv.snd' toIUvPolyTy
+  (toUnstructured.toExtIdPb' (IdIntro.ofUnstructured ii) rfl).flip
 
-def reflCase : Γ ⟶ U2.Tm :=
-  UvPoly.Equiv.snd' toUvPolyIdTm (toUnstructured.idPb U0 (UvPoly.Equiv.fst toUvPolyIdTm))
+-- def reflCase : Γ ⟶
 
-variable {toIUvPolyTy} {toUvPolyIdTm}
-
-include toUvPolyIdTm_uvPolyIdTp in -- TODO: remove
-lemma reflCase_tp : reflCase toUvPolyIdTm ≫ U2.tp =
-    ii.reflSubst (endpoint toIUvPolyTy) rfl ≫ motive toIUvPolyTy :=
-  have := toUvPolyIdTm_uvPolyIdTp -- TODO: remove
-  sorry
-
-def j : ii.motiveCtx (endpoint toIUvPolyTy) rfl ⟶ U2.Tm :=
-  ie.j (endpoint toIUvPolyTy) rfl (motive toIUvPolyTy) (reflCase toUvPolyIdTm)
-  (reflCase_tp toUvPolyIdTm_uvPolyIdTp)
+def j : (ofUnstructured ii).toUnstructured.motiveCtx (endpoint toIUvPolyTy) rfl ⟶ U2.Tm :=
+  ie.j (endpoint toIUvPolyTy) rfl (motive toIUvPolyTy)
 
 @[inherit_doc endpoint]
 def lift : Γ ⟶ (IdIntro.ofUnstructured ii).iUvPoly.functor.obj U2.Tm :=
   UvPoly.Equiv.mk' (endpoint toIUvPolyTy)
-  (toExtIdPb' toIUvPolyTy).flip (j ie toUvPolyIdTm_uvPolyIdTp)
+  (toUnstructured.toExtIdPb' (IdIntro.ofUnstructured ii) rfl).flip (j toIUvPolyTy)
 
 end ofUnstructured
 
@@ -1455,8 +1394,9 @@ open ofUnstructured
 
 def ofUnstructured : Id (IdIntro.ofUnstructured ii) U2 where
   weakPullback :=
+  have := ie -- TODO: remove
   { w := by simp only [NatTrans.naturality]
-    lift _ _ toUvPolyIdTm_uvPolyIdTp := lift ie toUvPolyIdTm_uvPolyIdTp
+    lift toUvPolyIdTm toIUvPolyTy _ := lift toIUvPolyTy
     lift_fst' := sorry
     lift_snd' := sorry }
 
