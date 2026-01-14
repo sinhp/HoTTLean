@@ -1269,13 +1269,59 @@ abbrev toIUvPolyTy : Γ ⟶ ii.iUvPoly.functor.obj U2.Ty :=
 
 variable {ii} {c} (c_tp : c ≫ U2.tp = ii.toUnstructured.reflSubst a a_tp ≫ C)
 
+
+lemma toIUvPolyTm_aux_fst :
+  UvPoly.Equiv.fst (UvPoly.Equiv.mk' a (idPb U0 a) c ≫
+  (UvPoly.id R U0.Tm).functor.map U2.tp) = a := by
+    simp[UvPoly.Equiv.fst_comp_right]
+    --Q: how does it figure out the behavior of id-induced poly? --Ah it does not have to
+
+-- lemma mk'_verticalNatTrans :
+--  (UvPoly.Equiv.mk' a ⋯ C ≫ ii.verticalNatTrans.app U2.Ty) =
+--   UvPoly.Equiv.mk' a
+
+lemma toIUvPolyTm_aux:
+  toUvPolyIdTm a c ≫ (UvPoly.id R U0.Tm).functor.map U2.tp =
+  toIUvPolyTy ii a_tp C ≫ ii.verticalNatTrans.app U2.Ty := by
+    fapply CategoryTheory.UvPoly.Equiv.ext' (idPb ..)
+    · simp[toUvPolyIdTm,] -- why UvPoly.Equiv.fst_mk' not automatic?
+      convert_to  a = UvPoly.Equiv.fst (toIUvPolyTy ii a_tp C ≫ ii.verticalNatTrans.app U2.Ty)
+      · apply toIUvPolyTm_aux_fst
+      simp[toIUvPolyTy,verticalNatTrans]
+      simp[UvPoly.fst_verticalNatTrans_app]
+      --Q: does verticalNaturalTrans deserve a specific ii-ver?
+      -- have e:
+      --  UvPoly.Equiv.mk' a (id ..) c ≫ (UvPoly.id R U0.Tm).functor.map U2.tp =
+      --  UvPoly.Equiv.mk' a (id ..) C := sorry
+
+    · simp[verticalNatTrans,toIUvPolyTy]
+      rw[UvPoly.Equiv.snd'_comp_right
+         (H := by
+             convert (idPb U0 a) --how do I know it requires indenting like this...?
+             · simp[UvPoly.Equiv.fst_comp_right]
+             · simp[])]
+      -- rw[UvPoly.snd'_verticalNatTrans_app
+      --    (P := (UvPoly.id R U0.Tm)) (Q := ii.iUvPoly)
+      --    (H' := by
+      --         convert (idPb U0 a)
+      --         · simp[UvPoly.Equiv.fst_comp_right]
+      --         · simp[])
+      --    (ρ := ii.comparison)
+      --    (h := by simp)
+      --    (H := by
+      --          convert (toExtIdPb' ii a_tp))
+
+      --  ]
+      simp[UvPoly.snd'_verticalNatTrans_app]
+      sorry
+
 -- previously called `toWeakpullback`
 @[inherit_doc toUvPolyIdTm]
 abbrev toIUvPolyTm : Γ ⟶ ii.iUvPoly.functor.obj U2.Tm :=
   id.weakPullback.lift (toUvPolyIdTm a c) (toIUvPolyTy ii a_tp C)
   (by
     have := c_tp -- TODO: remove
-    sorry)
+    apply toIUvPolyTm_aux)
 
 lemma fst_toIUvPolyTm : UvPoly.Equiv.fst (toIUvPolyTm id a_tp C c_tp) = a :=
   calc
@@ -1295,8 +1341,14 @@ def toUnstructured [id.IsCoherent] :
     UnstructuredUniverse.PolymorphicIdElim (ii.toUnstructured)
     U2.toUnstructuredUniverse where
   j a a_tp C c c_tp := j id a_tp C c_tp
-  comp_j σ A a a_tp C c c_tp := sorry -- NOTE: this will need [id.IsCoherent]
-  j_tp := sorry
+  comp_j σ A a a_tp C c c_tp := by
+    have e := id.IsCoherent
+
+    sorry -- NOTE: this will need [id.IsCoherent]
+  j_tp := by
+    intro Γ A a a_tp C c c_tp
+    simp[j]
+    sorry
   reflSubst_j := sorry
 
 end Id
@@ -1313,18 +1365,18 @@ def IdApp {Γ} (α : Γ ⟶ U0.ext U0.tp) : Γ ⟶ U1.Ty :=
   ii.Id (α ≫ U0.disp _) (α ≫ U0.var _) rfl (by simp)
 
 lemma IdApp_comp {Δ Γ} (σ : Δ ⟶ Γ) (α : Γ ⟶ U0.ext U0.tp) :
-    IdApp ii (σ ≫ α) = σ ≫ IdApp ii α :=
-  sorry
+    IdApp ii (σ ≫ α) = σ ≫ IdApp ii α := by
+  simp[IdApp,ii.Id_comp]
 
 def reflApp {Γ} (a : Γ ⟶ U0.Tm) : Γ ⟶ U1.Tm :=
   ii.refl a rfl
 
 lemma reflApp_comp {Δ Γ} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Tm) :
-    reflApp ii (σ ≫ A) = σ ≫ reflApp ii A :=
-  sorry
+    reflApp ii (σ ≫ A) = σ ≫ reflApp ii A := by
+  simp[reflApp,← ii.refl_comp]
 
-lemma reflApp_tp {Γ} (ab : Γ ⟶ U0.Tm) : reflApp ii ab ≫ U1.tp = IdApp ii (ab ≫ U0.diag) :=
-  sorry
+lemma reflApp_tp {Γ} (ab : Γ ⟶ U0.Tm) : reflApp ii ab ≫ U1.tp = IdApp ii (ab ≫ U0.diag) := by
+  simp[reflApp,ii.refl_tp,IdApp]
 
 end ofUnstructured
 
@@ -1438,6 +1490,7 @@ include toUvPolyIdTm_uvPolyIdTp in -- TODO: remove
 lemma reflCase_tp : reflCase toUvPolyIdTm ≫ U2.tp =
     ii.reflSubst (endpoint toIUvPolyTy) rfl ≫ motive toIUvPolyTy :=
   have := toUvPolyIdTm_uvPolyIdTp -- TODO: remove
+  --also need verticalNatTrans
   sorry
 
 def j : ii.motiveCtx (endpoint toIUvPolyTy) rfl ⟶ U2.Tm :=
