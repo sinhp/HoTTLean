@@ -685,8 +685,7 @@ def mkSig {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty) :
   PtpEquiv.mk U0 A B ≫ S.Sig
 
 theorem comp_mkSig {Δ Γ : Ctx} (σ : Δ ⟶ Γ) (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty) :
-    σ ≫ S.mkSig A B =
-      S.mkSig (σ ≫ A) ((U0.substWk σ A) ≫ B) := by
+    σ ≫ S.mkSig A B = S.mkSig (σ ≫ A) ((U0.substWk σ A) ≫ B) := by
   simp [mkSig, ← Category.assoc, PtpEquiv.mk_comp_left]
 
 /--
@@ -799,6 +798,22 @@ theorem mkPair_mkFst_mkSnd {Γ : Ctx} (A : Γ ⟶ U0.Ty) (B : U0.ext A ⟶ U1.Ty
     (eq := by rw [← mkFst.eq_def, mkFst_tp])
   conv at this => enter [1, 3]; apply S.dependent_eq
   simp [this]
+
+def toUnstructured :
+    UnstructuredUniverse.PolymorphicSigma U0.toUnstructuredUniverse
+    U1.toUnstructuredUniverse U2.toUnstructuredUniverse where
+  Sig := S.mkSig _
+  Sig_comp _ _ _ eq _ := eq ▸ (S.comp_mkSig ..).symm
+  pair := S.mkPair _
+  pair_comp _ _ _ eq _ _ _ _ _ := eq ▸ (S.comp_mkPair ..).symm
+  pair_tp := S.mkPair_tp _
+  fst := S.mkFst _
+  fst_tp := S.mkFst_tp _
+  snd := S.mkSnd _
+  snd_tp := S.mkSnd_tp _
+  fst_pair := S.mkFst_mkPair _
+  snd_pair := S.mkSnd_mkPair _
+  pair_fst_snd := S.mkPair_mkFst_mkSnd _
 
 end
 
