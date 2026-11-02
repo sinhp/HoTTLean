@@ -35,7 +35,8 @@ def Hom.comp {M N O : UnstructuredUniverse Ctx} (α : Hom M N) (β : Hom N O) : 
   mapTy := α.mapTy ≫ β.mapTy
   pb := α.pb.paste_horiz β.pb
 
-def Hom.comp_assoc {M N O P : UnstructuredUniverse Ctx} (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
+theorem Hom.comp_assoc {M N O P : UnstructuredUniverse Ctx}
+    (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp]
 
@@ -55,10 +56,12 @@ def Hom.subst (M : UnstructuredUniverse Ctx)
     Hom (M.pullback ((σ) ≫ A)) (M.pullback A) :=
   let Aσ := (σ) ≫ A
   { mapTm :=
-    (M.disp_pullback A).lift (M.var Aσ) (M.disp Aσ ≫ σ) (by aesop_cat)
+    (M.disp_pullback A).lift (M.var Aσ) (M.disp Aσ ≫ σ)
+      (by exact (M.disp_pullback Aσ).w.trans (Category.assoc _ _ _).symm)
     mapTy := (σ)
     pb := by
-      convert IsPullback.of_right' (M.disp_pullback Aσ) (M.disp_pullback A)}
+      change IsPullback _ (M.disp Aσ) (M.disp A) σ
+      exact IsPullback.of_right' (M.disp_pullback Aσ) (M.disp_pullback A)}
 
 @[simp] def Hom.extIsoExt {M N : UnstructuredUniverse Ctx} (h : Hom M N)
     {Γ} (A : Γ ⟶ M.Ty) : (N.ext (A ≫ h.mapTy)) ≅ (M.ext A) :=
@@ -99,7 +102,8 @@ def UHom.comp {M N O : UnstructuredUniverse Ctx} (α : UHom M N) (β : UHom N O)
   asTm := α.asTm ≫ β.mapTm
   U_pb := α.U_pb.paste_horiz β.pb
 
-def UHom.comp_assoc {M N O P : UnstructuredUniverse Ctx} (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
+theorem UHom.comp_assoc {M N O P : UnstructuredUniverse Ctx} (α : UHom M N) (β : UHom N O)
+    (γ : UHom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp, Hom.comp]
 
@@ -118,13 +122,11 @@ def UHom.ofTarskiU (M : UnstructuredUniverse Ctx) (U : (𝟭_ Ctx) ⟶ M.Ty) (El
   __ := M.pullbackHom El
   U
   asTm := M.var U
-  U_pb := (M.disp_pullback U).of_iso
-      (Iso.refl _)
-      (Iso.refl _)
-      (Iso.refl _)
-      (Iso.refl _)
-      (by simp) (isTerminal.hom_ext ..)
-      (by simp) (by simp)
+  U_pb := by
+    change IsPullback (M.var U) (isTerminal.from (M.ext U)) M.tp U
+    convert M.disp_pullback U using 1
+    exact isTerminal.hom_ext _ _
+
 
 section
 
@@ -135,6 +137,7 @@ def Hom.extCompMapTyIsoExt : N.ext (A ≫ α.mapTy) ≅ M.ext A :=
   (N.disp_pullback (A ≫ α.mapTy)).isoIsPullback _ _
   (IsPullback.paste_horiz (M.disp_pullback A) α.pb)
 
+omit [ChosenTerminal Ctx] in
 lemma Hom.extCompMapTyIsoExt_hom_comp_substWk  :
     (α.extCompMapTyIsoExt σA).hom ≫ M.substWk σ A σA eq =
     N.substWk σ (A ≫ α.mapTy) (σA ≫ α.mapTy) (by simp [← eq]) ≫ (α.extCompMapTyIsoExt A).hom := by
@@ -370,7 +373,7 @@ class PiSeq (s : UHomSeq Ctx) where
 -- Re-export for use with dot notation.
 abbrev polyPi := @PiSeq.polyPi
 
-def PiSeq.ofMonomorphic
+abbrev PiSeq.ofMonomorphic
     (nmPi : (i : Nat) → (ilen : i < s.length + 1 := by get_elem_tactic) →
     s[i].PolymorphicPi s[i] s[i]) : PiSeq s where
   polyPi i j _ _ := .ofMonomorphic (nmPi (max i j)) (s.homOfLe _ _) (s.homOfLe _ _)

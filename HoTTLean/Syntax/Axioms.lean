@@ -29,8 +29,8 @@ open Classical
 instance : LE (Axioms χ) where
   le E E' := ∀ ⦃c p⦄, (E c) = some p → (E' c) = some p
 
-instance : IsRefl (Axioms χ) (· ≤ ·) where
-  refl _ _ _ := id
+instance : Std.Refl (· ≤ · : Axioms χ → Axioms χ → Prop) where
+  refl _ _ _ h := h
 
 instance : IsTrans (Axioms χ) (· ≤ ·) where
   trans _ _ _ h h' _ _ Ec := h' (h Ec)

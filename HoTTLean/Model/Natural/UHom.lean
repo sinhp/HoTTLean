@@ -34,7 +34,7 @@ def Hom.comp {M N O : Universe Ctx} (α : Hom M N) (β : Hom N O) : Hom M O wher
   mapTy := α.mapTy ≫ β.mapTy
   pb := α.pb.paste_horiz β.pb
 
-def Hom.comp_assoc {M N O P : Universe Ctx} (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
+theorem Hom.comp_assoc {M N O P : Universe Ctx} (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp]
 
@@ -46,6 +46,8 @@ protected def pullbackHom (M : Universe Ctx) {Γ : Ctx} (A : y(Γ) ⟶ M.Ty) :
   mapTy := A
   pb := M.disp_pullback A
 
+-- The pullback projections need semireducible unfolding during elaboration.
+set_option backward.isDefEq.respectTransparency false in
 /-- Given `M : Universe`, a semantic type `A : y(Γ) ⟶ M.Ty`,
 and a substitution `σ : Δ ⟶ Γ`, construct a Hom for the substitution `A[σ]`.
 -/
@@ -54,11 +56,13 @@ def Hom.subst (M : Universe Ctx)
     Hom (M.pullback (ym(σ) ≫ A)) (M.pullback A) :=
   let Aσ := ym(σ) ≫ A
   { mapTm :=
-    (M.disp_pullback A).lift (M.var Aσ) ym(M.disp Aσ ≫ σ) (by aesop_cat)
+    (M.disp_pullback A).lift (M.var Aσ) ym(M.disp Aσ ≫ σ) (by
+      rw [(M.disp_pullback Aσ).w]
+      simp [Aσ, Category.assoc])
     mapTy := ym(σ)
     pb := by
-      convert IsPullback.of_right' (M.disp_pullback Aσ) (M.disp_pullback A)
-      simp }
+      simpa [Universe.pullback, Aσ] using
+        IsPullback.of_right' (M.disp_pullback Aσ) (M.disp_pullback A) }
 
 def Hom.cartesianNatTrans {M N : Universe Ctx} (h : Hom M N) :
     M.Ptp ⟶ N.Ptp :=
@@ -80,7 +84,7 @@ theorem Hom.mk_comp_cartesianNatTrans {M N : Universe Ctx} (h : Hom M N)
   refine this.trans ?_
   simp [UvPoly.Equiv.mk']; congr 1
   rw [← Category.assoc]; congr 1
-  generalize_proofs _ h1
+  generalize_proofs _ _ _ _ _ _ h1
   apply h1.hom_ext <;> simp
 
 /- We have a 'nice', specific terminal object in `Ctx`,
@@ -121,7 +125,7 @@ def UHom.comp {M N O : Universe Ctx} (α : UHom M N) (β : UHom N O) : UHom M O 
   asTm := α.asTm ≫ β.mapTm
   U_pb := α.U_pb.paste_horiz β.pb
 
-def UHom.comp_assoc {M N O P : Universe Ctx} (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
+theorem UHom.comp_assoc {M N O P : Universe Ctx} (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp, Hom.comp]
 
@@ -145,7 +149,10 @@ def UHom.ofTarskiU (M : Universe Ctx) (U : y(𝟭_ Ctx) ⟶ M.Ty) (El : y(M.ext 
       (Iso.refl _)
       (Iso.refl _)
       (Iso.refl _)
-      (by simp) (isTerminal_yUnit.hom_ext ..)
+      (by
+        change M.var U ≫ 𝟙 M.Tm = 𝟙 y(M.ext U) ≫ M.var U
+        simp only [Category.comp_id, Category.id_comp])
+      (isTerminal_yUnit.hom_ext ..)
       (by simp) (by simp)
 
 /-! ## Universe embeddings -/
@@ -248,6 +255,7 @@ theorem mk_comp_cartesianNatTrans {i j ij jlen} {Γ X} (A : y(Γ) ⟶ s[i].Ty)
     PtpEquiv.mk s[i] A B ≫ (s.cartesianNatTrans i j).app X =
     PtpEquiv.mk s[j] (A ≫ (s.homOfLe i j).mapTy)
     (ym(substCons _ (s[j].disp _) _ (s.unliftVar i j ij jlen A rfl) (by simp)) ≫ B) := by
+  unfold cartesianNatTrans
   convert Hom.mk_comp_cartesianNatTrans _ _ _
   apply (IsPullback.paste_horiz (s[i].disp_pullback _) (s.homOfLe i j).pb).hom_ext
   · simp [unliftVar]
@@ -274,14 +282,14 @@ Given `i0 ≤ i1` and `j0 ≤ j1`
 -/
 def cartesianNatTransTm (i0 i1 j0 j1 : Nat)
     (ii : i0 ≤ i1 := by get_elem_tactic) (ilen : i1 < s.length + 1 := by get_elem_tactic)
-    (jj : j0 ≤ j1 := by get_elem_tactic) (jlen : j1 < s.length + 1 := by get_elem_tactic)
-    : s[i0].Ptp.obj s[j0].Tm ⟶ s[i1].Ptp.obj s[j1].Tm :=
+    (jj : j0 ≤ j1 := by get_elem_tactic) (jlen : j1 < s.length + 1 := by get_elem_tactic) :
+    s[i0].Ptp.obj s[j0].Tm ⟶ s[i1].Ptp.obj s[j1].Tm :=
   (s.cartesianNatTrans i0 i1).app s[j0].Tm ≫
   s[i1].Ptp.map (s.homOfLe j0 j1).mapTm
 
 theorem mk_comp_cartesianNatTransTm {i0 i1 j0 j1 ii ilen jj jlen}
-    {Γ X} (A : y(Γ) ⟶ s[i0].Ty) (B : y(s[i0].ext A) ⟶ s[j0].Tm)
-    : PtpEquiv.mk s[i0] A B ≫ s.cartesianNatTransTm i0 i1 j0 j1 ii ilen jj jlen =
+    {Γ X} (A : y(Γ) ⟶ s[i0].Ty) (B : y(s[i0].ext A) ⟶ s[j0].Tm) :
+    PtpEquiv.mk s[i0] A B ≫ s.cartesianNatTransTm i0 i1 j0 j1 ii ilen jj jlen =
       PtpEquiv.mk s[i1] (A ≫ (s.homOfLe i0 i1).mapTy)
         (ym(substCons _ (s[i1].disp _) _ (s.unliftVar i0 i1 ii ilen A rfl) (by simp))
           ≫ B ≫ (s.homOfLe j0 j1).mapTm) := by
@@ -290,20 +298,23 @@ theorem mk_comp_cartesianNatTransTm {i0 i1 j0 j1 ii ilen jj jlen}
 theorem cartesianNatTransTm_fstProj {i0 i1 j0 j1 ii ilen jj jlen} :
     s.cartesianNatTransTm i0 i1 j0 j1 ii ilen jj jlen ≫ s[i1].uvPolyTp.fstProj s[j1].Tm =
     s[i0].uvPolyTp.fstProj s[j0].Tm ≫ (s.homOfLe i0 i1).mapTy := by
-  simp [cartesianNatTransTm]
-  slice_lhs 2 3 => apply UvPoly.map_fstProj
-  apply cartesianNatTrans_fstProj
+  let α := (s.cartesianNatTrans i0 i1 ii ilen).app s[j0].Tm
+  let f := (s.homOfLe j0 j1 jj jlen).mapTm
+  exact (Category.assoc α (s[i1].Ptp.map f) (s[i1].uvPolyTp.fstProj s[j1].Tm)).trans
+    ((congrArg (fun k => α ≫ k) (UvPoly.map_fstProj s[i1].uvPolyTp f)).trans
+      (s.cartesianNatTrans_fstProj (i := i0) (j := i1) (ij := ii) (jlen := ilen)
+        (X := s[j0].Tm)))
 
 def cartesianNatTransTy (i0 i1 j0 j1 : Nat)
     (i0len : i0 ≤ i1 := by get_elem_tactic) (i1len : i1 < s.length + 1 := by get_elem_tactic)
-    (j0len : j0 ≤ j1 := by get_elem_tactic) (j1len : j1 < s.length + 1 := by get_elem_tactic)
-    : s[i0].Ptp.obj s[j0].Ty ⟶ s[i1].Ptp.obj s[j1].Ty :=
+    (j0len : j0 ≤ j1 := by get_elem_tactic) (j1len : j1 < s.length + 1 := by get_elem_tactic) :
+    s[i0].Ptp.obj s[j0].Ty ⟶ s[i1].Ptp.obj s[j1].Ty :=
   (s.cartesianNatTrans i0 i1).app s[j0].Ty ≫
   s[i1].Ptp.map (s.homOfLe j0 j1).mapTy
 
 theorem mk_comp_cartesianNatTransTy {i0 i1 j0 j1 ii ilen jj jlen}
-    {Γ X} (A : y(Γ) ⟶ s[i0].Ty) (B : y(s[i0].ext A) ⟶ s[j0].Ty)
-    : PtpEquiv.mk s[i0] A B ≫ s.cartesianNatTransTy i0 i1 j0 j1 ii ilen jj jlen =
+    {Γ X} (A : y(Γ) ⟶ s[i0].Ty) (B : y(s[i0].ext A) ⟶ s[j0].Ty) :
+    PtpEquiv.mk s[i0] A B ≫ s.cartesianNatTransTy i0 i1 j0 j1 ii ilen jj jlen =
       PtpEquiv.mk s[i1] (A ≫ (s.homOfLe i0 i1).mapTy)
         (ym(substCons _ (s[i1].disp _) _ (s.unliftVar i0 i1 ii ilen A rfl) (by simp))
           ≫ B ≫ (s.homOfLe j0 j1).mapTy) := by
@@ -312,9 +323,12 @@ theorem mk_comp_cartesianNatTransTy {i0 i1 j0 j1 ii ilen jj jlen}
 theorem cartesianNatTransTy_fstProj {i0 i1 j0 j1 ii ilen jj jlen} :
     s.cartesianNatTransTy i0 i1 j0 j1 ii ilen jj jlen ≫ s[i1].uvPolyTp.fstProj s[j1].Ty =
     s[i0].uvPolyTp.fstProj s[j0].Ty ≫ (s.homOfLe i0 i1).mapTy := by
-  simp only [cartesianNatTransTy]
-  slice_lhs 2 3 => apply UvPoly.map_fstProj
-  apply cartesianNatTrans_fstProj
+  let α := (s.cartesianNatTrans i0 i1 ii ilen).app s[j0].Ty
+  let f := (s.homOfLe j0 j1 jj jlen).mapTy
+  exact (Category.assoc α (s[i1].Ptp.map f) (s[i1].uvPolyTp.fstProj s[j1].Ty)).trans
+    ((congrArg (fun k => α ≫ k) (UvPoly.map_fstProj s[i1].uvPolyTp f)).trans
+      (s.cartesianNatTrans_fstProj (i := i0) (j := i1) (ij := ii) (jlen := ilen)
+        (X := s[j0].Ty)))
 
 theorem hom_comp_trans (s : UHomSeq Ctx) (i j k : Nat) (ij : i < j) (jk : j < k)
     (klen : k < s.length + 1) :
@@ -433,7 +447,7 @@ def Pi : s[i].Ptp.obj s[j].Ty ⟶ s[max i j].Ty :=
 def lam : s[i].Ptp.obj s[j].Tm ⟶ s[max i j].Tm :=
   s.cartesianNatTransTm i (max i j) j (max i j) ≫ (nmPi (max i j)).lam
 
-def Pi_pb :
+theorem Pi_pb :
     IsPullback (s.lam ilen jlen) (s[i].Ptp.map s[j].tp) s[max i j].tp (s.Pi ilen jlen) := by
   have p1 : NatTrans.IsCartesian (s.cartesianNatTrans i (max i j)) := by
    dsimp only [UHomSeq.cartesianNatTrans]
@@ -507,8 +521,11 @@ theorem unLam_tp {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].
     (f : y(Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
     s.unLam ilen jlen A B f f_tp ≫ s[j].tp = B := by
   rw [unLam, ← PtpEquiv.snd_comp_right]
-  convert PtpEquiv.snd_mk s[i] A B using 2; simp
+  convert PtpEquiv.snd_mk s[i] A B using 2
+  exact (s.Pi_pb ilen jlen).lift_snd ..
 
+-- The pullback projections unfold the semireducible mkPi in their proof arguments.
+set_option backward.isDefEq.respectTransparency false in
 theorem comp_unLam {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
     (A : y(Γ) ⟶ s[i].Ty) (σA) (eq : ym(σ) ≫ A = σA) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (f : y(Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
@@ -555,14 +572,19 @@ theorem comp_mkApp {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
 theorem mkLam_unLam {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (f : y(Γ) ⟶ s[max i j].Tm) (f_tp : f ≫ s[max i j].tp = s.mkPi ilen jlen A B) :
     s.mkLam ilen jlen A (s.unLam ilen jlen A B f f_tp) = f := by
+  change f ≫ s[max i j].tp = PtpEquiv.mk s[i] A B ≫ s.Pi ilen jlen at f_tp
   let total : y(Γ) ⟶ s[i].Ptp.obj s[j].Tm :=
     (s.Pi_pb ilen jlen).lift f (PtpEquiv.mk s[i] A B) f_tp
   simp [mkLam, unLam]
   have : PtpEquiv.fst s[i] total = A := by
-    simp [total, PtpEquiv.fst, UvPoly.Equiv.fst]
+    change total ≫ s[i].uvPolyTp.fstProj s[j].Tm = A
     rw [← s[i].uvPolyTp.map_fstProj s[j].tp]
-    slice_lhs 1 2 => apply (s.Pi_pb ilen jlen).lift_snd
-    apply PtpEquiv.fst_mk
+    change (s.Pi_pb ilen jlen).lift f (PtpEquiv.mk s[i] A B) f_tp ≫
+      s[i].Ptp.map s[j].tp ≫ s[i].uvPolyTp.fstProj s[j].Ty = A
+    -- `Ptp` and the polynomial functor are definitionally equal but semireducible.
+    set_option backward.isDefEq.respectTransparency false in
+      rw [(s.Pi_pb ilen jlen).lift_snd_assoc]
+    exact PtpEquiv.fst_mk s[i] A B
   slice_lhs 1 1 => equals total =>
     apply PtpEquiv.ext _ (A := A) (by simp) (by simp [this]) (by simp [total])
   apply (s.Pi_pb ilen jlen).lift_fst
@@ -574,8 +596,14 @@ theorem unLam_mkLam {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[
     s.unLam ilen jlen A B (s.mkLam ilen jlen A t) lam_tp = t := by
   simp [mkLam, unLam]
   convert PtpEquiv.snd_mk s[i] A t using 2
-  apply (s.Pi_pb ilen jlen).hom_ext <;> simp
-  rw [PtpEquiv.mk_comp_right, t_tp]
+  congr 1
+  apply (s.Pi_pb ilen jlen).hom_ext
+  · exact (s.Pi_pb ilen jlen).lift_fst ..
+  -- The projection unfolds the semireducible mkPi in its proof argument.
+  · set_option backward.isDefEq.respectTransparency false in
+      rw [(s.Pi_pb ilen jlen).lift_snd]
+    rw [PtpEquiv.mk_comp_right, t_tp]
+  · apply proof_irrel_heq
 
 /--
 ```
@@ -645,7 +673,7 @@ def pair : UvPoly.compDom s[i].uvPolyTp s[j].uvPolyTp ⟶ s[max i j].Tm :=
       (s.homOfLe j (max i j)).pb.flip
   l ≫ (nmSig (max i j)).pair
 
-def Sig_pb : IsPullback
+theorem Sig_pb : IsPullback
     (s.pair ilen jlen)
   (s[i].uvPolyTp.compP s[j].uvPolyTp) s[max i j].tp
     (s.Sig ilen jlen) :=
@@ -689,6 +717,8 @@ theorem comp_mkPair {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
         (ym(σ) ≫ u) (by simp [u_tp, comp_sec_functor_map_assoc]) := by
   simp only [← Category.assoc, mkPair]; rw [compDomEquiv.comp_mk]
 
+-- The nested pullback presentation needs reducible instance matching.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem mkPair_tp {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (t : y(Γ) ⟶ s[i].Tm) (t_tp : t ≫ s[i].tp = A)
@@ -701,12 +731,16 @@ def mkFst {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     y(Γ) ⟶ s[i].Tm :=
   compDomEquiv.fst ((s.Sig_pb ilen jlen).lift p (PtpEquiv.mk _ A B) p_tp)
 
+-- The pullback projections require reducible instance matching.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem mkFst_tp {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (p : y(Γ) ⟶ s[max i j].Tm) (p_tp : p ≫ s[max i j].tp = s.mkSig ilen jlen A B) :
     s.mkFst ilen jlen A B p p_tp ≫ s[i].tp = A := by
   simp [mkFst, UvPoly.compP, compDomEquiv.fst_tp]
 
+-- The pullback projections require reducible instance matching.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem mkFst_mkPair {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (t : y(Γ) ⟶ s[i].Tm) (t_tp : t ≫ s[i].tp = A)
@@ -716,6 +750,8 @@ theorem mkFst_mkPair {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s
   convert compDomEquiv.fst_mk t t_tp B u u_tp using 2
   apply (s.Sig_pb ilen jlen).hom_ext <;> [simp; simp [compDomEquiv.mk, UvPoly.compP]]
 
+-- The pullback projections require reducible instance matching.
+set_option backward.isDefEq.respectTransparency false in
 theorem comp_mkFst {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
     (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (p : y(Γ) ⟶ s[max i j].Tm) (p_tp : p ≫ s[max i j].tp = s.mkSig ilen jlen A B) :
@@ -732,6 +768,8 @@ def mkSnd {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     y(Γ) ⟶ s[j].Tm :=
   compDomEquiv.snd ((s.Sig_pb ilen jlen).lift p (PtpEquiv.mk _ A B) p_tp)
 
+-- The pullback projections require reducible instance matching.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem mkSnd_mkPair {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (t : y(Γ) ⟶ s[i].Tm) (t_tp : t ≫ s[i].tp = A)
@@ -741,6 +779,8 @@ theorem mkSnd_mkPair {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s
   convert compDomEquiv.snd_mk t t_tp B u u_tp using 2
   apply (s.Sig_pb ilen jlen).hom_ext <;> [simp; simp [compDomEquiv.mk, UvPoly.compP]]
 
+-- The pullback projection requires reducible instance matching.
+set_option backward.isDefEq.respectTransparency false in
 protected theorem dependent_eq {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (p : y(Γ) ⟶ s[max i j].Tm) (p_tp : p ≫ s[max i j].tp = s.mkSig ilen jlen A B) :
     compDomEquiv.dependent ((s.Sig_pb ilen jlen).lift p (PtpEquiv.mk s[i] A B) p_tp) A
@@ -757,6 +797,8 @@ theorem mkSnd_tp {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].
   generalize_proofs h
   simp [mkSnd, compDomEquiv.snd_tp (eq := h), s.dependent_eq]; rfl
 
+-- The pullback projections require reducible instance matching.
+set_option backward.isDefEq.respectTransparency false in
 theorem comp_mkSnd {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
     (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A) ⟶ s[j].Ty)
     (p : y(Γ) ⟶ s[max i j].Tm) (p_tp : p ≫ s[max i j].tp = s.mkSig ilen jlen A B) :
@@ -777,7 +819,8 @@ theorem mkPair_mkFst_mkSnd {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty) (B : y(s[i].ext A)
   have := compDomEquiv.eta ((s.Sig_pb ilen jlen).lift p (PtpEquiv.mk _ A B) p_tp)
     (eq := by rw [← mkFst.eq_def, mkFst_tp])
   conv at this => enter [1, 3]; apply s.dependent_eq
-  simp [this]
+  rw [this]
+  exact (s.Sig_pb ilen jlen).lift_fst p (PtpEquiv.mk _ A B) p_tp
 
 end Sigma
 
@@ -836,6 +879,8 @@ theorem mkRefl_tp {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty)
     s.mkRefl ilen t ≫ s[i].tp = s.mkId ilen A t t t_tp t_tp :=
   (nmII i).mkRefl_tp t
 
+-- Let elaboration unfold substWk in the dependent equality proofs.
+set_option backward.isDefEq.respectTransparency false in
 /--
 ```
 Γ ⊢ᵢ t : A
@@ -858,10 +903,12 @@ def mkIdRec {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty)
     (ym(substWk _ (substWk _ (𝟙 _) _ _ (by simp [t_tp])) _ _ ?_) ≫ M)
     r ?_ u (t_tp ▸ u_tp) h ?_
   · simp [← B_eq, comp_mkId, ← mkId.eq_def]; congr 1 <;> simp [t_tp, substWk]
-  · simp [r_tp]; rw [← Functor.map_comp_assoc]; congr 1
+  · rw [r_tp, ← Functor.map_comp_assoc]; congr 1
     apply (s[i].disp_pullback _).hom_ext <;> simp [IdIntro.reflSubst, mkRefl, substWk, sec]
   · simp [h_tp, mkId, IdIntro.mkId]
 
+-- Unfold motiveCtx when checking dependent substitution equations.
+set_option backward.isDefEq.respectTransparency false in
 theorem comp_mkIdRec {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
     (A : y(Γ) ⟶ s[i].Ty) (σA) (σA_eq : ym(σ) ≫ A = σA)
     (t t_tp B B_eq σB) (σB_eq : ym(s[i].substWk σ _ _ σA_eq) ≫ B = σB)
@@ -907,6 +954,8 @@ theorem comp_mkIdRec {Δ Γ : Ctx} (σ : Δ ⟶ Γ)
     · simp [substWk_disp_functor_map_assoc]
     · simp [substWk_disp_functor_map, substWk_disp_functor_map_assoc]
 
+-- Unfold motiveCtx when checking dependent substitution equations.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem mkIdRec_tp {Γ : Ctx} (A : y(Γ) ⟶ s[i].Ty)
     (t t_tp B B_eq M) (r : y(Γ) ⟶ s[j].Tm) (r_tp u u_tp h h_tp) :

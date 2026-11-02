@@ -203,10 +203,10 @@ attribute [gcongr] EqTm.cong_idRec
 
 /-! ## Lemmas for substitution -/
 
-attribute [gcongr] WfTp.subst_eq
-attribute [gcongr] EqTp.subst_eq
-attribute [gcongr] WfTm.subst_eq
-attribute [gcongr] EqTm.subst_eq
+attribute [gcongr only] WfTp.subst_eq
+attribute [gcongr only] EqTp.subst_eq
+attribute [gcongr only] WfTm.subst_eq
+attribute [gcongr only] EqTm.subst_eq
 
 attribute [gcongr] EqTp.subst
 attribute [gcongr] EqTm.subst

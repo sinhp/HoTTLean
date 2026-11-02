@@ -72,8 +72,11 @@ partial def lookupAxiom (E : Q(Axioms Lean.Name)) (c : Q(Lean.Name)) : Lean.Meta
         {Lean.indentD "="}\
           {Lean.indentExpr c |>.nest 2}"
   | ~q(CheckedAx.snocAxioms _) =>
-    let E ← Lean.Meta.unfoldDefinition E
-    lookupAxiom E c
+    let E' : Q(Axioms Lean.Name) ← Lean.Meta.unfoldDefinition E
+    have : $E' =Q $E := .unsafeIntro
+    match ← lookupAxiom E' c with
+    | .inl ⟨A, l, h⟩ => return .inl ⟨A, l, q($h)⟩
+    | .inr h => return .inr q($h)
   | _ => throwError "unsupported axiom environment{Lean.indentExpr E}"
 
 partial def checkAxiomsLe (E E' : Q(Axioms Lean.Name)) : Lean.MetaM Q($E ≤ $E') := do
@@ -104,8 +107,9 @@ variable (E : Q(Axioms Lean.Name)) (Ewf : Q(($E).Wf))
 
 partial def checkTp (vΓ : Q(TpEnv Lean.Name)) (l : Q(Nat)) (T : Q(Expr Lean.Name)) :
     TypecheckerM Q(∀ {Γ}, TpEnvEqCtx $E $vΓ Γ → $E ∣ Γ ⊢[$l] ($T)) :=
-  Lean.withTraceNode traceClsTypechecker (fun e =>
-    return m!"{Lean.exceptEmoji e} {vΓ} ⊢[{l}] {T}") do
+  Lean.withTraceNode (ε := Lean.Exception) traceClsTypechecker (fun
+    | .ok _ => return m!"✅️ {vΓ} ⊢[{l}] {T}"
+    | .error _ => return m!"❌️ {vΓ} ⊢[{l}] {T}") do
   let key := (⟨vΓ⟩, ⟨l⟩, ⟨T⟩)
   if let some pf := (← get).checkTp[key]? then return pf
   eventually (fun pf =>
@@ -165,8 +169,9 @@ partial def checkTm (vΓ : Q(TpEnv Lean.Name)) (l : Q(Nat))
     (vT : Q(Val Lean.Name)) (t : Q(Expr Lean.Name)) :
     TypecheckerM Q(∀ {Γ T}, TpEnvEqCtx $E $vΓ Γ → ValEqTp $E Γ $l $vT T →
       $E ∣ Γ ⊢[$l] ($t) : T) := do
-  Lean.withTraceNode traceClsTypechecker (fun e =>
-    return m!"{Lean.exceptEmoji e} {vΓ} ⊢[{l}] {t} ⇐ {vT}") do
+  Lean.withTraceNode (ε := Lean.Exception) traceClsTypechecker (fun
+    | .ok _ => return m!"✅️ {vΓ} ⊢[{l}] {t} ⇐ {vT}"
+    | .error _ => return m!"❌️ {vΓ} ⊢[{l}] {t} ⇐ {vT}") do
   let key := (⟨vΓ⟩, ⟨l⟩, ⟨vT⟩, ⟨t⟩)
   if let some pf := (← get).checkTm[key]? then return pf
   eventually (fun pf =>

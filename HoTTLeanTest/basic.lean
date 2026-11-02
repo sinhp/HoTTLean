@@ -84,6 +84,6 @@ mltt noncomputable def c' : Cb := c
 
 /-! ## Using `sorry` -/
 
-/-- warning: declaration uses 'sorry' -/
+/-- warning: declaration uses `sorry` -/
 #guard_msgs in
 mltt def foo : Type := sorry

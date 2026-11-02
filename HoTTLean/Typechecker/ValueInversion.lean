@@ -139,7 +139,7 @@ theorem ValEqTm.inv_neut {Γ vA A vt t l} : ValEqTm E Γ l (.neut vt vA) t A →
   all_goals grind [NeutEqTm.conv_neut, ValEqTp.conv_tp]
 
 theorem NeutEqTm.inv_ax {Γ C c vA t l₀} : NeutEqTm E Γ l₀ (.ax c vA) t C → ∃ Al,
-   l₀ = Al.val.2 ∧ E c = some Al ∧ ValEqTp E Γ Al.val.2 vA Al.val.1 ∧
+    l₀ = Al.val.2 ∧ E c = some Al ∧ ValEqTp E Γ Al.val.2 vA Al.val.1 ∧
     (E ∣ Γ ⊢[l₀] t ≡ .ax c Al.val.1 : C) ∧ (E ∣ Γ ⊢[l₀] C ≡ Al.val.1) := by
   suffices ∀ {Γ l₀ vt t C}, NeutEqTm E Γ l₀ vt t C → ∀ {c vA}, vt = .ax c vA → ∃ Al,
       l₀ = Al.val.2 ∧ E c = some Al ∧ ValEqTp E Γ Al.val.2 vA Al.val.1 ∧
@@ -203,10 +203,12 @@ theorem NeutEqTm.inv_fst {Γ C vp f l₀ l l'} : NeutEqTm E Γ l₀ (.fst l l' v
 
 theorem NeutEqTm.inv_snd {Γ C vp s l₀ l l'} : NeutEqTm E Γ l₀ (.snd l l' vp) s C →
     l₀ = l' ∧ ∃ A B p, NeutEqTm E Γ (max l l') vp p (.sigma l l' A B) ∧
-      (E ∣ Γ ⊢[l'] s ≡ .snd l l' A B p : C) ∧ (E ∣ Γ ⊢[l'] C ≡ B.subst (Expr.fst l l' A B p).toSb) := by
+       (E ∣ Γ ⊢[l'] s ≡ .snd l l' A B p : C) ∧
+       (E ∣ Γ ⊢[l'] C ≡ B.subst (Expr.fst l l' A B p).toSb) := by
   suffices ∀ {Γ l₀ vn n C}, NeutEqTm E Γ l₀ vn n C → ∀ {vp l l'}, vn = .snd l l' vp →
       l₀ = l' ∧ ∃ A B p, NeutEqTm E Γ (max l l') vp p (.sigma l l' A B) ∧
-      (E ∣ Γ ⊢[l'] n ≡ .snd l l' A B p : C) ∧ (E ∣ Γ ⊢[l'] C ≡ B.subst (Expr.fst l l' A B p).toSb) from
+       (E ∣ Γ ⊢[l'] n ≡ .snd l l' A B p : C) ∧
+       (E ∣ Γ ⊢[l'] C ≡ B.subst (Expr.fst l l' A B p).toSb) from
     fun h => this h rfl
   mutual_induction NeutEqTm
   all_goals intros; try exact True.intro

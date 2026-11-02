@@ -11,6 +11,9 @@ open Limits PartialProduct
 universe v u
 variable {C : Type u} [Category.{v} C] [HasPullbacks C]
 
+-- These local settings let simp reduce the slice functor types in the mate construction.
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
 theorem η_naturality {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     (e : E ⟶ E') (b : B ⟶ B') (hp : IsPullback P.p e b P'.p) :
     Functor.whiskerLeft (Over.pullback P.p) (Over.mapPullbackAdj e).unit ≫
@@ -20,8 +23,9 @@ theorem η_naturality {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
         |>.trans (Over.pullbackComp e P'.p)).inv =
     Functor.whiskerRight (Over.mapPullbackAdj b).unit (Over.pullback P.p) := by
   ext X
-  simp [pullbackMapIsoSquare, ← pullback_map_eq_eqToHom rfl hp.w.symm, Over.pullbackComp]
-  ext <;> simp [pullback.condition]
+  simp [pullbackMapIsoSquare, asIso, ← pullback_map_eq_eqToHom rfl hp.w.symm,
+    Over.pullbackComp, Over.pullback, Over.map]
+  ext <;> simp [Category.assoc, pullback.map, pullback.condition]
 
 theorem η_naturality' {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     (e : E ⟶ E') (b : B ⟶ B')
@@ -40,22 +44,7 @@ theorem η_naturality' {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     Functor.whiskerRight α.hom ebk ≫
     Functor.whiskerLeft bmap bb.inv =
     Functor.whiskerRight (Over.mapPullbackAdj b).unit pbk := by
-  intro bmap emap pbk ebk bbk p'bk α bb
-  ext X
-  simp[bb,α,pullbackMapIsoSquare,pbk,bmap,ebk,emap,bbk,Category.assoc]
-  ext
-  · simp[← Category.assoc,← pullback_map_eq_eqToHom rfl hp.w.symm]
-    simp[Over.pullbackComp]
-    slice_lhs 2 3 => apply pullback.lift_fst
-    simp[← Category.assoc]
-  · rw[← pullback_map_eq_eqToHom rfl hp.w.symm]
-    simp[Over.pullbackComp]
-    slice_lhs 2 3 => apply pullback.lift_snd
-    simp[← Category.assoc,pullback.condition]
-  rw[← Category.assoc,← pullback_map_eq_eqToHom rfl hp.w.symm]
-  simp[Over.pullbackComp,pullback.map]
-  slice_lhs 2 3 => apply pullback.lift_snd
-  simp
+  exact η_naturality e b hp
 
 
 open ExponentiableMorphism in
@@ -69,9 +58,9 @@ theorem pushforwardPullbackIsoSquare_eq {C} [Category C] [HasPullbacks C] {X Y Z
       ((adj f).comp (Over.mapPullbackAdj h))
       (asIso (Over.pullbackMapTwoSquare h f g k pb.toCommSq)) := by
   simp [pushforwardPullbackIsoSquare, Over.pushforwardPullbackTwoSquare]
-  ext1; simp
+  ext1; rfl
 
-open ExponentiableMorphism Functor in
+open ExponentiableMorphism CategoryTheory.Functor in
 theorem ev_naturality {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     (e : E ⟶ E') (b : B ⟶ B')
     (hp : IsPullback P.p e b P'.p) :
@@ -99,7 +88,10 @@ theorem ev_naturality {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
   rw [← isoWhiskerLeft_inv, ← Category.assoc, Iso.comp_inv_eq,
     ← isoWhiskerRight_hom, ← Iso.eq_comp_inv] at this
   simp [β, pushforwardPullbackIsoSquare_eq, ev] at this ⊢
-  rw [show inv _ (I := _) = α.inv by simp [α, pullbackMapIsoSquare]]
+  change whiskerRight (conjugateEquiv ((adj P.p).comp (Over.mapPullbackAdj e))
+    ((Over.mapPullbackAdj b).comp (adj P'.p)) α.inv) pbk ≫
+    whiskerLeft p'fwd bb.hom ≫ whiskerRight (adj P'.p).counit ebk =
+    whiskerLeft ebk (adj P.p).counit
   generalize Over.mapPullbackAdj e = adje, Over.mapPullbackAdj b = adjb at *
   ext X : 2; simp
   have := congr(
@@ -127,24 +119,24 @@ theorem ev_naturality {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
 theorem associator_eq_id {C D E E'} [Category C] [Category D] [Category E] [Category E']
     (F : C ⥤ D) (G : D ⥤ E) (H : E ⥤ E') : Functor.associator F G H = Iso.refl (F ⋙ G ⋙ H) := rfl
 
-open Functor in
+open CategoryTheory.Functor in
 theorem whiskerRight_left' {C D E B} [Category C] [Category D] [Category E] [Category B]
     (F : B ⥤ C) {G H : C ⥤ D} (α : G ⟶ H) (K : D ⥤ E) :
     whiskerRight (whiskerLeft F α) K = whiskerLeft F (whiskerRight α K) := by
   aesop_cat
 
-open Functor in
+open CategoryTheory.Functor in
 theorem id_whiskerLeft' {C D} [Category C] [Category D] {G H : C ⥤ D} (α : G ⟶ H) :
     whiskerLeft (𝟭 C) α = α := by
   aesop_cat
 
-open Functor in
+open CategoryTheory.Functor in
 theorem whiskerLeft_twice' {C D E B} [Category C] [Category D] [Category E] [Category B]
     (F : B ⥤ C) (G : C ⥤ D) {H K : D ⥤ E} (α : H ⟶ K) :
     whiskerLeft F (whiskerLeft G α) = whiskerLeft (F ⋙ G) α := by
   aesop_cat
 
-open Functor in
+open CategoryTheory.Functor in
 theorem whiskerRight_twice' {C D E B} [Category C] [Category D] [Category E] [Category B]
     {H K : B ⥤ C} (F : C ⥤ D) (G : D ⥤ E) (α : H ⟶ K) :
     whiskerRight (whiskerRight α F) G = whiskerRight α (F ⋙ G) := by
@@ -152,20 +144,26 @@ theorem whiskerRight_twice' {C D E B} [Category C] [Category D] [Category E] [Ca
 
 variable [HasTerminal C]
 
-open Over ExponentiableMorphism Functor in
+-- This local setting lets simp reduce the mate through the TwoSquare wrapper.
+open Over ExponentiableMorphism CategoryTheory.Functor in
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma cartesianNatTrans_fstProj {E B E' B' : C} (P : UvPoly E B) (P' : UvPoly E' B')
     (e : E ⟶ E') (b : B ⟶ B') (pb : IsPullback P.p e b P'.p) (X : C) :
     (P.cartesianNatTrans P' b e pb).app X ≫ P'.fstProj X = P.fstProj X ≫ b := by
   let m := whiskerRight (Over.starPullbackIsoStar e).inv (pushforward P.p) ≫
     whiskerLeft (Over.star E') (pushforwardPullbackIsoSquare pb.flip).inv
-  simp [cartesianNatTrans, pullbackForgetTwoSquare, Adjunction.id, Over.mapForget]
+  simp [UvPoly.apply, fstProj, functor, cartesianNatTrans, pullbackForgetTwoSquare,
+    Adjunction.id, Over.mapForget, TwoSquare.vComp, TwoSquare.mk, TwoSquare.natTrans, mateEquiv]
   rw [← Category.assoc]
   change (m.app X).left ≫ pullback.fst (P'.fstProj X) b ≫ P'.fstProj X = P.fstProj X ≫ b
   rw [pullback.condition, ← Category.assoc]; congr 1
-  simpa using Over.w (m.app X)
+  simpa [fstProj, UvPoly.apply, functor] using Over.w (m.app X)
 
-open ExponentiableMorphism Functor in
+open ExponentiableMorphism CategoryTheory.Functor in
+-- Let tactics reduce the slice functor objects in this mate calculation.
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
 set_option maxHeartbeats 300000 in
 theorem fan_snd_map' {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     (e : E ⟶ E') (b : B ⟶ B') (A : C) (hp : IsPullback P.p e b P'.p) :
@@ -211,15 +209,15 @@ theorem fan_snd_map' {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
       TwoSquare.natTrans]
     slice_lhs 5 5 => exact (pullback_map_eq_eqToHom rfl hp.w).symm
     slice_lhs 10 10 => enter [2,2,2,2]; apply Category.comp_id
-    ext <;> simp
-    · conv_rhs => apply pullback.lift_fst
-      slice_lhs 1 2 => apply pullback.lift_fst
-      simp [← p_eq, UB, bγ, p'fwd, pfwd, Over.pullbackForgetTriangle,
-        Over.pullbackForgetTwoSquare, Adjunction.id, TwoSquare.natTrans, Over.mapForget]
+    ext <;> simp [pullback.map, Category.assoc, ← p_eq, UB, bγ,
+      Over.pullbackForgetTriangle, Over.pullbackForgetTwoSquare, Adjunction.id,
+      TwoSquare.natTrans, Over.mapForget]
+    all_goals simp [fstProj, UvPoly.apply, functor, pfwd, p'fwd, sE, sE']
+    · erw [pullback.lift_fst_assoc]
+      simp only [Category.assoc]
       congr 2
-      symm; apply Category.id_comp
-    · slice_lhs 1 2 => apply pullback.lift_snd
-      symm; apply pullback.lift_snd
+      exact (Category.id_comp _).symm
+    · erw [pullback.lift_snd_assoc]
   let Z : sE ⋙ pfwd ⋙ pbk ⋙ UE ⟶ sE ⋙ UE :=
     whiskerRight (sE.whiskerLeft (ev P.p)) UE
   let Z' : sE' ⋙ p'fwd ⋙ p'bk ⋙ UE' ⟶ sE' ⋙ UE' :=
@@ -256,9 +254,11 @@ theorem fan_snd_map' {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
   slice_lhs 1 2 => rw [← this]
   slice_lhs 2 3 => apply Category.comp_id
   simp [α, Over.starPullbackIsoStar]
-  slice_lhs 5 6 => apply pullback.lift_fst
-  simp [Over.mapForget]
+  simp [pullback.map, sE', Over.star]
 
+-- The slice functor and polynomial application reduce to the same object.
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
 open ExponentiableMorphism in
 theorem fan_snd_map {E B A E' B' A' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     (e : E ⟶ E') (b : B ⟶ B') (a : A ⟶ A')
@@ -282,6 +282,9 @@ theorem fan_snd_map {E B A E' B' A' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
   · slice_rhs 2 3 => apply pullback.lift_snd
     slice_rhs 1 2 => apply pullback.lift_snd
 
+-- Reduce polynomial application to the slice functor object for this proof.
+set_option backward.defeqAttrib.useBackward true in
+set_option backward.isDefEq.respectTransparency false in
 open ExponentiableMorphism in
 theorem ε_map {E B A E' B' A' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     (e : E ⟶ E') (b : B ⟶ B') (a : A ⟶ A')
@@ -289,11 +292,16 @@ theorem ε_map {E B A E' B' A' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     pullback.map (P.fstProj A) P.p (P'.fstProj A') P'.p
       ((P.cartesianNatTrans P' b e hp).app A ≫ P'.functor.map a) e b (by simp) hp.w ≫ ε P' A' =
     ε P A ≫ prod.map e a := by
-  ext
-  · simp
-    slice_rhs 1 2 => apply by simpa using ((ev P.p).app ((Over.star E).obj A)).w
-    slice_lhs 2 3 => apply by simpa using ((ev P'.p).app ((Over.star E').obj A')).w
-    apply pullback.lift_snd
+  have h (E B X : C) (Q : UvPoly E B) :
+      ε Q X ≫ prod.fst = pullback.snd (Q.fstProj X) Q.p := by
+    simpa [ε, fstProj, Over.star_obj_hom] using ((ev Q.p).app ((Over.star E).obj X)).w
+  apply prod.hom_ext
+  · simp only [Category.assoc, prod.map_fst]
+    rw [h]
+    calc
+      _ = pullback.snd (P.fstProj A) P.p ≫ e := pullback.lift_snd _ _ _
+      _ = (ε P A ≫ prod.fst) ≫ e := congrArg (fun f => f ≫ e) (h E B A P).symm
+      _ = _ := Category.assoc _ _ _
   · simpa [fan_snd] using fan_snd_map e b a hp
 
 namespace Equiv
@@ -304,7 +312,7 @@ def fst (pair : Γ ⟶ P @ X) :
     Γ ⟶ B :=
   fan P X |>.extend pair |>.fst
 
-lemma fst_eq (pair : Γ ⟶ P @ X) : fst P X pair = pair ≫ P.fstProj X := by simp [fst]
+lemma fst_eq (pair : Γ ⟶ P @ X) : fst P X pair = pair ≫ P.fstProj X := rfl
 
 def snd (pair : Γ ⟶ P @ X) :
     pullback (fst P X pair) P.p ⟶ X :=
@@ -329,7 +337,7 @@ theorem mk_eq_mk' (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
 @[simp]
 lemma fst_mk (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
     fst P X (mk P X b x) = b := by
-  simp [fst, mk]
+  exact UvPoly.lift_fst (P := P) (b := b) (e := x)
 
 @[simp]
 lemma fst_mk' (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X) :
@@ -345,10 +353,14 @@ theorem fst_comp_left (pair : Γ ⟶ P @ X) {Δ} (f : Δ ⟶ Γ) :
     fst P X (f ≫ pair) = f ≫ fst P X pair := by simp [fst_eq]
 
 theorem fst_comp_right (pair : Γ ⟶ P @ X) : fst P Y (pair ≫ P.functor.map f) = fst P X pair := by
-  simp [fst_eq]
+  exact (Category.assoc pair (P.functor.map f) (P.fstProj Y)).trans
+    (congrArg (fun k => pair ≫ k) (UvPoly.map_fstProj P f))
 
+-- Simplification must see the apex of the polynomial fan.
+set_option backward.isDefEq.respectTransparency false in
 lemma snd'_eq (pair : Γ ⟶ P @ X) {R f g} (H : IsPullback (P := R) f g (fst P X pair) P.p) :
-    snd' P X pair H = pullback.lift (f ≫ pair) g (by simpa using H.w) ≫ (fan P X).snd := by
+    snd' P X pair H = pullback.lift (f ≫ pair) g
+      (by simpa only [fst_eq, fan_fst, Category.assoc] using H.w) ≫ (fan P X).snd := by
   simp [snd', snd]
   simp only [← Category.assoc]; congr! 2
   ext <;> simp
@@ -356,14 +368,18 @@ lemma snd'_eq (pair : Γ ⟶ P @ X) {R f g} (H : IsPullback (P := R) f g (fst P 
     exact H.isoPullback_hom_fst
   · exact H.isoPullback_hom_snd
 
+-- The fan apex is definitionally the polynomial object; expose it during elaboration.
+set_option backward.isDefEq.respectTransparency false in
 /-- Switch the selected pullback `R` used in `UvPoly.Equiv.snd'` with a different pullback `R'`. -/
 lemma snd'_eq_snd' (pair : Γ ⟶ P @ X) {R f g} (H : IsPullback (P := R) f g (fst P X pair) P.p)
     {R' f' g'} (H' : IsPullback (P := R') f' g' (fst P X pair) P.p) :
     snd' P X pair H = (H.isoIsPullback _ _ H').hom ≫ snd' P X pair H' := by
-  simp [snd'_eq, ← Category.assoc]
-  congr 2
-  ext <;> simp
+  simp only [snd'_eq]
+  simp only [← Category.assoc]
+  apply congrArg (fun k => k ≫ (fan P X).snd)
+  apply pullback.hom_ext <;> simp
 
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma snd'_mk' (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X) :
     snd' P X (mk' P X b H x) (by rwa [fst_mk']) = x := by
@@ -391,6 +407,8 @@ lemma snd_mk (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
     snd P X (mk P X b x) = eqToHom (by simp) ≫ x := by
   apply eq_of_heq; rw [heq_eqToHom_comp_iff]; apply snd_mk_heq
 
+-- The fan point is definitionally the polynomial object.
+set_option backward.isDefEq.respectTransparency false in
 theorem snd'_comp_left (pair : Γ ⟶ P @ X)
     {R f g} (H : IsPullback (P := R) f g (fst P X pair) P.p)
     {Δ} (σ : Δ ⟶ Γ)
@@ -398,11 +416,10 @@ theorem snd'_comp_left (pair : Γ ⟶ P @ X)
     snd' P X (σ ≫ pair) (by convert H'; rw [fst_comp_left]) =
     H.lift (f' ≫ σ) g' (by simp [H'.w]) ≫ snd' P X pair H := by
   simp only [snd'_eq, ← Category.assoc]
-  congr 2
-  ext
-  · simp
-  · simp
+  apply congrArg (fun k => k ≫ (fan P X).snd)
+  apply pullback.hom_ext <;> simp [Category.assoc]
 
+set_option backward.isDefEq.respectTransparency false in
 theorem snd'_comp_right (pair : Γ ⟶ P @ X)
     {R f1 f2} (H : IsPullback (P := R) f1 f2 (fst P X pair) P.p) :
     snd' P Y (pair ≫ P.functor.map f) (by rwa [fst_comp_right]) =
@@ -424,24 +441,27 @@ theorem snd_comp_right (pair : Γ ⟶ P @ X) : snd P Y (pair ≫ P.functor.map f
   rw [snd_eq_snd', snd'_comp_right, snd', Category.assoc, ← eqToIso.hom]; congr! 2
   exact IsPullback.isoPullback_eq_eqToIso_left (fst_comp_right _ _ _ f pair) P.p
 
+-- Expose the fan apex when comparing the chosen pullback projections.
+set_option backward.isDefEq.respectTransparency false in
 lemma ext' {pair₁ pair₂ : Γ ⟶ P @ X}
     {R f g} (H : IsPullback (P := R) f g (fst P X pair₁) P.p)
     (h1 : fst P X pair₁ = fst P X pair₂)
     (h2 : snd' P X pair₁ H = snd' P X pair₂ (by rwa [h1] at H)) :
     pair₁ = pair₂ := by
   simp [fst_eq] at h1 H
-  apply partialProd.hom_ext ⟨fan P X, isLimitFan P X⟩ h1
+  apply UvPoly.hom_ext (P := P) (X := X) h1
   refine (cancel_epi H.isoPullback.hom).1 ?_
-  convert h2 using 1 <;> (
-    simp [snd'_eq, comparison_pullback.map, partialProd.snd, partialProd.cone]
-    simp only [← Category.assoc]; congr! 2
-    ext <;> simp)
-  · slice_lhs 2 3 => apply pullback.lift_fst
-    slice_lhs 1 2 => apply H.isoPullback_hom_fst
-    simp
-  · slice_lhs 2 3 => apply pullback.lift_snd
-    slice_lhs 1 2 => apply H.isoPullback_hom_snd
-    simp
+  convert h2 using 1 <;>
+    simp only [snd'_eq, comparison_pullback.map, ← Category.assoc] <;>
+    congr 1 <;>
+    apply pullback.hom_ext <;>
+    simp [Category.assoc] <;>
+    first
+    | exact H.isoPullback_hom_snd
+    | exact (Category.assoc _ _ _).symm.trans
+        (congrArg (fun k => k ≫ pair₁) H.isoPullback_hom_fst)
+    | exact (Category.assoc _ _ _).symm.trans
+        (congrArg (fun k => k ≫ pair₂) H.isoPullback_hom_fst)
 
 /-- Switch the selected pullback `R` used in `UvPoly.Equiv.mk'` with a different pullback `R'`. -/
 theorem mk'_eq_mk' (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X)
@@ -466,12 +486,19 @@ lemma eta (pair : Γ ⟶ P @ X) :
 
 lemma mk'_comp_right (b : Γ ⟶ B) {R f1 f2} (H : IsPullback (P := R) f1 f2 b P.p) (x : R ⟶ X) :
     mk' P X b H x ≫ P.functor.map f = mk' P Y b H (x ≫ f) := by
-  refine .symm <| ext' _ _ (by rwa [fst_mk']) (by simp [fst_comp_right]) ?_
-  rw [snd'_comp_right (H := by rwa [fst_mk'])]; simp
+  have hfst : fst P Y (mk' P Y b H (x ≫ f)) =
+      fst P Y (mk' P X b H x ≫ P.functor.map f) :=
+    (fst_mk' P Y b H (x ≫ f)).trans
+      ((fst_comp_right P X Y f (mk' P X b H x)).trans (fst_mk' P X b H x)).symm
+  refine .symm <| ext' _ _ (by rwa [fst_mk']) hfst ?_
+  exact (snd'_mk' P Y b H (x ≫ f)).trans
+    ((snd'_comp_right P X Y f (mk' P X b H x) (by rwa [fst_mk'])).trans
+      (congrArg (fun k => k ≫ f) (snd'_mk' P X b H x))).symm
 
 lemma mk_comp_right (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) :
     mk P X b x ≫ P.functor.map f = mk P Y b (x ≫ f) := by
-  simp [mk_eq_mk', mk'_comp_right]
+  simpa only [mk_eq_mk'] using
+    (mk'_comp_right P X Y f b (.of_hasPullback b P.p) x)
 
 theorem mk'_comp_left {Δ}
     (b : Γ ⟶ B) {R f g} (H : IsPullback (P := R) f g b P.p) (x : R ⟶ X) (σ : Δ ⟶ Γ)
@@ -490,8 +517,20 @@ theorem mk_comp_left {Δ} (b : Γ ⟶ B) (x : pullback b P.p ⟶ X) (σ: Δ ⟶ 
       (pullback.map _ _ _ _ σ (𝟙 _) (𝟙 _) (by simp) (by simp) ≫ x) := by
   simp only [mk_eq_mk']
   rw [mk'_comp_left (H := .of_hasPullback _ _) (H' := .of_hasPullback _ _) (eq := rfl)]
-  congr 2; ext <;> simp
+  congr 2
+  apply pullback.hom_ext
+  · simp only [IsPullback.lift_fst]
+    exact (pullback.lift_fst (f := b) (g := P.p)
+      (pullback.fst (σ ≫ b) P.p ≫ σ)
+      (pullback.snd (σ ≫ b) P.p ≫ 𝟙 E) _).symm
+  · simp only [IsPullback.lift_snd]
+    exact (Category.comp_id _).symm.trans
+      (pullback.lift_snd (f := b) (g := P.p)
+        (pullback.fst (σ ≫ b) P.p ≫ σ)
+        (pullback.snd (σ ≫ b) P.p ≫ 𝟙 E) _).symm
 
+-- Expose the polynomial objects in the natural transformation components.
+set_option backward.isDefEq.respectTransparency false in
 lemma mk'_comp_cartesianNatTrans_app {E' B' Γ X : C} {P' : UvPoly E' B'}
     (y : Γ ⟶ B) (R f g) (H : IsPullback (P := R) f g y P.p)
     (x : R ⟶ X) (e : E ⟶ E') (b : B ⟶ B')
@@ -505,7 +544,17 @@ lemma mk'_comp_cartesianNatTrans_app {E' B' Γ X : C} {P' : UvPoly E' B'}
   have := snd'_mk' P X y H x
   rw [snd'_eq, ← fan_snd_map' _ _ X hp] at this
   refine .trans ?_ this
-  simp only [← Category.assoc]; congr 1; ext <;> simp
+  simp only [← Category.assoc]; congr 1; ext
+  · change _ = _ ≫ pullback.fst (P'.fstProj X) P'.p
+    simp only [pullback.map, pullback.lift_fst, Category.assoc]
+    symm
+    slice_lhs 1 2 => apply pullback.lift_fst
+    exact Category.assoc _ _ _
+  · change _ = _ ≫ pullback.snd (P'.fstProj X) P'.p
+    simp only [pullback.map, pullback.lift_snd, Category.assoc]
+    rw [← Category.assoc]
+    exact congrArg (fun k => k ≫ e)
+      (pullback.lift_snd (f := P.fstProj X) (g := P.p) (f ≫ mk' P X y H x) g _).symm
 
 end Equiv
 
@@ -534,8 +583,8 @@ def compDomEquiv {Γ E B D A : 𝒞} {P : UvPoly E B} {Q : UvPoly D A} :
           apply Eq.congr_right
           congr 1
           apply pullback.hom_ext
-          · simp [pullbackHomEquiv]
-          · simp [pullbackHomEquiv]))
+          · exact (pullback.lift_fst (f := P.fstProj A) (g := P.p) _ _ _).symm
+          · exact (pullback.lift_snd (f := P.fstProj A) (g := P.p) _ _ _).symm))
   _ ≃ _ := {
       -- TODO should be general tactic for this?
       toFun x := ⟨ x.2.1.1, x.2.1.2.1 , x.1 , x.2.1.2.2, x.2.2 ⟩
@@ -551,9 +600,16 @@ def compP {E B D A : C} (P : UvPoly E B) (Q : UvPoly D A) : compDom P Q ⟶ P @ 
     (β : Γ ⟶ D) (w : AB ≫ P.fstProj A = α ≫ P.p)
     (h : β ≫ Q.p = pullback.lift AB α w ≫ (PartialProduct.fan P A).snd) :
     compDomEquiv.symm ⟨AB, α, β, w, h⟩ ≫ P.compP Q = AB := by
-   simp [compDomEquiv, compP, Equiv.psigmaCongrProp, Equiv.sigmaCongrRight_symm,
-    Equiv.coe_fn_symm_mk, pullbackHomEquiv]
+  change pullback.lift β (pullback.lift AB α w) h ≫
+    (pullback.snd Q.p (fan P A).snd ≫ pullback.fst (P.fstProj A) P.p) = AB
+  exact (Category.assoc _ _ _).symm.trans
+    ((congrArg (fun k => k ≫ pullback.fst (P.fstProj A) P.p)
+      (pullback.lift_snd (f := Q.p) (g := (fan P A).snd) β
+        (pullback.lift AB α w) h)).trans
+      (pullback.lift_fst (f := P.fstProj A) (g := P.p) AB α w))
 
+-- Reduce the polynomial functor objects when elaborating the pullback squares.
+set_option backward.isDefEq.respectTransparency false in
 def compDomMap {E B D A E' B' D' A' : 𝒞} {P : UvPoly E B} {Q : UvPoly D A}
     {P' : UvPoly E' B'} {Q' : UvPoly D' A'}
     (e : E ⟶ E') (d : D ⟶ D') (b : B ⟶ B') (a : A ⟶ A')
@@ -564,6 +620,8 @@ def compDomMap {E B D A E' B' D' A' : 𝒞} {P : UvPoly E B} {Q : UvPoly D A}
   let r := pullback.map (P.fstProj A) P.p (P'.fstProj A') P'.p pa e b (by simp [pa, p]) hp.w
   refine pullback.map _ _ _ _ d r a hq.w (fan_snd_map _ _ _ hp).symm
 
+-- Reduce the same functor objects in the pasted pullback squares.
+set_option backward.isDefEq.respectTransparency false in
 theorem compDomMap_isPullback {E B D A E' B' D' A' : 𝒞} {P : UvPoly E B} {Q : UvPoly D A}
     {P' : UvPoly E' B'} {Q' : UvPoly D' A'}
     (e : E ⟶ E') (d : D ⟶ D') (b : B ⟶ B') (a : A ⟶ A')
@@ -578,7 +636,7 @@ theorem compDomMap_isPullback {E B D A E' B' D' A' : 𝒞} {P : UvPoly E B} {Q :
   · refine hq.flip.back_face_of_comm_cube _ _ _ _ _ _ _ _ _ _ _ _ (by simp [compDomMap]) ?_ ?_
       (.of_hasPullback ..) (.of_hasPullback ..)
     · exact ⟨fan_snd_map _ _ a hp⟩
-    · constructor; simp [compDomMap]; ext <;> simp [p]
+    · constructor; simp [compDomMap]; ext <;> simp [p, fan]
   · exact hp.flip.back_face_of_comm_cube _ _ _ _ _ _ _ _ _ _ _ _
       (by simp) (by simp [p]) (by simp) (.flip (.of_hasPullback ..)) (.flip (.of_hasPullback ..))
 
@@ -623,7 +681,7 @@ instance preservesConnectedLimitsOfShape_of_hasLimitsOfShape {J : Type v₁} [Sm
   unfold UvPoly.functor
   infer_instance
 
-instance preservesPullbacks (P : UvPoly E B)
+theorem preservesPullbacks (P : UvPoly E B)
     {Pb X Y Z : C} (fst : Pb ⟶ X) (snd : Pb ⟶ Y)
     (f : X ⟶ Z) (g : Y ⟶ Z)
     (h: IsPullback fst snd f g) :

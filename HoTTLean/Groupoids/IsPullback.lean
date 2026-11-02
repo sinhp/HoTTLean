@@ -32,7 +32,7 @@ def tp' : AsSmall.{max u (v+1)} PGrpd.{v,v}
   AsSmall.down ⋙ PGrpd.forgetToGrpd ⋙ AsSmall.up
 
 theorem liftTm'_tp' : Cat.homOf liftTm'.{v,u} ≫ Cat.homOf tp'.{v+1, max u (v+2)} =
-  Cat.homOf tp'.{v, max u (v+2)} ≫ Cat.homOf liftTy'.{v,u} := rfl
+    Cat.homOf tp'.{v, max u (v+2)} ≫ Cat.homOf liftTy'.{v,u} := rfl
 
 /--
 The following square is a meta-theoretic pullback
@@ -88,11 +88,13 @@ def isPullback_liftTm' : Functor.IsPullback
 
 theorem isPullback_liftTm'_in_Cat : IsPullback
     (Cat.homOf liftTm'.{v,max u (v+2)})
-    tp'.{_,max u (v+2)}
-    tp'.{v+1,max u (v+2)}
+    (Cat.homOf tp'.{_,max u (v+2)})
+    (Cat.homOf tp'.{v+1,max u (v+2)})
     (Cat.homOf liftTy'.{v,max u (v+2)}) :=
   Cat.isPullback rfl isPullback_liftTm'
 
+-- Core.map and the bundled groupoid definitions need the earlier elaboration transparency.
+set_option backward.isDefEq.respectTransparency false in
 /--
 The small universes form pullbacks
       Tm.{v} ------------ liftTm ---------> Tm.{v+1}
@@ -105,7 +107,7 @@ The small universes form pullbacks
 -/
 theorem liftTm_isPullback : IsPullback liftTm.{v,max u (v+2)} U.tp.{v, max u (v+2)}
     U.tp.{v+1, max u (v+2)} liftTy.{v,max u (v+2)} := by
-  convert Functor.map_isPullback Core.map isPullback_liftTm'_in_Cat.{v,u}
+  exact Functor.map_isPullback Core.map isPullback_liftTm'_in_Cat.{v,u}
 
 variable {Γ : Ctx} (A : Γ ⥤ Grpd)
 
@@ -148,7 +150,7 @@ def isPullbackClassifierOfAsSmall :
     Functor.Groupoidal.forget (AsSmall.down ⋙ PGrpd.forgetToGrpd ⋙ AsSmall.up)
     (functorToAsSmallEquiv.symm A) :=
   Functor.IsPullback.Paste.ofRight
-    (by simp [functorToAsSmallEquiv, ← Functor.assoc, ← toPGrpd_forgetToGrpd]; rfl)
+    (by simp [functorToAsSmallEquiv, ← Functor.assoc]; rfl)
     (by rfl) isPullbackAsSmall
     (isPullbackClassifier A)
 
@@ -180,6 +182,8 @@ def isPullbackCoreAsSmall' :
     (PGrpd.forgetToGrpd) (Core.inclusion _ ⋙ AsSmall.down) :=
   Functor.IsPullback.Paste.horiz rfl rfl isPullbackCoreAsSmall isPullbackAsSmall
 
+-- The classifier paste uses bundled groupoids and core functor conversions.
+set_option backward.isDefEq.respectTransparency false in
 /--
 ∫ toCo...iv A ----> coreAsSmall PGrpd
      |                  |
@@ -194,8 +198,12 @@ def isPullbackClassifierOfCoreAsSmall (A : Γ ⟶ Ty) :
   (by
     dsimp [functorToAsSmallEquiv]
     convert_to (toPGrpd (toCoreAsSmallEquiv A) ⋙ forgetToGrpd) ⋙ AsSmall.up = _
-    erw [toPGrpd_forgetToGrpd, Core.functorToCoreEquiv_apply, Core.functorToCore_comp_inclusion,
-      Functor.assoc])
+    · apply CategoryTheory.Functor.ext
+      · intros X Y f
+        simp
+      · intro x; rfl
+    · erw [toPGrpd_forgetToGrpd, Core.functorToCoreEquiv_apply, Core.functorToCore_comp_inclusion,
+        Functor.assoc])
   (isPullbackClassifierOfAsSmall (toCoreAsSmallEquiv A))
   (by
     dsimp [Ctx.coreAsSmallFunctor, Grpd.homOf]
@@ -209,6 +217,8 @@ def isPullbackClassifierOfCoreAsSmall (A : Γ ⟶ Ty) :
     · rw [U.var, ← toCoreAsSmallEquiv_symm_apply_comp_left,
         ← toCoreAsSmallEquiv_symm_apply_comp_right, toPGrpd_forgetToGrpd])
 
+-- Unfold bundled groupoid morphisms when transferring the classifier square.
+set_option backward.isDefEq.respectTransparency false in
 /--
   The following square is a pullback in `Ctx`
   Ty.ext A --- Ty.var A ---> Tm
@@ -222,8 +232,10 @@ def isPullbackClassifierOfCoreAsSmall (A : Γ ⟶ Ty) :
      Γ --------- A ------> Ty
 -/
 theorem disp_pullback (A : Γ ⟶ Ty) : IsPullback (var A) forget tp A := by
-  convert Grpd.isPullback (isPullbackClassifierOfCoreAsSmall A)
-  simp
+  have h := Grpd.isPullback (isPullbackClassifierOfCoreAsSmall A)
+  change IsPullback (var A) forget tp (toCoreAsSmallEquiv.symm (toCoreAsSmallEquiv A)) at h
+  rw [toCoreAsSmallEquiv.symm_apply_apply] at h
+  exact h
 
 end IsPullback
 end GroupoidModel

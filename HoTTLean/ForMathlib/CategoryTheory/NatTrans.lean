@@ -1,6 +1,6 @@
 import Mathlib.CategoryTheory.NatTrans
 import Mathlib.CategoryTheory.Functor.TwoSquare
-import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import HoTTLean.ForMathlib
 
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
@@ -29,7 +29,7 @@ def inv : G ⟶ F := h.isoOfCodGroupoid.inv
 
 end
 
-open Functor
+open _root_.CategoryTheory.Functor
 
 lemma hext {A : Type u} [Category.{v} A] {B : Type u₁} [Category.{v₁} B]
     {F F' G G' : A ⥤ B} (α : F ⟶ G) (β : F' ⟶ G')

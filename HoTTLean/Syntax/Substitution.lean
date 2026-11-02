@@ -1,3 +1,4 @@
+import Mathlib.Tactic.Basic
 import Mathlib.Tactic.Convert
 import Mathlib.Tactic.SimpRw
 import HoTTLean.Syntax.Typing
@@ -20,7 +21,6 @@ theorem le_univMax_all :
     (∀ {Γ l A t}, E ∣ Γ ⊢[l] t : A → l ≤ univMax) ∧
     (∀ {Γ l A t u}, E ∣ Γ ⊢[l] t ≡ u : A → l ≤ univMax) := by
   mutual_induction WfCtx
-  -- I ❤ grind and omega
   all_goals first | omega | try grind
 
 theorem WfCtx.le_univMax_of_lookup : WfCtx E Γ → Lookup Γ i A l → l ≤ univMax :=
@@ -62,8 +62,10 @@ theorem wk (Γ : Ctx χ) (A l) : WfRen ((A,l) :: Γ) Nat.succ Γ := by
   exact autosubst% Lookup.succ _ lk
 
 theorem comp : WfRen Θ ξ Δ → WfRen Δ ξ' Γ → WfRen Θ (ξ ∘ ξ') Γ := by
-  unfold WfRen; intro wf wf' _ _ _ lk
-  exact autosubst% wf <| wf' lk
+  unfold WfRen; intro wf wf' i A l lk
+  have h := wf (wf' lk)
+  have e : (A.rename ξ').rename ξ = A.rename (ξ ∘ ξ') := by autosubst
+  simpa only [e, Function.comp_apply] using h
 
 theorem upr : WfRen Δ ξ Γ → WfRen ((A.rename ξ, l) :: Δ) (Expr.upr ξ) ((A, l) :: Γ) := by
   unfold WfRen; intro wf _ _ _ lk
@@ -76,7 +78,7 @@ theorem upr : WfRen Δ ξ Γ → WfRen ((A.rename ξ, l) :: Δ) (Expr.upr ξ) ((
 
 end WfRen
 
-attribute [local grind ←] WfCtx.snoc WfRen.upr in
+attribute [local grind ← ] WfCtx.snoc WfRen.upr in
 theorem rename_all :
     (∀ {Γ l A}, E ∣ Γ ⊢[l] A →
       ∀ {Δ ξ}, WfCtx E Δ → WfRen Δ ξ Γ → E ∣ Δ ⊢[l] A.rename ξ) ∧
@@ -90,7 +92,7 @@ theorem rename_all :
   have ih_subst (B a : Expr χ) (ξ) :
       (B.subst a.toSb).rename ξ = (B.rename (Expr.upr ξ)).subst (a.rename ξ).toSb := by autosubst
   mutual_induction WfCtx
-  all_goals dsimp only; try intros
+  all_goals (try dsimp only); try intros
   all_goals try simp only [Expr.rename, ih_subst] at *; clear ih_subst
   -- Cases that don't go through by `grind_cases`.
   case ax p _ Ec _ _ ihA _ _ Δ ξ =>
@@ -353,7 +355,7 @@ theorem Id_bvar : WfCtx E Γ → E ∣ Γ ⊢[l] A → E ∣ Γ ⊢[l] t : A →
     E ∣ (A, l) :: Γ ⊢[l] .Id l (A.subst Expr.wk) (t.subst Expr.wk) (.bvar 0) :=
   fun Γ A t => WfTp.Id' (tp_wk Γ A A) (tm_wk Γ A t) (.bvar (Γ.snoc A) (.zero ..))
 
-attribute [local grind ←] WfCtx.snoc eqSb_up wfSb_up in
+attribute [local grind ← ] WfCtx.snoc eqSb_up wfSb_up in
 attribute [local grind →] EqSb.wf_left EqSb.wf_right in
 attribute [local grind .] -- TODO: fwd or bwd for properties of equality?
   EqTp.refl_tp EqTp.symm_tp EqTp.trans_tp
@@ -371,7 +373,8 @@ theorem subst_all :
     (∀ {Γ l A t u}, E ∣ Γ ⊢[l] t ≡ u : A →
       ∀ {Δ σ σ'}, EqSb E Δ σ σ' Γ → E ∣ Δ ⊢[l] t.subst σ ≡ u.subst σ' : A.subst σ) := by
   mutual_induction WfCtx
-  all_goals dsimp; try intros
+  all_goals try dsimp
+  all_goals try intros
   all_goals try simp only [Expr.subst_toSb_subst, Expr.subst_snoc_toSb_subst, Expr.subst] at *
   case ax p _ Ec _ _ ihA =>
     constructor

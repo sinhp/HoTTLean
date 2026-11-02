@@ -260,13 +260,12 @@ def mk (A : y(Γ) ⟶ M.Ty) (B : y(M.ext A) ⟶ X) : y(Γ) ⟶ M.Ptp.obj X :=
 @[simp]
 lemma fst_mk (A : y(Γ) ⟶ M.Ty) (B : y(M.ext A) ⟶ X) :
     fst M (mk M A B) = A := by
-  simp [fst, mk]
+  exact UvPoly.Equiv.fst_mk' M.uvPolyTp X A (M.disp_pullback A).flip B
 
 @[simp]
 lemma snd_mk (A : y(Γ) ⟶ M.Ty) (B : y(M.ext A) ⟶ X) :
     snd M (mk M A B) _ (fst_mk ..) = B := by
-  dsimp only [snd, mk]
-  rw! [UvPoly.Equiv.snd'_mk']
+  exact UvPoly.Equiv.snd'_mk' M.uvPolyTp X A (M.disp_pullback A).flip B
 
 section
 variable {Δ : Ctx} {σ : Δ ⟶ Γ} {AB : y(Γ) ⟶ M.Ptp.obj X}
@@ -279,8 +278,8 @@ theorem fst_comp_right {Y} (σ : X ⟶ Y) : fst M (AB ≫ M.Ptp.map σ) = fst M 
 
 theorem snd_comp_right {Y} (σ : X ⟶ Y) {A} (eq : fst M AB = A) :
     snd M (AB ≫ M.Ptp.map σ) _ (fst_comp_right M σ ▸ eq) = snd M AB _ eq ≫ σ := by
-  simp only [snd, Ptp]
-  rw [UvPoly.Equiv.snd'_comp_right M.uvPolyTp X Y σ AB]
+  exact UvPoly.Equiv.snd'_comp_right M.uvPolyTp X Y σ AB
+    (by rw [← fst, eq]; exact (M.disp_pullback A).flip)
 
 theorem snd_comp_left {A} (eqA : fst M AB = A) {σA} (eqσ : ym(σ) ≫ A = σA) :
     snd M (ym(σ) ≫ AB) σA (by simp [fst_comp_left, eqA, eqσ]) =
@@ -290,19 +289,26 @@ theorem snd_comp_left {A} (eqA : fst M AB = A) {σA} (eqσ : ym(σ) ≫ A = σA)
   have H2 : IsPullback ym(M.disp σA) (M.var σA)
     (ym(σ) ≫ UvPoly.Equiv.fst M.uvPolyTp X AB) M.uvPolyTp.p := by
     rw [← fst, eqA, eqσ]; exact (M.disp_pullback _).flip
-  convert UvPoly.Equiv.snd'_comp_left M.uvPolyTp X AB H1 _ H2
-  apply H1.hom_ext <;> simp [← Functor.map_comp, substWk]
+  have hlift : H1.lift (ym(M.disp σA) ≫ ym(σ)) (M.var σA)
+      (by simpa only [Category.assoc] using H2.w) = ym(M.substWk σ A _ eqσ) := by
+    apply H1.hom_ext
+    · simp only [IsPullback.lift_fst, ← Functor.map_comp, substWk_disp]
+    · simp
+  have h := UvPoly.Equiv.snd'_comp_left M.uvPolyTp X AB H1 ym(σ) H2
+  rw [hlift] at h
+  exact h
 
 theorem mk_comp_left {Δ Γ : Ctx} (M : Universe Ctx) (σ : Δ ⟶ Γ)
     {X : Psh Ctx} (A : y(Γ) ⟶ M.Ty) (σA) (eq : ym(σ) ≫ A = σA) (B : y(M.ext A) ⟶ X) :
     ym(σ) ≫ PtpEquiv.mk M A B = PtpEquiv.mk M σA (ym(M.substWk σ A _ eq) ≫ B) := by
-  dsimp [PtpEquiv.mk]
-  have h := UvPoly.Equiv.mk'_comp_left M.uvPolyTp X A (M.disp_pullback A).flip B ym(σ)
-    σA eq (M.disp_pullback σA).flip
-  convert h
-  apply (M.disp_pullback _).hom_ext
-  · simp
-  · simp [← Functor.map_comp, substWk_disp]
+  apply UvPoly.Equiv.ext' M.uvPolyTp X
+    (R := y(M.ext σA)) (f := ym(M.disp σA)) (g := M.var σA)
+    (by rw [← fst, fst_comp_left, fst_mk, eq]; exact (M.disp_pullback σA).flip)
+  · change snd M (ym(σ) ≫ mk M A B) σA (by rw [fst_comp_left, fst_mk, eq]) =
+      snd M (mk M σA _) σA (fst_mk ..)
+    rw [snd_comp_left M (fst_mk M A B) eq, snd_mk, snd_mk]
+  · change fst M (ym(σ) ≫ mk M A B) = fst M (mk M σA _)
+    rw [fst_comp_left, fst_mk, fst_mk, eq]
 
 theorem mk_comp_right {Γ : Ctx} (M : Universe Ctx)
     {X Y : Psh Ctx} (σ : X ⟶ Y) (A : y(Γ) ⟶ M.Ty) (B : y(M.ext A) ⟶ X) :
@@ -312,8 +318,8 @@ theorem mk_comp_right {Γ : Ctx} (M : Universe Ctx)
 theorem ext {AB AB' : y(Γ) ⟶ M.Ptp.obj X}
     (A := fst M AB) (eq : fst M AB = A := by rfl)
     (h1 : fst M AB = fst M AB')
-    (h2 : snd M AB A eq = snd M AB' A (h1 ▸ eq))
-    : AB = AB' := UvPoly.Equiv.ext' _ _ _ h1 h2
+    (h2 : snd M AB A eq = snd M AB' A (h1 ▸ eq)) :
+    AB = AB' := UvPoly.Equiv.ext' _ _ _ h1 h2
 
 theorem eta (AB : y(Γ) ⟶ M.Ptp.obj X) : mk M (fst M AB) (snd M AB) = AB :=
   .symm <| ext _ _ rfl (by simp) (by simp)
@@ -326,7 +332,7 @@ end PtpEquiv
 theorem PtpEquiv.mk_map {Γ : Ctx} {X Y : Psh Ctx}
     (A : y(Γ) ⟶ M.Ty) (x : y(M.ext A) ⟶ X) (α : X ⟶ Y) :
     mk M A x ≫ M.Ptp.map α = mk M A (x ≫ α) := by
-  simp [mk, Ptp, UvPoly.Equiv.mk'_comp_right]
+  exact PtpEquiv.mk_comp_right M α A x
 
 /-! ## Polynomial composition `M.tp ▸ N.tp` -/
 
@@ -356,6 +362,8 @@ def fst (ab : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp) : y(Γ) ⟶ M.Tm :=
   ab ≫ pullback.snd N.tp (UvPoly.PartialProduct.fan M.uvPolyTp N.Ty).snd ≫
     pullback.snd (M.uvPolyTp.fstProj N.Ty) M.uvPolyTp.p
 
+-- The presheaf category and polynomial projection require reducible instance matching.
+set_option backward.isDefEq.respectTransparency false in
 /-- Computation of `comp` (part 1).
 
 `fst_tp` is (part 1) of the computation that
@@ -373,8 +381,14 @@ theorem fst_tp (ab : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp) :
   have : pullback.snd (M.uvPolyTp.fstProj N.Ty) M.tp ≫ M.tp =
     pullback.fst (M.uvPolyTp.fstProj N.Ty) M.tp ≫ M.uvPolyTp.fstProj N.Ty :=
       Eq.symm pullback.condition
-  simp [PtpEquiv.fst, fst, this]
-  rfl
+  change fst ab ≫ M.tp = UvPoly.Equiv.fst M.uvPolyTp N.Ty _
+  rw [UvPoly.Equiv.fst_eq]
+  simp only [fst, UvPoly.compP, Category.assoc]
+  change ab ≫ (pullback.snd N.tp (PartialProduct.fan M.uvPolyTp N.Ty).snd ≫
+      (pullback.snd (M.uvPolyTp.fstProj N.Ty) M.tp ≫ M.tp)) =
+    ab ≫ (pullback.snd N.tp (PartialProduct.fan M.uvPolyTp N.Ty).snd ≫
+      (pullback.fst (M.uvPolyTp.fstProj N.Ty) M.tp ≫ M.uvPolyTp.fstProj N.Ty))
+  rw [this]
 
 theorem comp_fst (ab : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp) (σ : y(Δ) ⟶ y(Γ)) :
     σ ≫ fst ab = fst (σ ≫ ab) := by simp [fst]
@@ -410,8 +424,11 @@ def snd (ab : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp) : y(Γ) ⟶ N.Tm :=
   ab ≫ pullback.fst N.tp (PartialProduct.fan M.uvPolyTp N.Ty).snd
 
 theorem comp_snd (ab : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp) (σ : y(Δ) ⟶ y(Γ)) :
-    σ ≫ snd ab = snd (σ ≫ ab) := by simp [snd]
+    σ ≫ snd ab = snd (σ ≫ ab) := by
+  exact (Category.assoc σ ab _).symm
 
+-- The pullback presentation of compDom needs reducible instance compatibility.
+set_option backward.isDefEq.respectTransparency false in
 /-- Universal property of `compDom`, decomposition (part 4).
 
 A map `ab : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp` is equivalently three maps
@@ -424,8 +441,10 @@ theorem snd_tp (ab : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp)
     snd ab ≫ N.tp = ym(M.sec _ (fst ab) eq) ≫ dependent ab A eq := by
   simp [snd, pullback.condition, dependent, PtpEquiv.snd, Equiv.snd'_eq]
   simp only [← Category.assoc]; congr! 1
-  apply pullback.hom_ext <;> simp [fst, UvPoly.compP]
+  apply pullback.hom_ext <;> simp [fst, UvPoly.compP] <;> rfl
 
+-- The pullback presentation of compDom needs reducible instance compatibility.
+set_option backward.isDefEq.respectTransparency false in
 /-- Universal property of `compDom`, constructing a map into `compDom`. -/
 def mk (α : y(Γ) ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : y(M.ext A) ⟶ N.Ty) (β : y(Γ) ⟶ N.Tm)
     (h : β ≫ N.tp = ym(M.sec _ α eq) ≫ B) : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp := by
@@ -438,25 +457,52 @@ def mk (α : y(Γ) ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : y(M.ext A) ⟶ N.Ty
     simp only [← Category.assoc]; congr! 1
     apply pullback.hom_ext <;> simp
 
+-- The pullback presentation of compDom needs reducible instance compatibility.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem fst_mk (α : y(Γ) ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : y(M.ext A) ⟶ N.Ty) (β : y(Γ) ⟶ N.Tm)
     (h : β ≫ N.tp = ym(M.sec _ α eq) ≫ B) : fst (mk α eq B β h) = α := by
-  simp [mk, fst]
+  simp only [mk, fst, ← Category.assoc]
+  change (pullback.lift β (pullback.lift (PtpEquiv.mk M A B) α _) _ ≫
+    pullback.snd N.uvPolyTp.p (PartialProduct.fan M.uvPolyTp N.Ty).snd) ≫
+    pullback.snd (M.uvPolyTp.fstProj N.Ty) M.uvPolyTp.p = α
+  rw [pullback.lift_snd]
+  change pullback.lift (PtpEquiv.mk M A B) α _ ≫
+    pullback.snd (PartialProduct.fan M.uvPolyTp N.Ty).fst M.uvPolyTp.p = α
+  exact pullback.lift_snd _ _ _
 
+-- The pullback presentation of compDom needs reducible instance compatibility.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem dependent_mk (α : y(Γ) ⟶ M.Tm) {A} (eq : α ≫ M.tp = A)
     (B : y(M.ext A) ⟶ N.Ty) (β : y(Γ) ⟶ N.Tm)
     (h : β ≫ N.tp = ym(M.sec _ α eq) ≫ B) :
     dependent (mk α eq B β h) A (by simp [fst_mk, eq]) = B := by
   simp [mk, dependent, UvPoly.compP]
-  convert PtpEquiv.snd_mk M A B using 2
-  slice_lhs 1 2 => apply pullback.lift_snd
-  simp
+  have hp (w₁ : PtpEquiv.mk M A B ≫ (PartialProduct.fan M.uvPolyTp N.Ty).fst =
+      α ≫ M.uvPolyTp.p)
+      (w₂ : β ≫ N.uvPolyTp.p =
+        pullback.lift (PtpEquiv.mk M A B) α w₁ ≫ (PartialProduct.fan M.uvPolyTp N.Ty).snd) :
+      (pullback.lift β (pullback.lift (PtpEquiv.mk M A B) α w₁) w₂ ≫
+        pullback.snd N.uvPolyTp.p (PartialProduct.fan M.uvPolyTp N.Ty).snd) ≫
+        pullback.fst (PartialProduct.fan M.uvPolyTp N.Ty).fst M.uvPolyTp.p =
+        PtpEquiv.mk M A B := by
+    rw [pullback.lift_snd]
+    exact pullback.lift_fst _ _ _
+  convert PtpEquiv.snd_mk M A B using 1
+  congr 1
+  rw [← Category.assoc]
+  exact hp _ _
+  all_goals apply proof_irrel_heq
 
+-- The pullback presentation of compDom needs reducible instance compatibility.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem snd_mk (α : y(Γ) ⟶ M.Tm) {A} (eq : α ≫ M.tp = A) (B : y(M.ext A) ⟶ N.Ty) (β : y(Γ) ⟶ N.Tm)
     (h : β ≫ N.tp = ym(M.sec _ α eq) ≫ B) : snd (mk α eq B β h) = β := by
-  simp [mk, snd]
+  change pullback.lift β (pullback.lift (PtpEquiv.mk M A B) α _) _ ≫
+    pullback.fst N.uvPolyTp.p (PartialProduct.fan M.uvPolyTp N.Ty).snd = β
+  exact pullback.lift_fst _ _ _
 
 theorem ext {ab₁ ab₂ : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp}
     {A} (eq : fst ab₁ ≫ M.tp = A)
@@ -467,8 +513,8 @@ theorem ext {ab₁ ab₂ : y(Γ) ⟶ M.uvPolyTp.compDom N.uvPolyTp}
   simp only [dependent, PtpEquiv.snd] at h2
   generalize_proofs _ _ H at h2
   refine Equiv.ext' M.uvPolyTp N.Ty H ?_ h2
-  simp [Equiv.fst, pullback.condition]
-  simp only [← Category.assoc]; congr 1
+  exact (fst_tp ab₁).symm.trans
+    ((congrArg (fun a => a ≫ M.tp) h1).trans (fst_tp ab₂))
 
 theorem comp_mk
     (α : y(Γ) ⟶ M.Tm) {A} (e1 : α ≫ M.tp = A)
@@ -602,6 +648,8 @@ def reflSubst (a : y(Γ) ⟶ M.Tm) : Γ ⟶ idIntro.motiveCtx a :=
     congr 1
     apply idIntro.isKernelPair.hom_ext <;> simp)
 
+-- Allow the pullback projections to unfold the motive context during elaboration.
+set_option backward.isDefEq.respectTransparency false in
 @[reassoc]
 theorem comp_reflSubst' {Γ Δ} (σ : Δ ⟶ Γ) (a : y(Γ) ⟶ M.Tm) :
     ym(σ) ≫ ym(idIntro.reflSubst a) =
@@ -852,20 +900,27 @@ lemma toK_comp_left {Δ} (σ : Δ ⟶ Γ) : ii.toK (ym(σ) ≫ a) =
 
 def toI : y(ii.motiveCtx a) ⟶ ie.i :=
   ie.i_isPullback.lift (M.var _) (ym(M.disp _) ≫ toK ii a)
-  (by rw [(M.disp_pullback _).w]; simp [IdIntro.mkId, toK])
+  (by
+    dsimp only [IdIntro.motiveCtx]
+    rw [(M.disp_pullback _).w]
+    simp [IdIntro.mkId, toK])
 
-lemma toI_comp_i1 : ie.toI a ≫ ie.i1 = M.var _ := by simp [toI]
+lemma toI_comp_i1 : ie.toI a ≫ ie.i1 = M.var _ := by
+  exact ie.i_isPullback.lift_fst _ _ _
 
-lemma toI_comp_i2 : ie.toI a ≫ ie.i2 = ym(M.disp _) ≫ ii.toK a :=
-  by simp [toI]
+lemma toI_comp_i2 : ie.toI a ≫ ie.i2 = ym(M.disp _) ≫ ii.toK a := by
+    exact ie.i_isPullback.lift_snd _ _ _
 
 lemma toI_comp_left {Δ} (σ : Δ ⟶ Γ) : toI ie (ym(σ) ≫ a) =
     ym(ii.motiveSubst σ a) ≫ toI ie a := by
-  dsimp [toI]
   apply ie.i_isPullback.hom_ext
-  · simp [motiveSubst]
-  · simp [toK_comp_left, motiveSubst, substWk, substCons]
-    rfl
+  · simp only [Category.assoc, toI_comp_i1, motiveSubst]
+    exact (M.substWk_var _ _ _ _).symm
+  · simp only [Category.assoc, toI_comp_i2, toK_comp_left, motiveSubst]
+    -- Unfold the context definitions only for this projection rewrite.
+    rw! (transparency := .default) [substWk_disp_functor_map_assoc]
+    dsimp only [motiveCtx]
+    congr 2
 
 theorem motiveCtx_isPullback :
     IsPullback (ie.toI a) ym(M.disp _) ie.i2 (toK ii a) :=
@@ -887,13 +942,14 @@ def equivFst (pair : y(Γ) ⟶ ie.iFunctor.obj X) :
 lemma equivFst_comp_left (pair : y(Γ) ⟶ ie.iFunctor.obj X)
     {Δ} (σ : Δ ⟶ Γ) :
     ie.equivFst (ym(σ) ≫ pair) = ym(σ) ≫ ie.equivFst pair := by
-  dsimp [equivFst]
-  rw [UvPoly.Equiv.fst_comp_left]
+  exact UvPoly.Equiv.fst_comp_left ie.iUvPoly X pair ym(σ)
 
 def equivSnd (pair : y(Γ) ⟶ ie.iFunctor.obj X) :
     y(ii.motiveCtx (equivFst ie pair)) ⟶ X :=
   UvPoly.Equiv.snd' ie.iUvPoly X pair (ie.motiveCtx_isPullback' _).flip
 
+-- The polynomial functor and its object need semireducible unfolding for rewriting.
+set_option backward.isDefEq.respectTransparency false in
 lemma equivSnd_comp_left (pair : y(Γ) ⟶ ie.iFunctor.obj X)
     {Δ} (σ : Δ ⟶ Γ) :
     ie.equivSnd (ym(σ) ≫ pair) =
@@ -932,8 +988,11 @@ lemma equivFst_verticalNatTrans_app {Γ : Ctx} {X : Psh Ctx}
     ie.equivFst pair = UvPoly.Equiv.fst (UvPoly.id M.Tm) X
     (pair ≫ ie.verticalNatTrans.app X) := by
   dsimp [equivFst, verticalNatTrans]
-  rw [← UvPoly.fst_verticalNatTrans_app]
+  exact (UvPoly.fst_verticalNatTrans_app (UvPoly.id M.Tm) ie.iUvPoly
+    ie.comparison (by simp [iUvPoly]) X pair).symm
 
+-- The pullback projections require semireducible unfolding during rewriting.
+set_option backward.isDefEq.respectTransparency false in
 lemma equivSnd_verticalNatTrans_app {Γ : Ctx} {X : Psh Ctx}
     (pair : y(Γ) ⟶ ie.iFunctor.obj X) :
     UvPoly.Equiv.snd' (UvPoly.id M.Tm) X (pair ≫ ie.verticalNatTrans.app X)
@@ -959,6 +1018,8 @@ lemma equivSnd_verticalNatTrans_app {Γ : Ctx} {X : Psh Ctx}
         simp [reflSubst]
       · simp [reflSubst]
 
+-- Keep pullback projections at semireducible transparency during rewriting.
+set_option backward.isDefEq.respectTransparency false in
 lemma equivMk_comp_verticalNatTrans_app {Γ : Ctx} {X : Psh Ctx} (a : y(Γ) ⟶ M.Tm)
     (x : y(ii.motiveCtx a) ⟶ X) :
     ie.equivMk a x ≫ (ie.verticalNatTrans).app X =
@@ -1072,6 +1133,8 @@ Ty <-- y(motiveCtx) ----> i
 abbrev motive : y(Γ) ⟶ ie.iFunctor.obj N.Ty :=
   ie.equivMk a C
 
+-- The motive context and polynomial application need semireducible unfolding here.
+set_option backward.isDefEq.respectTransparency false in
 lemma motive_comp_left : ym(σ) ≫ motive ie a C =
     motive ie (ym(σ) ≫ a) (ym(motiveSubst ii σ a) ≫ C) := by
   dsimp [motive, equivMk]
@@ -1089,6 +1152,9 @@ lemma motive_comp_left : ym(σ) ≫ motive ie a C =
       slice_rhs 1 2 => rw [← ie.toI_comp_i2]
       simp
 
+-- Keep the polynomial functor applications at semireducible transparency while
+-- rewriting the coherent lift's naturality square.
+set_option backward.isDefEq.respectTransparency false in
 def lift : y(Γ) ⟶ ie.iFunctor.obj N.Tm :=
   i.weakPullback.coherentLift (reflCase a r) (motive ie a C) (by
     dsimp only [motive, equivMk, verticalNatTrans, reflCase]
@@ -1105,6 +1171,8 @@ def lift : y(Γ) ⟶ ie.iFunctor.obj N.Tm :=
         simp
       · simp)
 
+-- Allow the polynomial application and its functor object to unfold together.
+set_option backward.isDefEq.respectTransparency false in
 lemma lift_comp_left {Δ} (σ : Δ ⟶ Γ) : i.lift (ym(σ) ≫ a) (ym(ii.motiveSubst σ a) ≫ C)
     (ym(σ) ≫ r) (by simp [r_tp, comp_reflSubst'_assoc]) =
     ym(σ) ≫ i.lift a C r r_tp := by
@@ -1121,6 +1189,8 @@ lemma lift_comp_left {Δ} (σ : Δ ⟶ Γ) : i.lift (ym(σ) ≫ a) (ym(ii.motive
     · simp
   · rw [motive_comp_left]
 
+-- Keep the polynomial objects and motive context at the same transparency.
+set_option backward.isDefEq.respectTransparency false in
 lemma equivFst_lift_eq : ie.equivFst (i.lift a C r r_tp) = a :=
   calc ie.equivFst (i.lift a C r r_tp)
   _ = ie.equivFst (i.lift a C r r_tp ≫ ie.iFunctor.map N.tp) := by
@@ -1139,6 +1209,7 @@ lemma equivFst_lift_eq : ie.equivFst (i.lift a C r r_tp) = a :=
 def j : y(ii.motiveCtx a) ⟶ N.Tm :=
   eqToHom (by rw [equivFst_lift_eq]) ≫ ie.equivSnd (i.lift a C r r_tp)
 
+set_option backward.isDefEq.respectTransparency false in
 /-- Typing for elimination rule `J` -/
 lemma j_tp : j i a C r r_tp ≫ N.tp = C := by
   simp only [j, Category.assoc, IdElimBase.equivSnd, ← UvPoly.Equiv.snd'_comp_right]
@@ -1148,6 +1219,8 @@ lemma j_tp : j i a C r r_tp ≫ N.tp = C := by
   rw! [equivFst_lift_eq]
   simp
 
+-- Unfold dependent polynomial projections consistently while rewriting the lift.
+set_option backward.isDefEq.respectTransparency false in
 lemma comp_j : ym(ii.motiveSubst σ _) ≫ j i a C r r_tp =
     j i (ym(σ) ≫ a) (ym(ii.motiveSubst σ _) ≫ C) (ym(σ) ≫ r) (by
       simp [r_tp, IdIntro.comp_reflSubst'_assoc]) := by
@@ -1215,11 +1288,14 @@ variable {Γ} (ar : y(Γ) ⟶ (UvPoly.id M.Tm).functor.obj N.Tm)
 
 include hrC in
 lemma fst_eq_fst : UvPoly.Equiv.fst _ _ ar = ie.equivFst aC :=
+  -- The polynomial functor notation requires default transparency for these rewrites.
   calc _
   _ = UvPoly.Equiv.fst _ _ (ar ≫ (UvPoly.id M.Tm).functor.map N.tp) := by
-    rw [UvPoly.Equiv.fst_comp_right]
+    rw! (transparency := .default) [UvPoly.Equiv.fst_comp_right]
+    rfl
   _ = UvPoly.Equiv.fst _ _  (aC ≫ (IdElimBase.verticalNatTrans ie).app N.Ty) := by
-    rw [hrC]
+    rw! (transparency := .default) [hrC]
+    rfl
   _ = _ := by
     rw [ie.equivFst_verticalNatTrans_app]
 
@@ -1228,13 +1304,14 @@ abbrev motive : y(ii.motiveCtx (ie.equivFst aC)) ⟶ N.Ty :=
 
 lemma comp_motive {Δ} (σ : Δ ⟶ Γ) : motive (ym(σ) ≫ aC) =
     ym(ii.motiveSubst σ (ie.equivFst aC)) ≫ motive aC := by
-  simp only [motive, equivSnd_comp_left ie aC σ]
+  exact equivSnd_comp_left ie aC σ
 
 abbrev reflCase : y(Γ) ⟶ N.Tm := UvPoly.Equiv.snd' _ _ ar (Id.reflCase_aux _)
 
 lemma comp_reflCase {Δ} (σ : Δ ⟶ Γ) : reflCase (ym(σ) ≫ ar) = ym(σ) ≫ reflCase ar := by
   simp only [reflCase]
-  rw [UvPoly.Equiv.snd'_comp_left (UvPoly.id M.Tm) N.Tm ar
+  -- The polynomial functor notation requires default transparency for this rewrite.
+  rw! (transparency := .default) [UvPoly.Equiv.snd'_comp_left (UvPoly.id M.Tm) N.Tm ar
     (Id.reflCase_aux (UvPoly.Equiv.fst (UvPoly.id M.Tm) N.Tm ar)) ym(σ)
     (Id.reflCase_aux _)]
   congr 1
@@ -1243,18 +1320,21 @@ lemma comp_reflCase {Δ} (σ : Δ ⟶ Γ) : reflCase (ym(σ) ≫ ar) = ym(σ) �
     simp
   · simp
 
+-- Keep dependent pullback projections at semireducible transparency.
+set_option backward.isDefEq.respectTransparency false in
 include hrC in
 lemma reflCase_comp_tp : reflCase ar ≫ N.tp =
     ym(ii.reflSubst (ie.equivFst aC)) ≫ motive aC := by
   dsimp [reflCase, motive]
-  rw! [← UvPoly.Equiv.snd'_comp_right, hrC]
+  -- Polynomial functor notation requires default transparency for these rewrites.
+  rw! (transparency := .default) [← UvPoly.Equiv.snd'_comp_right, hrC]
   have H : IsPullback ym(M.disp (ii.mkId
       (ym(M.disp (ie.equivFst aC ≫ M.tp)) ≫ ie.equivFst aC)
       (M.var (ie.equivFst aC ≫ M.tp)) (by simp)) ≫
       M.disp (ie.equivFst aC ≫ M.tp))
     (ie.toI (ie.equivFst aC)) (UvPoly.Equiv.fst ie.iUvPoly N.Ty aC) ie.iUvPoly.p := by
-    convert (ie.motiveCtx_isPullback' (ie.equivFst aC)).flip
-    simp
+    change IsPullback _ _ (ie.equivFst aC) _
+    simpa only [Functor.map_comp] using (ie.motiveCtx_isPullback' (ie.equivFst aC)).flip
   -- FIXME: `transparency := .default` is like `erw` and should be avoided
   rw! (transparency := .default) [UvPoly.snd'_verticalNatTrans_app
     (R := y(ii.motiveCtx (ie.equivFst aC)))
@@ -1267,12 +1347,13 @@ lemma reflCase_comp_tp : reflCase ar ≫ N.tp =
   congr 1
   apply (M.disp_pullback _).hom_ext <;>
     simp only [reflSubst, substCons_var, substCons_disp_functor_map, substCons_var]
-  · simp [← ie.toI_comp_i1 (ie.equivFst aC), fst_eq_fst ar aC hrC, mkRefl]
+  · conv => lhs; rw [← toI_comp_i1 ie]
+    simp [comparison, mkRefl]
+    exact congrArg (fun f => f ≫ ii.refl) (fst_eq_fst ar aC hrC)
   · apply (M.disp_pullback _).hom_ext
-    · rw! [fst_eq_fst ar aC hrC]
-      slice_lhs 3 4 => rw [← ii.toK_comp_k1]
+    · slice_lhs 3 4 => rw [← ii.toK_comp_k1]
       slice_lhs 2 3 => rw [← ie.toI_comp_i2]
-      simp
+      simp [fst_eq_fst ar aC hrC]
     · simp
 
 def lift : y(Γ) ⟶ (IdElimBase.iFunctor ie).obj N.Tm :=
@@ -1289,7 +1370,7 @@ lemma lift_fst : lift i ar aC hrC ≫ ie.verticalNatTrans.app N.Tm = ar := by
 
 lemma lift_snd : lift i ar aC hrC ≫ ie.iFunctor.map N.tp = aC := by
   dsimp only [lift, equivMk]
-  rw [UvPoly.Equiv.mk'_comp_right]
+  rw! (transparency := .default) [UvPoly.Equiv.mk'_comp_right]
   apply UvPoly.Equiv.ext' ie.iUvPoly N.Ty
   · rw! [i.j_tp]
     rw [UvPoly.Equiv.snd'_mk']
@@ -1298,10 +1379,12 @@ lemma lift_snd : lift i ar aC hrC ≫ ie.iFunctor.map N.tp = aC := by
     exact (ie.motiveCtx_isPullback' _).flip
   · simp [equivFst]
 
+-- Dependent pullback projections require semireducible unfolding.
+set_option backward.isDefEq.respectTransparency false in
 lemma comp_lift {Δ} (σ : Δ ⟶ Γ) : ym(σ) ≫ lift i ar aC hrC =
     lift i (ym(σ) ≫ ar) (ym(σ) ≫ aC) (by simp [hrC]) := by
   dsimp [lift, equivMk]
-  rw [UvPoly.Equiv.mk'_comp_left ie.iUvPoly N.Tm (ie.equivFst aC) _
+  rw! (transparency := .default) [UvPoly.Equiv.mk'_comp_left ie.iUvPoly N.Tm (ie.equivFst aC) _
     (i.j (ie.equivFst aC) (motive aC) (reflCase ar) _) ym(σ) _ rfl
     (by simp only [iUvPoly_p]; exact (ie.motiveCtx_isPullback' _).flip)]
   congr 1
@@ -1310,7 +1393,7 @@ lemma comp_lift {Δ} (σ : Δ ⟶ Γ) : ym(σ) ≫ lift i ar aC hrC =
   rw [← h]
   congr 1
   simp only [iUvPoly_p, Category.assoc]
-  apply (M.disp_pullback _).hom_ext
+  apply (M.disp_pullback _).hom_ext <;> try simp only [IsPullback.lift_fst, IsPullback.lift_snd]
   · simp [toI_comp_left, ← toI_comp_i1 ie]
   · apply (M.disp_pullback _).hom_ext
     · slice_rhs 3 4 => rw [← toK_comp_k1 ii]

@@ -1,3 +1,3 @@
-import test.basic
-import test.import
-import test.hott0
+import HoTTLeanTest.basic
+import HoTTLeanTest.import
+import HoTTLeanTest.hott0

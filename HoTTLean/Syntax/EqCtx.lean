@@ -8,13 +8,12 @@ variable {χ : Type*} {E : Axioms χ} {Δ Δ' Γ Γ' Γ'' : Ctx χ}
 
 /-! ## Context equality -/
 
-variable (E : Axioms χ) in
 /-- The two contexts are judgmentally equal. -/
-inductive EqCtx : Ctx χ → Ctx χ → Prop
-  | nil : EqCtx [] []
+inductive EqCtx (E : Axioms χ) : Ctx χ → Ctx χ → Prop
+  | nil : EqCtx E [] []
   /-- Prefer using `EqCtx.snoc`. -/
-  | snoc' {Γ Γ' A A' l} :
-    EqCtx Γ Γ' → E ∣ Γ ⊢[l] A ≡ A' → E ∣ Γ' ⊢[l] A ≡ A' → EqCtx ((A, l) :: Γ) ((A', l) :: Γ')
+  | snoc' {Γ Γ' : Ctx χ} {A A' : Expr χ} {l : Nat} :
+    EqCtx E Γ Γ' → E ∣ Γ ⊢[l] A ≡ A' → E ∣ Γ' ⊢[l] A ≡ A' → EqCtx E ((A, l) :: Γ) ((A', l) :: Γ')
 
 theorem EqCtx.refl : WfCtx E Γ → EqCtx E Γ Γ := by
   revert Γ; mutual_induction WfCtx <;> grind [EqCtx.nil, EqCtx.snoc', EqTp.refl_tp]

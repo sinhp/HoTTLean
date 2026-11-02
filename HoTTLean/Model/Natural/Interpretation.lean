@@ -184,15 +184,19 @@ theorem var_substWk_of_lt_length {l i} {Δ Γ Γ' : 𝒞} (σ : Δ ⟶ Γ) (d : 
     intro h
     cases i
     · clear ih
-      dsimp [ExtSeq.var] at st_mem ⊢
+      dsimp [ExtSeq.var] at st_mem
+      dsimp [substWk, ExtSeq.var]
       simp_part at st_mem ⊢
       obtain ⟨rfl, rfl⟩ := st_mem
-      simp
+      simp only [NaturalModel.Universe.substWk_var]
+      exact Part.mem_assert_iff.mpr ⟨rfl, Part.mem_some_iff.mpr rfl⟩
     · simp only [length, Nat.add_lt_add_iff_right] at h
-      dsimp [ExtSeq.var] at st_mem ⊢
+      dsimp [ExtSeq.var] at st_mem
+      dsimp [substWk, ExtSeq.var]
       simp_part at st_mem ⊢
       obtain ⟨a, amem, rfl⟩ := st_mem
-      refine ⟨_, ih amem h, ?_⟩
+      apply Part.mem_bind_iff.mpr
+      refine ⟨_, ih amem h, Part.mem_some_iff.mpr ?_⟩
       simp only [← Functor.map_comp_assoc]
       simp [NaturalModel.Universe.substWk_disp]
 
@@ -253,13 +257,21 @@ protected def tp {l : Nat} (Γ : s.CObj) (llen : l < s.length + 1) (i : ℕ) :
     Part (y(Γ.1) ⟶ s[l].Ty) :=
   Γ.2.tp llen i
 
+-- Unfold the CObj abbreviation when matching membership under the dependent transport.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem mem_var_zero {Γ : s.CObj} {l' l'len A l} {llen : l < s.length + 1} {x} :
     x ∈ (Γ.snoc (l := l') l'len A).var llen 0 ↔
     ∃ l'l : l' = l, x = l'l ▸ s[l'].var A := by
   dsimp only [UHomSeq.CObj.var, UHomSeq.CObj.snoc, UHomSeq.ExtSeq.var]
-  simp_part; exact exists_congr fun _ => by subst l'; simp_part
+  rw [Part.mem_assert_iff]
+  apply exists_congr
+  intro h
+  cases h
+  simp_part
 
+-- Unfold CObj while matching membership through the dependent snoc projection.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 theorem mem_var_succ {Γ : s.CObj} {l' l'len A l i} {llen : l < s.length + 1} {x} :
     x ∈ (Γ.snoc (l := l') l'len A).var llen (i+1) ↔
@@ -484,7 +496,7 @@ theorem mem_ofTerm_pair {Γ l i j B t u} {llen : l < s.length + 1} {x} :
     have ilen : i < s.length + 1 := by> omega
     have jlen : j < s.length + 1 := by> omega
     ∃ t' : y(Γ.1) ⟶ s[i].Tm, t' ∈ I.ofTerm Γ i t ∧
-    ∃ A', ∃ eq : t' ≫ s[i].tp = A',
+    ∃ A' : y(Γ.1) ⟶ s[i].Ty, ∃ eq : t' ≫ s[i].tp = A',
     ∃ B' : y((Γ.snoc ilen A').1) ⟶ s[j].Ty,
       B' ∈ I.ofType (Γ.snoc ilen A') j B ∧
     ∃ u' : y(Γ.1) ⟶ s[j].Tm, u' ∈ I.ofTerm Γ j u ∧
@@ -542,6 +554,18 @@ theorem mem_ofTerm_idRec {Γ l i j t M r u h} {llen : l < s.length + 1} {x} :
     ∃ h_tp : h' ≫ s[i].tp = s.mkId ilen A' t' u' t_tp u_tp,
     x = s.mkIdRec ilen llen A' t' t_tp B' B_eq M' r' r_tp u' u_tp h' h_tp := by
   dsimp only [ofTerm]; simp_part; simp only [exists_prop_eq']
+  apply exists_congr
+  intro ilen
+  apply exists_congr
+  intro t'
+  apply and_congr_right
+  intro ht
+  constructor
+  · intro h
+    exact ⟨_, rfl, h⟩
+  · rintro ⟨B', B_eq, h⟩
+    subst B'
+    exact h
 
 @[simp]
 theorem mem_ofTerm_code {Γ l t} {llen : l < s.length + 1} {x} :
@@ -633,14 +657,15 @@ def sub1 {se : y(Γ.1) ⟶ s[l].Tm}
 @[simp] theorem sub1_toSb {se : y(Γ.1) ⟶ s[l].Tm}
     (A : y(Γ.1) ⟶ s[l].Ty) (e) (eq : se ≫ s[l].tp = A) (H : se ∈ I.ofTerm Γ l e) :
     (sub1 llen A e eq H).toSb = Expr.toSb e := by
-  simp [sub1, toSb, Expr.toSb]
+  rfl
 
 def up {Δ Γ σ full} (sσ : I.CSb Δ Γ σ full)
     {l} (llen : l < s.length + 1) (A : y(Γ.1) ⟶ s[l].Ty)
     (A' := ym(σ) ≫ A) (eq : ym(σ) ≫ A = A' := by rfl) :
     I.CSb (Δ.snoc llen A') (Γ.snoc llen A) (s[l].substWk σ A _ eq) full := by
   refine ((CSb.wk _ _ false).comp sσ).snoc' _ _ (.bvar 0) (by simp) _ ?_
-  simp [UHomSeq.CObj.var, UHomSeq.ExtSeq.var]
+  rw [ofTerm_bvar]
+  exact UHomSeq.CObj.mem_var_zero.mpr ⟨rfl, rfl⟩
 
 @[simp] theorem up_toSb {Δ Γ σ full} (sσ : I.CSb Δ Γ σ full)
      {l} {llen : l < s.length + 1} {A A'} {eq : ym(σ) ≫ A = A'} :
@@ -654,6 +679,8 @@ end CSb
 open UHomSeq
 variable (slen : univMax ≤ s.length)
 
+-- The dependent substitution proof relies on the earlier elaborator transparency behavior.
+set_option backward.isDefEq.respectTransparency false in
 theorem mem_ofType_ofTerm_subst' {full}
     (IH : full = true → ∀ {Δ Γ l} (llen : l < s.length + 1) {sσ} (σ : I.CSb Δ Γ sσ false) {se e},
       se ∈ I.ofTerm Γ l e llen → ym(sσ) ≫ se ∈ I.ofTerm Δ l (Expr.subst σ.toSb e) llen)
@@ -700,7 +727,7 @@ theorem mem_ofType_ofTerm_subst' {full}
     simp [ofTerm_bvar] at H
     simp [Expr.subst]
     induction σ generalizing i with simp [CSb.toSb, *]
-    | wk => exact CObj.mem_var_succ.2 ⟨_, ‹_›, rfl⟩
+    | wk => exact ⟨_, ‹_›, rfl⟩
     | @comp _ _ _ _ _ full σ τ ih1 ih2 =>
       simp [Expr.comp]
       cases full with
@@ -791,16 +818,18 @@ theorem mem_ofType_wk {e l l' hl} (hl' : l' < s.length + 1)
     ym(s[l'].disp X) ≫ se ∈ I.ofType (Γ.snoc hl' X) l (Expr.subst Expr.wk e) hl :=
   (I.mem_ofType_ofTerm_subst hl (.wk hl' X) rfl).1 H
 
+-- Let category rewrite lemmas reduce the contextual-object projections.
+set_option backward.isDefEq.respectTransparency false in
 theorem mem_ofType_of_isClosed {e l} (e_cl : e.isClosed)
     (Γ : s.CObj) (hl : l < s.length + 1) {se} (se_mem : se ∈ I.ofType s.nilCObj l e hl) :
     isTerminal_yUnit.from y(Γ.1) ≫ se ∈ I.ofType Γ l e hl := by
   rcases Γ with ⟨_, ext⟩
   induction ext
-  · convert se_mem; simp
+  · simpa only [UHomSeq.nilCObj, IsTerminal.from_self, Category.id_comp] using se_mem
   · rename_i X se_mem
     have := I.mem_ofType_wk (X := X) (by omega) se_mem
-    convert this using 1 <;>
-      simp [e.subst_of_isClosed _ e_cl, UHomSeq.CObj.snoc]
+    simpa only [e.subst_of_isClosed _ e_cl, UHomSeq.CObj.snoc,
+      ← Category.assoc, IsTerminal.comp_from] using this
 
 theorem mem_ofTerm_wk {e l l' hl} (hl' : l' < s.length + 1)
     {Γ : s.CObj} {X : y(Γ.1) ⟶ s[l'].Ty}
@@ -826,13 +855,16 @@ theorem mem_ofTerm_toSb {e l l' hl} (hl' : l' < s.length + 1)
 
 theorem tp_sound {Γ i A l} (H : Lookup Γ i A l) {sΓ} (hΓ : sΓ ∈ I.ofCtx Γ) :
     ∃ llen, ∃ sA ∈ sΓ.tp llen i, sA ∈ I.ofType sΓ l A llen := by
-  induction H generalizing sΓ with (
-    obtain ⟨_, hΓ', _, _, hB, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ
-    simp [UHomSeq.CObj.tp, UHomSeq.ExtSeq.tp, *] at *)
-  | zero => exact I.mem_ofType_wk _ hB
+  induction H generalizing sΓ with
+  | zero =>
+    obtain ⟨_, hΓ', llen, _, hB, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ
+    refine ⟨llen, _, ?_, I.mem_ofType_wk _ hB⟩
+    exact Part.mem_assert rfl (Part.mem_some _)
   | succ _ _ ih =>
-    have ⟨_, _, _, _⟩ := ih hΓ'
-    exact ⟨‹_›, _, ‹_›, I.mem_ofType_wk _ ‹_›⟩
+    obtain ⟨_, hΓ', _, _, hB, rfl⟩ := I.mem_ofCtx_snoc.1 hΓ
+    obtain ⟨llen, sA, hA, hA'⟩ := ih hΓ'
+    refine ⟨llen, _, ?_, I.mem_ofType_wk _ hA'⟩
+    exact Part.mem_bind hA (Part.mem_some _)
 
 theorem var_sound {Γ i A l} (H : Lookup Γ i A l) {sΓ} (hΓ : sΓ ∈ I.ofCtx Γ) :
     ∃ llen, ∃ st ∈ sΓ.var llen i, st ≫ s[l].tp ∈ I.ofType sΓ l A llen := by
@@ -1030,6 +1062,8 @@ theorem EqTmIH.refl_tm {Γ A t t' l} :
       I.mem_ofTerm_refl.2 ⟨_, ht', rfl⟩,
       mkRefl_tp ..⟩
 
+-- The dependent context projections need reducible transparency during elaboration.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
     I.EqTmIH Γ l A t t' →
     I.EqTpIH ((.Id l (.subst .wk A) (.subst .wk t) (.bvar 0), l) :: (A, l) :: Γ) l' M M' →
@@ -1060,7 +1094,8 @@ theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
   refine ⟨_, hΓ, _, _,
     (I.mem_ofType_ofTerm_subst _ (.snoc (.sub1 _ _ _ utp hu) _ _ _ ?_ hh) ?_).1 hM, _,
     I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, ?b, _, hM, _, hr, ?a, _, hu, utp, _, hh, htp, rfl⟩,
-    I.mem_ofTerm_idRec.2 ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
+    I.mem_ofTerm_idRec.2
+      ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
     mkIdRec_tp ..⟩
   · rw [htp, Beq, comp_mkId]
     · congr 1 <;> simp
@@ -1096,7 +1131,8 @@ theorem EqTmIH.app_lam {Γ A B t u l l'} :
         I.mem_ofTerm_lam.2 ⟨rfl, _, hA, _, ht, by simp⟩, _, hu, _, utp, _, hB,
         s.mkLam_tp (t_tp := ttp) ..,
         (s.mkApp_mkLam (t_tp := ttp) ..).symm⟩,
-      I.mem_ofTerm_toSb _ hu _ ht, by simp [ttp]⟩
+      I.mem_ofTerm_toSb _ hu _ ht, by
+        exact (Category.assoc _ _ _).trans (congrArg _ ttp)⟩
 
 theorem EqTmIH.fst_snd_pair {Γ A B t u l l'} :
     I.WfTpIH ((A, l) :: Γ) l' B → I.WfTmIH Γ l A t → I.WfTmIH Γ l' (Expr.subst t.toSb B) u →
@@ -1116,6 +1152,8 @@ theorem EqTmIH.fst_snd_pair {Γ A B t u l l'} :
        ⟨_, hΓ, _, _, I.mem_ofType_toSb _ ht ttp hB, _,
         I.mem_ofTerm_snd.2 ⟨_, _, hA, _, hB, _, hp, tp, (mkSnd_mkPair ..).symm⟩, hu, utp⟩⟩
 
+-- Keep the semantic context projections transparent in this dependent proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.idRec_refl {Γ A M t r l l'} :
     I.WfTmIH Γ l A t →
     I.WfTpIH ((.Id l (.subst .wk A) (.subst .wk t) (.bvar 0), l) :: (A, l) :: Γ) l' M →
@@ -1143,6 +1181,8 @@ theorem EqTmIH.idRec_refl {Γ A M t r l l'} :
     ⟨_, hΓ, _, _, sM, _, ir, hr, sr⟩
   simp [Beq, comp_mkId, sAeq]
 
+-- Keep the semantic context projections transparent in this dependent proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.lam_app {Γ A B f l l'} :
     I.WfTmIH Γ (max l l') (.pi l l' A B) f →
     I.EqTmIH Γ (max l l') (.pi l l' A B) f
@@ -1158,6 +1198,8 @@ theorem EqTmIH.lam_app {Γ A B f l l'} :
       ⟨_, hΓ, _, _, hF, _, hf, hl, ftp⟩
     simp [ftp, comp_mkPi]
 
+-- Keep the semantic context projections transparent in this dependent proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.pair_fst_snd {Γ A B p l l'} :
     I.WfTmIH Γ (max l l') (Expr.sigma l l' A B) p →
     I.EqTmIH Γ (max l l') (Expr.sigma l l' A B) p
@@ -1167,7 +1209,8 @@ theorem EqTmIH.pair_fst_snd {Γ A B p l l'} :
     exact
       have h1 := I.mem_ofTerm_fst.2 ⟨by omega, _, hA, _, hB, _, hp, ptp, rfl⟩
       have h2 := I.mem_ofTerm_snd.2 ⟨by omega, _, hA, _, hB, _, hp, ptp, rfl⟩
-      have pr := I.mem_ofTerm_pair.2 ⟨rfl, _, h1, _, mkFst_tp .., _, hB, _, h2, mkSnd_tp .., by simp⟩
+       have pr := I.mem_ofTerm_pair.2
+         ⟨rfl, _, h1, _, mkFst_tp .., _, hB, _, h2, mkSnd_tp .., by simp⟩
       ⟨_, hΓ, _, _, hP, _, hp, pr, ptp⟩
 
 theorem EqTmIH.code_el {Γ a l} :

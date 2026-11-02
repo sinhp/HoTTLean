@@ -51,7 +51,7 @@ variable {Γ : Type u} [Category.{v} Γ] (A : Γ ⥤ Grpd.{v₁,u₁})
 -/
 def toPGrpd : ∫(A) ⥤ PGrpd.{v₁,u₁} :=
   PGrpd.functorTo (forget ⋙ A) (fun x => x.fiber) (fun f => f.fiber)
-    (by simp) (by simp [forget_map, Hom.base])
+    (by intro x; exact id_fiber x) (by intros; exact comp_fiber _ _)
 
 @[simp] theorem toPGrpd_obj_base (x) :
     ((toPGrpd A).obj x).base = A.obj x.base := rfl
@@ -71,6 +71,8 @@ theorem toPGrpd_forgetToGrpd : toPGrpd A ⋙ PGrpd.forgetToGrpd = forget ⋙ A :
 theorem toPGrpd_forgetToPCat : toPGrpd A ⋙ PGrpd.forgetToPCat = (Grothendieck.toPCat _) :=
   rfl
 
+-- The two Grothendieck domains use definitionally equal category instances.
+set_option backward.isDefEq.respectTransparency false in
 /--
 We also provide a definition of `toPGrpd` as the universal lift
 of the pullback `PGrpd`.
@@ -152,9 +154,7 @@ variable (A : Γ ⥤ Grpd.{v₁,u₁}) (α : Γ ⥤ PGrpd.{v₁,u₁}) (h : α �
 -/
 def sec : Γ ⥤ ∫(A) :=
   Groupoidal.functorTo (𝟭 _) (fun x => PGrpd.objFiber' h x) (fun f => PGrpd.mapFiber' h f)
-  (fun x => by simp) (fun f g => by
-    subst h
-    simp [PGrpd.mapFiber', PGrpd.mapFiber'EqToHom])
+  (fun _ => PGrpd.mapFiber'_id h) (fun f g => PGrpd.mapFiber'_comp' h f g)
 
 @[simp] lemma sec_obj_base (x) : ((sec A α h).obj x).base = x :=
   rfl
@@ -170,20 +170,16 @@ def sec : Γ ⥤ ∫(A) :=
     ((sec A α h).map f).fiber = PGrpd.mapFiber' h f :=
   rfl
 
-@[simp] def sec_toPGrpd : sec A α h ⋙ toPGrpd _ = α := by
+@[simp] theorem sec_toPGrpd : sec A α h ⋙ toPGrpd _ = α := by
   apply Grothendieck.FunctorTo.hext
   · rw [Functor.assoc, toPGrpd_forgetToGrpd, sec, ← Functor.assoc, h]
     rfl
   · intro x
-    simp [toPGrpd_obj_fiber, PGrpd.objFiber', PGrpd.objFiber, Grpd.eqToHom_obj,
-      PGrpd.objFiber'EqToHom]
+    exact PGrpd.objFiber'_heq h
   · intro x y f
-    simp only [Functor.comp_map, toPGrpd_map_fiber, sec_map_fiber, PGrpd.mapFiber',
-      Grpd.eqToHom_hom, PGrpd.mapFiber'EqToHom, PGrpd.objFiber'EqToHom]
-    rw! [eqToHom_comp_heq]
-    simp
+    exact PGrpd.mapFiber'_heq h f
 
-@[simp] def sec_forget : sec A α h ⋙ forget = 𝟭 _ :=
+@[simp] theorem sec_forget : sec A α h ⋙ forget = 𝟭 _ :=
   rfl
 
 theorem sec_eq_lift : sec A α h = (isPullback A).lift α (𝟭 _) (by simp [h, Functor.id_comp]) := by

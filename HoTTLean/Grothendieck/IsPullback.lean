@@ -1,6 +1,6 @@
 import Mathlib.CategoryTheory.Limits.Yoneda
 import Mathlib.CategoryTheory.Limits.Preserves.Finite
-import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 
 import HoTTLean.Pointed.Basic
 import HoTTLean.ForMathlib
@@ -12,7 +12,7 @@ namespace CategoryTheory
 
 namespace Functor.Grothendieck
 
-open Functor.IsPullback
+open _root_.CategoryTheory.Functor.IsPullback
 
 section
 
@@ -21,9 +21,11 @@ variable {Γ : Type u} [Category.{v} Γ] {A : Γ ⥤ Cat.{v₁,u₁}}
 
 variable (A)
 
+-- The Grothendieck fiber equations reduce through bundled category morphisms.
+set_option backward.isDefEq.respectTransparency false in
 def toPCat : ∫ A ⥤ PCat.{v₁,u₁} :=
   functorTo (forget _ ⋙ A) (fun x => x.fiber) (fun f => f.fiber)
-    (by simp) (by intros; simp)
+    (by simp) (by intros; simp [forget])
 
 @[simp] theorem toPCat_obj_base (x) :
     ((toPCat A).obj x).base = A.obj x.base := by
@@ -43,7 +45,7 @@ def toPCat : ∫ A ⥤ PCat.{v₁,u₁} :=
 
 -- formerly duplicated as `toPCat_comp_forgetPoint` and `comm_sq`
 theorem toPCat_forgetToCat : toPCat A ⋙ PCat.forgetToCat
-  = Grothendieck.forget A ⋙ A :=
+    = Grothendieck.forget A ⋙ A :=
   rfl
 
 namespace IsPullback
@@ -56,34 +58,41 @@ variable {C : Type*} [Category C]
 abbrev pt (x : C) := (fst.obj x).fiber
 
 abbrev point {x y : C} (f : x ⟶ y) :
-    (fst.map f)⟱.obj (pt fst x) ⟶ pt fst y :=
+    (fst.map f)⟱.toFunctor.obj (pt fst x) ⟶ pt fst y :=
   (fst.map f).fiber
 
 variable {A} {fst} {snd}
 
 @[simp] def liftObjFiber (x : C) : A.obj (snd.obj x) :=
-  ((eqToHom w).app x).obj (pt fst x)
+  ((eqToHom w).app x).toFunctor.obj (pt fst x)
 
 variable {x y : C} (f : x ⟶ y)
 
-@[simp] def liftMapFiber : ((snd ⋙ A).map f).obj (liftObjFiber w x) ⟶ liftObjFiber w y :=
-  let m1 := ((eqToHom w).app y).map (point fst f)
-  let m2 := (eqToHom ((eqToHom w).naturality f).symm).app
+@[simp] def liftMapFiber : ((snd ⋙ A).map f).toFunctor.obj (liftObjFiber w x) ⟶ liftObjFiber w y :=
+  let m1 := ((eqToHom w).app y).toFunctor.map (point fst f)
+  let m2 := (eqToHom ((eqToHom w).naturality f).symm).toNatTrans.app
     (pt fst x)
   m2 ≫ m1
 
+-- The fiber transports reduce through bundled category morphisms.
+set_option backward.isDefEq.respectTransparency false in
 theorem liftMapFiber_id (x : C) : liftMapFiber w (𝟙 x) = eqToHom (by simp) := by
-  simp [eqToHom_map]
+  simp
+  rw [eqToHom_map]
+  simp
 
+-- As for the identity law, the fiber transport crosses bundled Cat morphisms.
+set_option backward.isDefEq.respectTransparency false in
 theorem liftMapFiber_comp {x y z} (f : x ⟶ y) (g : y ⟶ z) :
     liftMapFiber w (f ≫ g) =
     eqToHom (by simp)
-    ≫ (A.map (snd.map g)).map (liftMapFiber w f)
+    ≫ (A.map (snd.map g)).toFunctor.map (liftMapFiber w f)
     ≫ liftMapFiber w g := by
-  have hgNatNatF := (eqToHom ((eqToHom w).naturality g).symm).naturality (fst.map f).fiber
-  have h := congr_arg (λ x ↦ x ≫ ((eqToHom w).app z).map (fst.map g).fiber) hgNatNatF
+  have hgNatNatF :=
+    (eqToHom ((eqToHom w).naturality g).symm).toNatTrans.naturality (fst.map f).fiber
+  have h := congr_arg (λ x ↦ x ≫ ((eqToHom w).app z).toFunctor.map (fst.map g).fiber) hgNatNatF
   dsimp at h
-  simp only [Category.assoc, eqToHom_app ((eqToHom w).naturality g).symm] at h
+  simp only [Category.assoc, Cat.Hom₂.eqToHom_toNatTrans, eqToHom_app] at h
   simp [eqToHom_map, h]
 
 variable (fst) (snd)
@@ -100,27 +109,27 @@ def lift : C ⥤ Grothendieck A := functorTo snd
 
 @[simp] theorem lift_obj_fiber (x) :
     ((lift fst snd w).obj x).fiber = liftObjFiber w x := by
-  simp [lift]
+  rfl
 
 @[simp] theorem lift_map_base {x y} (f : x ⟶ y) :
     ((lift fst snd w).map f).base = snd.map f := by
-  simp [lift]
+  rfl
 
 @[simp] theorem lift_map_fiber {x y} (f : x ⟶ y) :
     ((lift fst snd w).map f).fiber = liftMapFiber w f := by
-  simp [lift]
+  rfl
 
 @[simp] theorem fac_right : lift fst snd w ⋙ Grothendieck.forget A = snd := by
-  apply CategoryTheory.Functor.ext
-  · simp
-  · simp
+  exact CategoryTheory.Functor.hext (fun _ => rfl) (fun _ _ _ => HEq.rfl)
 
+-- Match the bundled Cat projections in the fiber transport equations.
+set_option backward.isDefEq.respectTransparency false in
 @[simp] theorem fac_left : lift fst snd w ⋙ Grothendieck.toPCat A = fst := by
   apply CategoryTheory.Functor.ext
   · intro x y f
     apply Grothendieck.Hom.ext
     · simp [eqToHom_map, PCat.eqToHom_base_map,
-        Functor.congr_hom (eqToHom_app w y) (point fst f)]
+        Functor.congr_hom (congrArg Cat.Hom.toFunctor (eqToHom_app w y)) (point fst f)]
     · have h := Functor.congr_hom w f
       simp only [PCat.forgetToCat_map, Functor.comp_map] at h
       simp [h]
@@ -131,6 +140,8 @@ def lift : C ⥤ Grothendieck A := functorTo snd
     · simp [h]
     · simp [Cat.eqToHom_obj]
 
+-- Reduce the bundled fiber maps of identity transports.
+set_option backward.isDefEq.respectTransparency false in
 theorem lift_uniq (m : C ⥤ Grothendieck A)
     (hl : m ⋙ Grothendieck.toPCat A = fst)
     (hr : m ⋙ Grothendieck.forget A = snd) :
@@ -144,13 +155,12 @@ theorem hom_ext {m n : C ⥤ Grothendieck A}
     (hl : m ⋙ Grothendieck.toPCat A = n ⋙ Grothendieck.toPCat A)
     (hr : m ⋙ Grothendieck.forget A = n ⋙ Grothendieck.forget A) :
     m = n := by
-  rw [lift_uniq (m ⋙ toPCat A) (m ⋙ forget A) ?_ m rfl rfl,
-    lift_uniq (n ⋙ toPCat A) (n ⋙ forget A) ?_ n rfl rfl]
-  rw! [hl, hr]
-  . show n ⋙ (toPCat A ⋙ PCat.forgetToCat) = _
-    rw [toPCat_forgetToCat, Functor.assoc]
-  . show m ⋙ (toPCat A ⋙ PCat.forgetToCat) = _
-    rw [toPCat_forgetToCat, Functor.assoc]
+  have wm : (m ⋙ toPCat A) ⋙ PCat.forgetToCat = (m ⋙ forget A) ⋙ A := by
+    rw [Functor.assoc, toPCat_forgetToCat, Functor.assoc]
+  have wn : (n ⋙ toPCat A) ⋙ PCat.forgetToCat = (n ⋙ forget A) ⋙ A := by
+    rw [Functor.assoc, toPCat_forgetToCat, Functor.assoc]
+  rw [lift_uniq _ _ wm m rfl rfl, lift_uniq _ _ wn n rfl rfl]
+  congr 1
 
 def aux {C : Type*} [inst : Category C] (Cn : C ⥤ PCat) (Cw : C ⥤ Γ)
     (hC : Cn ⋙ forget (𝟭 Cat) = Cw ⋙ A) :
@@ -163,7 +173,7 @@ def aux {C : Type*} [inst : Category C] (Cn : C ⥤ PCat) (Cw : C ⥤ Γ)
 
 end IsPullback
 
-open IsPullback
+open _root_.CategoryTheory.Functor.Grothendieck.IsPullback
 
 /--
 The following square is a (meta-theoretic) pullback of functors
@@ -288,14 +298,16 @@ end
 --     (s.snd ⋙ downFunctor)
 --     condition'
 
--- theorem lift_uniq (s : PullbackCone uLiftPCatForgetToCat.{v,u} (uLiftA.{v,u} A)) (m : s.pt ⥤ Grothendieck A)
+-- theorem lift_uniq (s : PullbackCone uLiftPCatForgetToCat.{v,u}
+--     (uLiftA.{v,u} A)) (m : s.pt ⥤ Grothendieck A)
 --     (hl : m ⋙ Grothendieck.toPCat A = s.fst ⋙ downFunctor)
 --     (hr : m ⋙ Grothendieck.forget A = s.snd ⋙ downFunctor) :
 --     m = lift s :=
 --   IsMegaPullback.lift_uniq
 --     (s.fst ⋙ downFunctor) (s.snd ⋙ downFunctor) condition' m hl hr
 
--- theorem lift_uniq' (s : PullbackCone uLiftPCatForgetToCat.{v,u} (uLiftA.{v,u} A)) (m : s.pt ⟶ uLiftGrothendieck A)
+-- theorem lift_uniq' (s : PullbackCone uLiftPCatForgetToCat.{v,u}
+--     (uLiftA.{v,u} A)) (m : s.pt ⟶ uLiftGrothendieck A)
 --     (hl : m ≫ uLiftToPCat A = s.fst) (hr : m ≫ uLiftGrothendieckForget A = s.snd) :
 --     m = lift' s := by
 --   unfold lift'

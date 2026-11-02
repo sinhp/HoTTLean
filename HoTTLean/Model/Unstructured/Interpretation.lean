@@ -3,8 +3,10 @@ import HoTTLean.Model.Unstructured.UHom
 
 import HoTTLean.ForMathlib
 
+-- Part membership simplification must unfold dependent context projections.
 macro "simp_part" loc:(Lean.Parser.Tactic.location)? : tactic =>
-  `(tactic| simp only [
+  `(tactic| set_option backward.isDefEq.respectTransparency false in
+    simp only [
     Part.mem_assert_iff, Part.mem_bind_iff, Part.mem_map_iff,
     Part.pure_eq_some, Part.bind_eq_bind, Part.map_bind,
     Part.map_some, Part.mem_bind_iff, Part.mem_some_iff,
@@ -20,7 +22,7 @@ namespace Model.UnstructuredUniverse
 
 open SynthLean
 
-variable {𝒞 : Type u} [Category 𝒞] (M : UnstructuredUniverse 𝒞)
+variable {𝒞 : Type u} [Category.{v} 𝒞] (M : UnstructuredUniverse 𝒞)
 variable [ChosenTerminal 𝒞]
 
 open ChosenTerminal
@@ -56,7 +58,7 @@ where `Γ` is a prefix of `Γ'`.
 It witnesses a sequence of context extension operations in `s`
 that built `Γ'` on top of `Γ`.
 We write `Γ ≤ Γ'`. -/
-inductive ExtSeq (s : UHomSeq 𝒞) (Γ : 𝒞) : 𝒞 → Type u where
+inductive ExtSeq (s : UHomSeq 𝒞) (Γ : 𝒞) : 𝒞 → Type (max u v) where
   | nil : s.ExtSeq Γ Γ
   | snoc {Γ'} {l : Nat} (d : s.ExtSeq Γ Γ') (llen : l < s.length + 1) (A : Γ' ⟶ s[l].Ty) :
     s.ExtSeq Γ (s[l].ext A)
@@ -209,7 +211,7 @@ i.e., one of the form `1.Aₙ₋₁.….A₀`,
 together with the extension sequence `[Aₙ₋₁ :: … :: A₀]`.
 
 This kind of object can be destructured. -/
-def CObj (s : UHomSeq 𝒞) : Type u := Σ Γ : 𝒞, s.ExtSeq (𝟭_ 𝒞) Γ
+def CObj (s : UHomSeq 𝒞) : Type (max u v) := Σ Γ : 𝒞, s.ExtSeq (𝟭_ 𝒞) Γ
 
 def nilCObj (s : UHomSeq 𝒞) : s.CObj :=
   ⟨𝟭_ 𝒞, .nil⟩
@@ -401,8 +403,9 @@ def ofCtx : Ctx χ → Part s.CObj
   | (A,l) :: Γ => do
     Part.assert (l < s.length + 1) fun llen => do
     let sΓ ← ofCtx Γ
-    let sA ← I.ofType sΓ l A
-    return sΓ.snoc llen sA
+    -- Use the universe-polymorphic bind: contexts and homs may live at different levels.
+    (I.ofType sΓ l A).bind fun sA =>
+      return sΓ.snoc llen sA
 
 @[simp]
 theorem mem_ofType_pi {Γ l i j A B} {llen : l < s.length + 1} {x} :
@@ -637,14 +640,15 @@ def sub1 {se : Γ.1 ⟶ s[l].Tm}
 @[simp] theorem sub1_toSb {se : Γ.1 ⟶ s[l].Tm}
     (A : Γ.1 ⟶ s[l].Ty) (e) (eq : se ≫ s[l].tp = A) (H : se ∈ I.ofTerm Γ l e) :
     (sub1 llen A e eq H).toSb = Expr.toSb e := by
-  simp [sub1, toSb, Expr.toSb]
+  rfl
 
 def up {Δ Γ σ full} (sσ : I.CSb Δ Γ σ full)
     {l} (llen : l < s.length + 1) (A : Γ.1 ⟶ s[l].Ty)
     (A' := σ ≫ A) (eq : σ ≫ A = A' := by rfl) :
     I.CSb (Δ.snoc llen A') (Γ.snoc llen A) (s[l].substWk σ A _ eq) full := by
   refine ((CSb.wk _ _ false).comp sσ).snoc' _ _ (.bvar 0) (by simp) _ ?_
-  simp [UHomSeq.CObj.var, UHomSeq.ExtSeq.var]
+  simp [UHomSeq.CObj.var, UHomSeq.ExtSeq.var, Part.assert_pos rfl]
+  exact Part.mem_some _
 
 @[simp] theorem up_toSb {Δ Γ σ full} (sσ : I.CSb Δ Γ σ full)
      {l} {llen : l < s.length + 1} {A A'} {eq : σ ≫ A = A'} :
@@ -658,6 +662,8 @@ end CSb
 open UHomSeq PolymorphicSigma PolymorphicPi PolymorphicIdIntro PolymorphicIdElim
 variable (slen : univMax ≤ s.length)
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem mem_ofType_ofTerm_subst' {full}
     (IH : full = true → ∀ {Δ Γ l} (llen : l < s.length + 1) {sσ} (σ : I.CSb Δ Γ sσ false) {se e},
       se ∈ I.ofTerm Γ l e llen → sσ ≫ se ∈ I.ofTerm Δ l (Expr.subst σ.toSb e) llen)
@@ -704,7 +710,7 @@ theorem mem_ofType_ofTerm_subst' {full}
     simp [ofTerm_bvar] at H
     simp [Expr.subst]
     induction σ generalizing i with simp [CSb.toSb, *]
-    | wk => exact CObj.mem_var_succ.2 ⟨_, ‹_›, rfl⟩
+    | wk => exact ⟨_, ‹_›, rfl⟩
     | @comp _ _ _ _ _ full σ τ ih1 ih2 =>
       simp [Expr.comp]
       cases full with
@@ -798,12 +804,14 @@ theorem mem_ofType_wk {e l l' hl} (hl' : l' < s.length + 1)
     (s[l'].disp X) ≫ se ∈ I.ofType (Γ.snoc hl' X) l (Expr.subst Expr.wk e) hl :=
   (I.mem_ofType_ofTerm_subst hl (.wk hl' X) rfl).1 H
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem mem_ofType_of_isClosed {e l} (e_cl : e.isClosed)
     (Γ : s.CObj) (hl : l < s.length + 1) {se} (se_mem : se ∈ I.ofType s.nilCObj l e hl) :
     isTerminal.from Γ.1 ≫ se ∈ I.ofType Γ l e hl := by
   rcases Γ with ⟨_, ext⟩
   induction ext
-  · convert se_mem; simp
+  · simpa [UHomSeq.nilCObj] using se_mem
   · rename_i X se_mem
     have := I.mem_ofType_wk (X := X) (by omega) se_mem
     convert this using 1 <;>
@@ -831,6 +839,8 @@ theorem mem_ofTerm_toSb {e l l' hl} (hl' : l' < s.length + 1)
 
 /-! ## Soundness of interpretation -/
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem tp_sound {Γ i A l} (H : Lookup Γ i A l) {sΓ} (hΓ : sΓ ∈ I.ofCtx Γ) :
     ∃ llen, ∃ sA ∈ sΓ.tp llen i, sA ∈ I.ofType sΓ l A llen := by
   induction H generalizing sΓ with (
@@ -954,6 +964,8 @@ theorem WfTmIH.bvar {Γ A i l} (H : Lookup Γ i A l) : I.WfCtxIH Γ → I.WfTmIH
     have ⟨llen, _, h1, h2⟩ := I.var_sound H hΓ
     ⟨_, ‹_›, llen, _, h2, _, h1, rfl⟩
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.lam {Γ A A' B t t' l l'} :
     I.EqTpIH Γ l A A' → I.EqTmIH ((A, l) :: Γ) l' B t t' →
     I.EqTmIH Γ (max l l') (Expr.pi l l' A B) (Expr.lam l l' A t) (Expr.lam l l' A' t')
@@ -1040,6 +1052,8 @@ theorem EqTmIH.refl_tm {Γ A t t' l} :
       ?_⟩
     simp; congr
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
     I.EqTmIH Γ l A t t' →
     I.EqTpIH ((.Id l (.subst .wk A) (.subst .wk t) (.bvar 0), l) :: (A, l) :: Γ) l' M M' →
@@ -1070,7 +1084,8 @@ theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
   refine ⟨_, hΓ, _, _,
     (I.mem_ofType_ofTerm_subst _ (.snoc (.sub1 _ _ _ utp hu) _ _ _ ?_ hh) ?_).1 hM, _,
     I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, ?b, _, hM, _, hr, ?a, _, hu, utp, _, hh, htp, rfl⟩,
-    I.mem_ofTerm_idRec.2 ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
+    I.mem_ofTerm_idRec.2
+      ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
     idRec_tp (I_eq := _) ..⟩
   · rw [htp, Beq, ← Id_comp]
     congr 1 <;> simp [sAeq]
@@ -1093,6 +1108,8 @@ theorem EqTmIH.code {Γ A A' l} (_ : l < univMax) :
       I.mem_ofTerm_code.2 ⟨_, rfl, _, hA', by simp⟩,
       s.code_tp ..⟩
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.app_lam {Γ A B t u l l'} :
     I.WfTmIH ((A, l) :: Γ) l' B t → I.WfTmIH Γ l A u →
     I.EqTmIH Γ l' (Expr.subst u.toSb B) (Expr.app l l' B (Expr.lam l l' A t) u)
@@ -1128,6 +1145,8 @@ theorem EqTmIH.fst_snd_pair {Γ A B t u l l'} :
        ⟨_, hΓ, _, _, I.mem_ofType_toSb _ ht ttp hB, _,
         I.mem_ofTerm_snd.2 ⟨_, _, hA, _, hB, _, hp, tp, (snd_pair ..).symm⟩, hu, utp⟩⟩
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.idRec_refl {Γ A M t r l l'} :
     I.WfTmIH Γ l A t →
     I.WfTpIH ((.Id l (.subst .wk A) (.subst .wk t) (.bvar 0), l) :: (A, l) :: Γ) l' M →
@@ -1152,10 +1171,12 @@ theorem EqTmIH.idRec_refl {Γ A M t r l l'} :
     have sr := rtp ▸ Part.mem_unique hR sM
     have ir := I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, by simp [Beq, sAeq],
       _, hM, _, hr, by simp [ttp, sr], _, ht, ttp, _, h1, by simp [ttp],
-        by rw! [ttp, PolymorphicIdElim.idRec_refl (I_eq := _)]⟩
+        by rw! [ttp, PolymorphicIdElim.idRec_refl (I_eq := _)]; rfl⟩
     ⟨_, hΓ, _, _, sM, _, ir, hr, sr⟩
   simp [Beq, ← Id_comp, sAeq, ttp]
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.lam_app {Γ A B f l l'} :
     I.WfTmIH Γ (max l l') (.pi l l' A B) f →
     I.EqTmIH Γ (max l l') (.pi l l' A B) f
@@ -1179,6 +1200,8 @@ theorem EqTmIH.lam_app {Γ A B f l l'} :
       congr 1
       apply (s[l].disp_pullback _).hom_ext <;> simp
 
+-- Unfold dependent context projections in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem EqTmIH.pair_fst_snd {Γ A B p l l'} :
     I.WfTmIH Γ (max l l') (Expr.sigma l l' A B) p →
     I.EqTmIH Γ (max l l') (Expr.sigma l l' A B) p

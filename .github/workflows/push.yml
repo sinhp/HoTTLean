@@ -14,22 +14,25 @@ jobs:
     name: Lint style
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
       - name: Check for long lines
         if: always()
         run: |
-          ! (find HoTTLean -name "*.lean" -type f -exec grep -E -H -n '^.{101,}$' {} \; | grep -v -E 'https?://')
+          ! (grep -E -H -n '^.{101,}$' HoTTLean.lean HoTTLeanTest.lean lakefile.lean $(find HoTTLean HoTTLeanTest -name '*.lean') | grep -v -E 'https?://')
 
       - name: Don't 'import Mathlib', use precise imports
         if: always()
         run: |
-          ! (find HoTTLean -name "*.lean" -type f -print0 | xargs -0 grep -E -n '^import Mathlib$')
+          ! grep -E -H -n '^import Mathlib$' HoTTLean.lean HoTTLeanTest.lean lakefile.lean $(find HoTTLean HoTTLeanTest -name '*.lean')
 
   build_project:
     runs-on: ubuntu-latest
     name: Build project
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 

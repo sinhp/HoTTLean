@@ -49,7 +49,8 @@ def sigmaMap : sigmaObj B x ⥤ sigmaObj B y :=
 @[simp] theorem sigmaMap_obj_fiber (a) :
     ((sigmaMap B f).obj a).fiber = (B.map ((ιNatTrans f).app a.base)).obj (a.fiber) := rfl
 
-theorem ιNatTrans_app_base (a : sigmaObj B x) : ((ιNatTrans f).app a.base) = homMk f (𝟙 (A.map f).obj a.base) :=
+theorem ιNatTrans_app_base (a : sigmaObj B x) : ((ιNatTrans f).app a.base) =
+    homMk f (𝟙 (A.map f).obj a.base) :=
   rfl
 
 @[simp] theorem sigmaMap_map_base {a b : sigmaObj B x} {p : a ⟶ b} :
@@ -58,12 +59,16 @@ theorem ιNatTrans_app_base (a : sigmaObj B x) : ((ιNatTrans f).app a.base) = h
 theorem sigmaMap_map_fiber_aux {a b : sigmaObj B x} {p : a ⟶ b} :
     (((ι A y ⋙ B)).map ((sigmaMap B f).map p).base).obj ((sigmaMap B f).obj a).fiber =
     (B.map ((ιNatTrans f).app (base b))).obj (((ι A x ⋙ B).map p.base).obj a.fiber) := by
-  simp only [sigmaObj, sigmaMap, Functor.comp_obj, Functor.comp_map, pre_map_base, map_map_base,
-    pre_obj_fiber, map_obj_fiber, Functor.whiskerRight_app]
+  change (B.map ((ι A y).map ((A.map f).map p.base))).obj
+    ((B.map ((ιNatTrans f).app a.base)).obj a.fiber) =
+    (B.map ((ιNatTrans f).app b.base)).obj
+      ((B.map ((ι A x).map p.base)).obj a.fiber)
   simp only [← Functor.comp_obj, ← Grpd.comp_eq_comp, ← Functor.map_comp]
-  congr 2
-  exact ((ιNatTrans f).naturality p.base).symm
+  exact congrArg (fun k => (B.map k).obj a.fiber)
+    ((ιNatTrans f).naturality p.base).symm
 
+-- Let the projection lemmas unfold the bundled groupoid in this proof.
+set_option backward.isDefEq.respectTransparency false in
 @[simp] theorem sigmaMap_map_fiber {a b : sigmaObj B x} {p : a ⟶ b} :
     ((sigmaMap B f).map p).fiber =
     eqToHom (sigmaMap_map_fiber_aux B f) ≫ (B.map ((ιNatTrans f).app (base b))).map p.fiber := by
@@ -74,9 +79,13 @@ variable {B}
 
 @[simp] theorem sigmaMap_id_obj {p} : (sigmaMap B (𝟙 x)).obj p = p := by
   apply hext
-  · simp [sigmaMap]
-  · simp [sigmaMap, Grpd.eqToHom_obj]
+  · simp only [sigmaMap_obj_base, Grpd.map_id_obj]
+  · simp only [sigmaMap_obj_fiber, ιNatTrans_id_app, eqToHom_map,
+      Grpd.eqToHom_obj]
+    exact cast_heq _ _
 
+-- The projection and transport simp lemmas need to unfold the bundled groupoid.
+set_option backward.isDefEq.respectTransparency false in
 @[simp] theorem sigmaMap_id_map {p1 p2} {hp2 : p2 = (sigmaMap B (𝟙 x)).obj p2}
     (f : p1 ⟶ p2) :
     (sigmaMap B (𝟙 x)).map f =
@@ -105,20 +114,25 @@ variable {B}
 
 variable {z : Γ} {f} {g : y ⟶ z}
 
+-- Unfold the bundled groupoid for the projection and transport lemmas.
+set_option backward.isDefEq.respectTransparency false in
 @[simp] theorem sigmaMap_comp_obj {p} : (sigmaMap B (f ≫ g)).obj p =
     (sigmaMap B g).obj ((sigmaMap B f).obj p) := by
   dsimp only [sigmaMap]
   apply hext
   · simp
   · simp only [sigmaObj, Functor.comp_obj, pre_obj_fiber, map_obj_fiber, Functor.whiskerRight_app,
-      ιNatTrans_comp_app, Functor.map_comp, eqToHom_map, Grpd.comp_eq_comp, Grpd.eqToHom_obj, cast_heq_iff_heq, heq_eq_eq]
+      ιNatTrans_comp_app, Functor.map_comp, eqToHom_map, Grpd.comp_eq_comp, Grpd.eqToHom_obj,
+      cast_heq_iff_heq, heq_eq_eq]
     aesop_cat
 
+-- Unfold bundled groupoids when elaborating dependent transport projections.
+set_option backward.isDefEq.respectTransparency false in
 @[simp] theorem sigmaMap_comp_map {B : ∫(A) ⥤ Grpd.{v₃,u₃}} {x y z : Γ} {f : x ⟶ y} {g : y ⟶ z}
     {p q : sigmaObj B x} (hpq : p ⟶ q)
     {h1 : (sigmaMap B (f ≫ g)).obj p = (sigmaMap B g).obj ((sigmaMap B f).obj p)}
-    {h2 : (sigmaMap B g).obj ((sigmaMap B f).obj q) = (sigmaMap B (f ≫ g)).obj q}
-    : (sigmaMap B (f ≫ g)).map hpq =
+    {h2 : (sigmaMap B g).obj ((sigmaMap B f).obj q) = (sigmaMap B (f ≫ g)).obj q} :
+    (sigmaMap B (f ≫ g)).map hpq =
     eqToHom h1 ≫ (sigmaMap B g).map ((sigmaMap B f).map hpq) ≫ eqToHom h2 := by
   have h : B.map ((ιNatTrans (f ≫ g)).app q.base) =
     B.map ((ιNatTrans f).app q.base)
@@ -167,7 +181,7 @@ theorem sigma_naturality_aux (x) :
   rfl
 
 lemma whiskerRight_ιNatTrans_naturality {x y : Δ} (f : x ⟶ y) :
-  Functor.whiskerRight (ιNatTrans f) (pre A σ ⋙ B) =
+    Functor.whiskerRight (ιNatTrans f) (pre A σ ⋙ B) =
     eqToHom (sigma_naturality_aux B σ x) ≫ Functor.whiskerRight (ιNatTrans (σ.map f)) B ≫
     eqToHom (by simp [Functor.assoc, sigma_naturality_aux B σ y]) := by
   aesop
@@ -181,6 +195,8 @@ lemma sigmaObj_naturality (x) :
     sigmaObj B (σ.obj x) = sigmaObj (pre A σ ⋙ B) x :=
   sigma_naturality_obj _ _ _
 
+-- The rewrite crosses the bundled Grpd hom and its underlying functor.
+set_option backward.isDefEq.respectTransparency false in
 lemma sigmaMap_naturality {x y : Δ} (f : x ⟶ y) : sigmaMap B (σ.map f)
     = Grpd.homOf (map (eqToHom (sigma_naturality_aux B σ x).symm)) ≫
     sigmaMap (pre A σ ⋙ B) f ≫
@@ -241,29 +257,34 @@ lemma assocIso_hom_app_fiber {x y} (f : x ⟶ y) (p) :
   rfl
 
 @[simp] theorem assocIso_id {x} :
-    assocIso B (𝟙 x) = eqToIso (by simp [sigmaMap_id, Functor.id_comp]) := by
+    assocIso B (𝟙 x) = eqToIso (by simp [sigmaMap_id]; rfl) := by
   simp [assocIso, preNatIso_congr B (ιNatIso_id A x), preNatIso_eqToIso]
+  apply eqToIso_trans
 
+-- Let projection simp lemmas unfold the bundled groupoid in this proof.
+set_option backward.isDefEq.respectTransparency false in
 theorem assocIso_comp {x y z : Γ} (f : x ⟶ y) (g : y ⟶ z) : assocIso B (f ≫ g) =
     assocIso B f ≪≫ Functor.isoWhiskerLeft (sigmaMap B f) (assocIso B g)
-    ≪≫ eqToIso (by simp [sigmaMap_comp, Functor.assoc]) := by
-  simp only [assocFib, sigmaMap, assocIso, preNatIso_congr B (ιNatIso_comp A f g), Iso.trans_hom,
-    Functor.isoWhiskerLeft_hom, eqToIso.hom, pre_comp, preNatIso_comp, preNatIso_eqToIso,
-    isoWhiskerLeft_eqToIso, eqToIso_trans, Functor.isoWhiskerLeft_trans, Iso.trans_assoc]
-  rfl
+    ≪≫ eqToIso (by simp only [sigmaMap_comp]; exact (Functor.assoc _ _ _).symm) := by
+  ext p
+  fapply Hom.ext
+  · simp [assocIso, ιNatIso_comp]
+  · simp only [assocIso, Iso.trans_hom, eqToIso.hom, NatTrans.comp_app]
+    rw! [eqToHom_app]
+    simp
 
 abbrev assocHom {x y : Γ} (f : x ⟶ y) :
     assocFib B x ⟶ sigmaMap B f ⋙ assocFib B y :=
   (assocIso B f).hom
 
 @[simp] theorem assocHom_id {x : Γ} :
-    assocHom B (𝟙 x) = eqToHom (by simp [sigmaMap_id, Functor.id_comp]) := by
-  simp [assocHom, assocIso_id]
+    assocHom B (𝟙 x) = eqToHom (by simp [sigmaMap_id]; rfl) := by
+  simp only [assocHom, assocIso_id, eqToIso.hom]
 
 theorem assocHom_comp {x y z : Γ} (f : x ⟶ y) (g : y ⟶ z) :
     assocHom B (f ≫ g) = assocHom B f ≫ Functor.whiskerLeft (sigmaMap B f) (assocHom B g) ≫
-      eqToHom (by simp [sigmaMap_comp, Functor.assoc]) := by
-  simp [assocHom, assocIso_comp]
+      eqToHom (by simp only [sigmaMap_comp]; exact (Functor.assoc _ _ _).symm) := by
+  simp only [assocHom, assocIso_comp, Iso.trans_hom, Functor.isoWhiskerLeft_hom, eqToIso.hom]
 
 section
 
@@ -276,14 +297,17 @@ def assocFibObj (x : ∫ B) : sigmaObj B x.base.base :=
 @[simp] theorem assocFibObj_base (x : ∫ B) : (assocFibObj x).base = x.base.fiber :=
   rfl
 
+-- Unfold bundled groupoid morphisms to combine the functor maps.
+set_option backward.isDefEq.respectTransparency false in
 theorem assocFibMap_aux {x y : ∫ B} (f : x ⟶ y) :
     ((ι A y.base.base ⋙ B).map (Hom.fiber (Hom.base f))).obj
     (fiber ((sigmaMap B (Hom.base (Hom.base f))).obj (assocFibObj x))) =
     (B.map (Hom.base f)).obj x.fiber := by
-  simp only [assocFibObj, objMk_base, ← Functor.comp_obj, Functor.comp_map,
-    sigmaMap_obj_fiber, objMk_fiber]
-  simp only [Functor.comp_obj, ← Grpd.comp_eq_comp, ← Functor.map_comp]
-  congr 2
+  change (B.map ((ι A y.base.base).map (Hom.fiber (Hom.base f)))).obj
+    ((B.map ((ιNatTrans (Hom.base (Hom.base f))).app x.base.fiber)).obj x.fiber) =
+    (B.map (Hom.base f)).obj x.fiber
+  simp only [← Functor.comp_obj, ← Grpd.comp_eq_comp, ← Functor.map_comp]
+  apply congrArg (fun k => (B.map k).obj x.fiber)
   apply Hom.ext <;> simp
 
 def assocFibMap {x y : ∫ B} (f : x ⟶ y) :
@@ -298,9 +322,13 @@ def assocFibMap {x y : ∫ B} (f : x ⟶ y) :
     (assocFibMap f).fiber = eqToHom (assocFibMap_aux ..) ≫ f.fiber := by
   rfl
 
+-- Expose the bundled fiber groupoid for the identity projection lemmas.
+set_option backward.isDefEq.respectTransparency false in
 lemma assocFibMap_id (x : ∫ B) : assocFibMap (𝟙 x) = eqToHom (by simp) := by
   apply Hom.ext <;> simp [sigmaObj]
 
+-- Expose the bundled groupoid for dependent projection simplification.
+set_option backward.isDefEq.respectTransparency false in
 lemma assocFibMap_comp {x y z : ∫ B} (f : x ⟶ y) (g : y ⟶ z) :
     assocFibMap (f ≫ g) = eqToHom (by simp) ≫
     (sigmaMap B (Hom.base (Hom.base g))).map (assocFibMap f) ≫ assocFibMap g := by
@@ -326,18 +354,22 @@ lemma assocFibMap_comp {x y z : ∫ B} (f : x ⟶ y) (g : y ⟶ z) :
       · simp
       · simp
     conv => left; rw! (castMode := .all) [this]
-    simp only [Functor.comp_obj, Grpd.map_comp_map, Category.assoc, eqRec_heq_iff_heq,
+    simp only [Functor.comp_obj, Grpd.map_comp_map, Category.assoc, eqRec_heq_iff,
       eqToHom_comp_heq_iff, heq_eq_eq]
     congr 1
     simp [← heq_eq_eq]
     rfl
 
+-- The functor associativity rewrites cross the bundled Grpd coercion.
+set_option backward.isDefEq.respectTransparency false in
 lemma assocFib_comp_forget (c : Γ) : assocFib B c ⋙ forget ⋙
     forget = ι (sigma A B) c ⋙ forget := by
   dsimp [assocFib]
   rw [ι_comp_forget, ← Functor.assoc, pre_comp_forget, Functor.assoc, ι_comp_forget]
   aesop_cat
 
+-- Extensionality crosses the bundled Grpd coercion.
+set_option backward.isDefEq.respectTransparency false in
 lemma assocFibObj_assocFib_obj (c : Γ) (x : sigmaObj B c) :
     assocFibObj ((assocFib B c).obj x) ≍ x := by
   simp only [assocFib, assocFibObj, pre_obj_fiber, heq_eq_eq]
@@ -346,6 +378,8 @@ lemma assocFibObj_assocFib_obj (c : Γ) (x : sigmaObj B c) :
   · rw! (castMode := .all) [pre_obj_base]
     simp
 
+-- Expose bundled groupoid projections for the dependent map equations.
+set_option backward.isDefEq.respectTransparency false in
 lemma assocFibMap_assocFib_map (c : Γ) {x y : sigmaObj B c} (f : x ⟶ y) :
     assocFibMap ((assocFib B c).map f) ≍ f := by
   dsimp [assocFib, assocFibMap]
@@ -354,6 +388,8 @@ lemma assocFibMap_assocFib_map (c : Γ) {x y : sigmaObj B c} (f : x ⟶ y) :
   rw! (castMode := .all) [pre_map_base]
   apply Hom.hext' <;> simp
 
+-- The extensionality proof crosses bundled groupoid coercions.
+set_option backward.isDefEq.respectTransparency false in
 lemma assocFib_forget_comp_forget_obj (x : ∫ B) :
     (assocFib B ((forget ⋙ forget).obj x)).obj
     (assocFibObj x) = x := by
@@ -365,6 +401,8 @@ lemma assocFib_forget_comp_forget_obj (x : ∫ B) :
       simp
   · simp
 
+-- Dependent projections cross bundled groupoid coercions.
+set_option backward.isDefEq.respectTransparency false in
 lemma assocHom_app_comp_pre_map_assocFibMap {x y : ∫ B} (f : x ⟶ y) :
     (assocHom B (Hom.base (Hom.base f))).app (assocFibObj x) ≫
       (pre B (ι A y.base.base)).map (assocFibMap f) ≍ f := by
@@ -403,16 +441,22 @@ lemma assocFibMap_assocHom_app {c c' : Γ} (f : c ⟶ c') (x : sigmaObj B c) :
   dsimp [assocFibMap, assocHom, assocIso]
   fapply Hom.hext' rfl HEq.rfl HEq.rfl
   · rfl
-  · simp only [objMk_base, Functor.comp_obj, sigmaMap_obj_base, homMk_base, Functor.comp_map,
-    sigmaMap_obj_fiber, objMk_fiber, homMk_fiber, preNatIso_hom_app_fiber, pre_comp,
-    Category.comp_id, heq_eq_eq]
+  · simp only [Functor.comp_obj, Functor.comp_map]
     symm
-    apply Functor.Groupoidal.id_fiber
+    -- The dependent fiber types require unfolding the bundled groupoid coercion.
+    rw! (transparency := .default) (castMode := .all) [Functor.Groupoidal.id_fiber]
+    rw! (transparency := .default) (castMode := .all) [homMk_fiber, preNatIso_hom_app_fiber]
+    simp
+    rw! (transparency := .default) (castMode := .all) [homMk_fiber, Category.comp_id]
+    apply eqToHom_heq_eqToHom
+    rfl
 
 end
 
+-- The coherence equations unfold bundled groupoid projections.
+set_option backward.isDefEq.respectTransparency false in
 def assoc : ∫ B ≅≅ ∫ sigma A B := .symm <| functorIsoFrom
-  (assocFib B) (assocHom B) (by simp) (by simp [assocHom_comp])
+  (assocFib B) (assocHom B) (by simp) (by intro c₁ c₂ c₃ f g; exact assocHom_comp B f g)
   (forget ⋙ forget) assocFibObj assocFibMap assocFibMap_id assocFibMap_comp
   assocFib_comp_forget assocFibObj_assocFib_obj assocFibMap_assocFib_map
   assocFib_forget_comp_forget_obj assocHom_app_comp_pre_map_assocFibMap
@@ -457,11 +501,7 @@ lemma assoc_hom_map_fiber_base {x y} (f : x ⟶ y) : ((assoc B).hom.map f).fiber
 
 @[simp]
 lemma assoc_hom_map_fiber_fiber {x y} (f : x ⟶ y) : ((assoc B).hom.map f).fiber.fiber =
-    eqToHom (by
-      simp [assoc_hom]
-      rw [← Functor.comp_obj, ← Grpd.comp_eq_comp, ← Functor.map_comp]
-      congr 2
-      fapply Hom.ext <;> simp) ≫ f.fiber :=
+    eqToHom (assocFibMap_aux f) ≫ f.fiber :=
   rfl
 
 @[simp]
@@ -476,41 +516,56 @@ lemma assoc_inv_obj_base_fiber (x) : ((assoc B).inv.obj x).base.fiber = x.fiber.
 lemma assoc_inv_obj_fiber (x) :  ((assoc B).inv.obj x).fiber = x.fiber.fiber :=
   rfl
 
+-- The inverse construction unfolds semireducible groupoid wrappers in this proof.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma assoc_inv_map_base_base {x y} (f : x ⟶ y) : ((assoc B).inv.map f).base.base = f.base := by
-  simp only [assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj, assocFib,
-    functorIsoFrom_hom_map, sigma_map, comp_base, pre_map_base, assocIso_hom_app_base_base,
-    ι_map_base, ι_obj_base]
+  simp only [assoc, Functor.Iso.symm_inv, assocFib, functorIsoFrom_hom_map, comp_base,
+    pre_map_base, assocIso_hom_app_base_base, ι_map_base, ι_obj_base]
   erw [Category.comp_id]
   rfl
 
+-- Unfold the bundled groupoid wrappers when matching dependent projections.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma assoc_inv_map_base_fiber {x y} (f : x ⟶ y) : ((assoc B).inv.map f).base.fiber =
     eqToHom (by simp) ≫ f.fiber.base := by
-  simp only [assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj, assocFib,
-    functorIsoFrom_hom_map, sigma_map, comp_base, assocIso_hom_app_base_base,
-    Functor.Groupoidal.comp_fiber, assocIso_hom_app_base_fiber, Functor.comp_obj,
-    CategoryTheory.Functor.map_id, Category.id_comp]
-  rw! [pre_map_base, ι_map_fiber]
+  simp only [assoc, Functor.Iso.symm_inv]
+  rw! (transparency := .default) [functorIsoFrom_hom_map]
+  simp only [comp_base, Functor.Groupoidal.comp_fiber, assocIso_hom_app_base_base,
+    assocHom, assocIso_hom_app_base_fiber, assocFib]
+  rw! (transparency := .default) [pre_map_base, ι_map_fiber]
   simp
+  rw! (transparency := .default) [CategoryTheory.Functor.map_id]
+  rw! (transparency := .default) [Grpd.id_eq_id, CategoryTheory.Functor.id_map]
+  rw! (transparency := .default) [Category.id_comp, ← Category.assoc, eqToHom_trans]
   rfl
 
+-- Unfold the bundled groupoid wrappers when matching dependent projections.
+set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma assoc_inv_map_fiber {x y} (f : x ⟶ y) : ((assoc B).inv.map f).fiber =
     eqToHom (by
-      simp only [assoc_inv_obj_fiber, sigma_map,
-        Functor.comp_map, sigmaMap_obj_fiber]
-      conv => rhs; rw [← Functor.comp_obj, ← Grpd.comp_eq_comp, ← Functor.map_comp]
+      simp only [assoc_inv_obj_fiber, Functor.comp_map]
+      conv => rhs; rw! (transparency := .default) [← Functor.comp_obj, ← Grpd.comp_eq_comp,
+        ← Functor.map_comp]
       rfl) ≫ f.fiber.fiber := by
-  simp [assoc]
+  simp only [assoc, Functor.Iso.symm_inv]
+  rw! (transparency := .default) [functorIsoFrom_hom_map]
+  simp [assocFib, assocHom]
+  rw! (transparency := .default) [CategoryTheory.Functor.map_id]
+  simp only [Category.id_comp]
   rfl
 
+-- Unfold the bundled groupoid wrappers when matching dependent projections.
+set_option backward.isDefEq.respectTransparency false in
 lemma assocFibMap_pre_pre_map {Δ : Type u₄} [Groupoid.{v₄} Δ] {σ : Δ ⥤ Γ} {x y} (f : x ⟶ y) :
     assocFibMap ((pre B (pre A σ)).map f) ≍ assocFibMap f := by
   have pre_pre_obj_base_base (x) : ((pre B (pre A σ)).obj x).base.base = σ.obj x.base.base := by
     rw [pre_obj_base, pre_obj_base]
   have pre_pre_obj_base_fiber (x) : ((pre B (pre A σ)).obj x).base.fiber = x.base.fiber := by
     rw! (castMode := .all) [pre_obj_base, pre_obj_fiber]
+    rfl
   simp [assocFibMap]
   apply Hom.hext'
   · rw [sigma_naturality_aux]
@@ -524,20 +579,24 @@ lemma assocFibMap_pre_pre_map {Δ : Type u₄} [Groupoid.{v₄} Δ] {σ : Δ ⥤
     simp only [← heq_eq_eq, cast_heq_iff_heq]
     apply Functor.Groupoidal.hext'
     · rw! (castMode := .all) [sigma_naturality_aux, pre_pre_obj_base_base]
+      rfl
     · simp
     · simp
   · apply Functor.Groupoidal.hext'
     · rw! (castMode := .all) [sigma_naturality_aux, pre_pre_obj_base_base]
+      rfl
     · simp [pre_pre_obj_base_fiber]
     · simp
   · simp only [sigmaMap_obj_base, objMk_base, homMk_base, Functor.comp_obj, Functor.comp_map]
     rfl
   · simp
 
+-- Unfold the bundled groupoid wrappers when matching dependent projections.
+set_option backward.isDefEq.respectTransparency false in
 lemma assoc_comp_fiber {Δ : Type u₄} [Groupoid.{v₄} Δ] (σ : Δ ⥤ Γ) {x y} (f : x ⟶ y) :
     Hom.fiber (((assoc (pre A σ ⋙ B)).hom ⋙ map (eqToHom (sigma_naturality ..).symm) ⋙
     pre (sigma A B) σ).map f) ≍ Hom.fiber ((pre B (pre A σ) ⋙ (assoc B).hom).map f) := by
-  simp only [assoc_hom, Functor.comp_obj, sigma_obj, Functor.comp_map, sigma_map, pre_map_fiber,
+  simp only [assoc_hom, Functor.comp_obj, Functor.comp_map, pre_map_fiber,
     map_map_fiber, Functor.Groupoidal.functorTo_obj_base, Functor.Groupoidal.forget_obj,
     Functor.Groupoidal.functorTo_map_base, forget_map, Grpd.comp_eq_comp,
     Functor.Groupoidal.functorTo_obj_fiber, assocFibObj, Functor.Groupoidal.functorTo_map_fiber,
@@ -546,6 +605,8 @@ lemma assoc_comp_fiber {Δ : Type u₄} [Groupoid.{v₄} Δ] (σ : Δ ⥤ Γ) {x
   rw! [assocFibMap_pre_pre_map]
   simp
 
+-- Allow these rewrites to unfold the bundled groupoid wrappers.
+set_option backward.isDefEq.respectTransparency false in
 lemma assoc_comp {Δ : Type u₄} [Groupoid.{v₄} Δ] (σ : Δ ⥤ Γ) :
     (sigma.assoc ((pre A σ) ⋙ B)).hom ⋙
     map (eqToHom (by simp [sigma_naturality])) ⋙ pre (sigma A B) σ =
@@ -560,7 +621,7 @@ lemma assoc_comp {Δ : Type u₄} [Groupoid.{v₄} Δ] (σ : Δ ⥤ Γ) :
     conv => right; rw [← Functor.assoc, pre_comp_forget]
     simp only [Functor.assoc, pre_comp_forget]
   · intro x
-    simp only [Functor.comp_obj, sigma_obj, pre_obj_fiber, map_obj_fiber, assoc_hom_obj_base,
+    simp only [Functor.comp_obj, pre_obj_fiber, map_obj_fiber, assoc_hom_obj_base,
       eqToHom_app, heq_eq_eq]
     rw [eqToHom_eq_homOf_map]
     apply Functor.Groupoidal.hext
@@ -571,6 +632,7 @@ lemma assoc_comp {Δ : Type u₄} [Groupoid.{v₄} Δ] (σ : Δ ⥤ Γ) :
       rw [eqToHom_app, Grpd.eqToHom_obj]
       simp
       rw! (castMode := .all) [assoc_hom_obj_fiber_fiber, assoc_hom_obj_fiber_fiber, pre_obj_fiber]
+      rfl
     · rw [← Functor.assoc, ι_comp_pre A σ x.base.base]
   · intro x y f
     apply assoc_comp_fiber B σ f
@@ -622,6 +684,8 @@ abbrev SigAux
     Γ ⟶ Ctx.coreAsSmall.{max v₁ v₂, max u (max v₁ v₂ + 1)} Y :=
   toCoreAsSmallEquiv.symm (S (toCoreAsSmallEquiv A) (toCoreAsSmallEquiv B))
 
+-- Allow these rewrites to unfold the bundled groupoid wrappers.
+set_option backward.isDefEq.respectTransparency false in
 include S_naturality in
 theorem SigAux_comp
     (B : U.ext A ⟶ Ctx.coreAsSmall.{v₂, max u (max v₁ v₂ + 1)} X) :
@@ -651,6 +715,8 @@ def assoc : U.ext B ≅ U.ext (Sig.{v₁,v₂,u} B) :=
   Grpd.mkIso' (sigma.assoc (toCoreAsSmallEquiv B)) ≪≫
     eqToIso (by dsimp [U.ext, Sig]; rw [toCoreAsSmallEquiv.apply_symm_apply])
 
+-- Allow these rewrites to unfold the bundled groupoid wrappers.
+set_option backward.isDefEq.respectTransparency false in
 set_option maxHeartbeats 400000 in
 lemma assoc_comp : (assoc (U.substWk σ A σA eq ≫ B)).hom ≫ U.substWk σ (Sig.{v₁,v₂,u} B)
     (Sig.{v₁,v₂,u} (U.substWk σ A σA eq ≫ B)) (Sig_comp.{v₁,v₂,u} ..).symm =
@@ -664,6 +730,8 @@ lemma assoc_comp : (assoc (U.substWk σ A σA eq ≫ B)).hom ≫ U.substWk σ (S
   simp only [pre_comp, Functor.id_comp]
   apply sigma.assoc_comp' (toCoreAsSmallEquiv B) (σ := σ) (toCoreAsSmallEquiv σA)
 
+-- Allow these rewrites to unfold the bundled groupoid wrappers.
+set_option backward.isDefEq.respectTransparency false in
 lemma assoc_disp : (assoc B).hom ≫ U.disp (Sig.{v₁,v₂,u} B) = U.disp B ≫ U.disp A := by
   simpa [assoc] using sigma.assoc_hom_comp_forget _
 

@@ -1,4 +1,4 @@
-import Mathlib.CategoryTheory.Category.Grpd
+import Mathlib.CategoryTheory.Groupoid.Grpd.Basic
 import HoTTLean.ForMathlib
 import HoTTLean.Grothendieck.Groupoidal.Basic
 import HoTTLean.ForMathlib.CategoryTheory.Functor.IsPullback
@@ -12,10 +12,12 @@ universe w v u v₁ u₁ v₂ u₂
 noncomputable section
 
 namespace CategoryTheory
+-- The Grothendieck fiber equations reduce through bundled category morphisms.
+set_option backward.isDefEq.respectTransparency false
 
 attribute [local simp] eqToHom_map Grpd.id_eq_id Grpd.comp_eq_comp Functor.id_comp
 
-open Functor
+open _root_.CategoryTheory.Functor
 
 abbrev PCat := ∫ 𝟭 Cat.{v,u}
 
@@ -34,32 +36,32 @@ prefix:max "⇓" => forgetToCat.obj
 -- write using `\d==`
 postfix:max "⟱" => forgetToCat.map
 
-lemma forgetToCat_map {C D : PCat} (F : C ⟶ D) :
+@[local simp] lemma forgetToCat_map {C D : PCat} (F : C ⟶ D) :
     F⟱ = F.base := rfl
 
 @[simp]
-theorem id_obj {C : PCat} (X : C.base) : (𝟙 C)⟱.obj X = X :=
+theorem id_obj {C : PCat} (X : C.base) : (𝟙 C)⟱.toFunctor.obj X = X :=
   rfl
 
 @[simp]
 theorem id_map {C : PCat} {X Y : C.base} (f : X ⟶ Y) :
-    (𝟙 C)⟱.map f = f :=
+    (𝟙 C)⟱.toFunctor.map f = f :=
   rfl
 
 @[simp] lemma id_fiber {C : PCat} : Hom.fiber (𝟙 C) = 𝟙 _ := rfl
 
 @[simp]
 theorem comp_obj {C D E : PCat} (F : C ⟶ D) (G : D ⟶ E) (X : C.base) :
-    (F ≫ G)⟱.obj X = G⟱.obj (F⟱.obj X) :=
+    (F ≫ G)⟱.toFunctor.obj X = G⟱.toFunctor.obj (F⟱.toFunctor.obj X) :=
   rfl
 
 @[simp]
 theorem comp_map {C D E : PCat} (F : C ⟶ D) (G : D ⟶ E) {X Y : C.base}
-    (f : X ⟶ Y) : (F ≫ G)⟱.map f = G⟱.map (F⟱.map f) :=
+    (f : X ⟶ Y) : (F ≫ G)⟱.toFunctor.map f = G⟱.toFunctor.map (F⟱.toFunctor.map f) :=
   rfl
 
 @[simp] lemma comp_fiber {C D E : PCat} (F : C ⟶ D) (G : D ⟶ E) :
-    (F ≫ G).fiber = G⟱.map F.fiber ≫ G.fiber := by
+    (F ≫ G).fiber = G⟱.toFunctor.map F.fiber ≫ G.fiber := by
   simp
 
 -- formerly `map_id_point`
@@ -72,13 +74,13 @@ theorem comp_map {C D E : PCat} (F : C ⟶ D) (G : D ⟶ E) {X Y : C.base}
 -- formerly `map_comp_point`
 @[simp] theorem map_comp_fiber {C : Type u} [Category.{v} C] {F : C ⥤ PCat}
     {x y z: C} (f : x ⟶ y) (g : y ⟶ z) : (F.map (f ≫ g)).fiber =
-    eqToHom (by simp) ≫ (F.map g)⟱.map (F.map f).fiber ≫ (F.map g).fiber := by
+    eqToHom (by simp) ≫ (F.map g)⟱.toFunctor.map (F.map f).fiber ≫ (F.map g).fiber := by
   rw! [Functor.map_comp]
   simp
 
 /-- This is the proof of equality used in the eqToHom in `PCat.eqToHom_point` -/
 theorem eqToHom_point_aux {P1 P2 : PCat.{v,u}} (eq : P1 = P2) :
-    (eqToHom eq)⟱.obj P1.fiber = P2.fiber := by
+    (eqToHom eq)⟱.toFunctor.obj P1.fiber = P2.fiber := by
   subst eq
   simp
 
@@ -100,7 +102,7 @@ def objFiber (x : Γ) : ⇓(α.obj x) := (α.obj x).fiber
 
 -- formerly `mapObjPt`
 def mapObjFiber {x y : Γ} (f : x ⟶ y) : ⇓(α.obj y) :=
-    (α.map f)⟱.obj (objFiber α x)
+    (α.map f)⟱.toFunctor.obj (objFiber α x)
 
 -- formerly `mapPoint`
 def mapFiber {x y : Γ} (f : x ⟶ y) :
@@ -114,7 +116,7 @@ def mapFiber {x y : Γ} (f : x ⟶ y) :
 -- formerly `mapPoint_comp`
 theorem mapFiber_comp {x y z} (f : x ⟶ y) (g : y ⟶ z) :
     mapFiber α (f ≫ g) = eqToHom (by simp [mapObjFiber, objFiber])
-      ≫ (α.map g)⟱.map (mapFiber α f) ≫ mapFiber α g := by
+      ≫ (α.map g)⟱.toFunctor.map (mapFiber α f) ≫ mapFiber α g := by
   simp [mapFiber]
 
 theorem mapFiber_inv {x y} (f : x ⟶ y) [IsIso f] :
@@ -124,7 +126,9 @@ theorem mapFiber_inv {x y} (f : x ⟶ y) [IsIso f] :
 end
 
 theorem eqToHom_base_map {x y : PCat} (eq : x = y) {a b} (f : a ⟶ b) :
-    (eqToHom eq).base.map f = eqToHom (by simp) ≫ (eqToHom (by simp [eq] : x.base = y.base)).map f ≫ eqToHom (by simp) := by
+    (eqToHom eq).base.toFunctor.map f = eqToHom (by simp) ≫
+      (eqToHom (by simp [eq] : x.base = y.base)).toFunctor.map f ≫
+      eqToHom (by simp) := by
   cases eq
   simp
 
@@ -166,7 +170,7 @@ prefix:max "⇓" => forgetToGrpd.obj
 -- write using `\d==`
 postfix:max "⟱" => forgetToGrpd.map
 
-lemma forgetToGrpd_map {C D : PGrpd} (F : C ⟶ D) :
+@[local simp] lemma forgetToGrpd_map {C D : PGrpd} (F : C ⟶ D) :
     F⟱ = F.base := rfl
 
 @[simp]
@@ -385,8 +389,8 @@ end
 theorem Functor.hext (F G : Γ ⥤ PGrpd)
     (hbase : F ⋙ forgetToGrpd = G ⋙ forgetToGrpd)
     (hfiber_obj : ∀ x : Γ, HEq (F.obj x).fiber (G.obj x).fiber)
-    (hfiber_map : ∀ {x y : Γ} (f : x ⟶ y), HEq (F.map f).fiber (G.map f).fiber)
-    : F = G :=
+    (hfiber_map : ∀ {x y : Γ} (f : x ⟶ y), HEq (F.map f).fiber (G.map f).fiber) :
+    F = G :=
   Grothendieck.FunctorTo.hext F G hbase hfiber_obj hfiber_map
 
 section

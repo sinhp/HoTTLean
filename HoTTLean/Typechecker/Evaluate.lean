@@ -123,6 +123,7 @@ partial def evalTm (env : Q(List (Val $χ))) (t' : Q(Expr $χ)) :
       subst $v
       have ⟨_, h⟩ := List.getElem?_eq_some_iff.mp ($this).symm
       rw [h]
+      all_goals rfl
     )⟩
   | ~q(.lam $k $k' $C $b) => do
     let ⟨vC, vCpost⟩ ← evalTp q($env) q($C)
@@ -175,7 +176,7 @@ partial def evalTm (env : Q(List (Val $χ))) (t' : Q(Expr $χ)) :
       obtain ⟨rfl, p, eq⟩ := t.inv_snd
       apply ValEqTm.conv_tp _ (eq.subst env.wf_sb).symm_tp
       convert ($vpost) ($vppost env p) using 1
-      autosubst
+      all_goals first | rfl | autosubst
     )⟩
   | ~q(.refl $l $u) => do
     let ⟨vu, vupost⟩ ← evalTm q($env) q($u)
@@ -397,6 +398,7 @@ partial def evalNeutTm (env : Q(List (Val $χ))) (nt : Q(Neut $χ)) :
       obtain ⟨_, rfl⟩ := List.getElem?_eq_some_iff.mp ($this).symm
       congr 3
       exact env.eq_length
+      all_goals rfl
     )⟩
   | ~q(.app _ _ _ $nf $va) =>
     let ⟨vf, vfpost⟩ ← evalNeutTm q($env) q($nf)
@@ -409,7 +411,7 @@ partial def evalNeutTm (env : Q(List (Val $χ))) (nt : Q(Neut $χ)) :
       apply ValEqTm.conv_tm _ (eqt.subst env.wf_sb).symm_tm
       apply ValEqTm.conv_tp _ (eq.subst env.wf_sb).symm_tp
       convert ($vpost ($vfpost env nf) ($vapost env va)) using 1
-      autosubst
+      all_goals autosubst
     )⟩
   | ~q(.fst $k $k' $np) =>
     let ⟨vp, vppost⟩ ← evalNeutTm q($env) q($np)
@@ -432,7 +434,7 @@ partial def evalNeutTm (env : Q(List (Val $χ))) (nt : Q(Neut $χ)) :
       apply ValEqTm.conv_tm _ (eqt.subst env.wf_sb).symm_tm
       apply ValEqTm.conv_tp _ (eq.subst env.wf_sb).symm_tp
       convert ($vpost ($vppost env np_eq)) using 1
-      autosubst
+      all_goals autosubst
     )⟩
   | ~q(.idRec $k $k' $vA $va $cM $vr $vh) =>
     /- NOTE: the type arguments to `forceClos₂Tp`
@@ -479,7 +481,7 @@ partial def evalClosTp (vB : Q(Clos $χ)) (vt : Q(Val $χ)) :
       simp +zetaDelta only at vB
       rcases vB with ⟨env, Aeq, B⟩
       convert ($vpost (env.snoc B.wf_binder (vt.conv_tp Aeq.symm_tp)) B) using 1
-      autosubst
+      all_goals autosubst
     )⟩
   | ~q(.of_val $env $vB') => do
     let ⟨v, vpost⟩ ← evalValTp q($vt :: $env) q($vB')
@@ -489,7 +491,7 @@ partial def evalClosTp (vB : Q(Clos $χ)) (vt : Q(Val $χ)) :
       rcases vB with _ | ⟨env, Aeq, B⟩
       have := env.snoc B.wf_tp.wf_binder (vt.conv_tp Aeq.symm_tp)
       convert ($vpost this B) using 1
-      autosubst
+      all_goals autosubst
     )⟩
   | vB => throwError "expected a type closure, got{Lean.indentExpr vB}"
 
@@ -597,7 +599,7 @@ partial def evalClosTm (vb : Q(Clos $χ)) (vt : Q(Val $χ)) :
       have := env.snoc b.wf_binder (vt.conv_tp Aeq.symm_tp)
       have Beq := Beq.subst <| WfSb.toSb vt.wf_tm
       convert ($vpost this b |>.conv_tp (by convert Beq using 1; autosubst)) using 1
-      autosubst
+      all_goals autosubst
     )⟩
   | ~q(.of_val $env $vb') => do
     let ⟨v, vpost⟩ ← evalValTm q($vt :: $env) q($vb')
@@ -608,7 +610,7 @@ partial def evalClosTm (vb : Q(Clos $χ)) (vt : Q(Val $χ)) :
       have := env.snoc b.wf_tm.wf_binder (vt.conv_tp Aeq.symm_tp)
       have Beq := Beq.subst <| WfSb.toSb vt.wf_tm
       convert ($vpost this b |>.conv_tp (by convert Beq using 1; autosubst)) using 1
-      autosubst
+      all_goals autosubst
     )⟩
   | vB => throwError "expected a type closure, got{Lean.indentExpr vB}"
 
@@ -682,7 +684,6 @@ partial def evalApp (vf va : Q(Val $χ)) : TypecheckerM ((v : Q(Val $χ)) ×
       apply EqTm.cong_app (EqTp.refl_tp b.wf_tp) _ (EqTm.refl_tm va.wf_tm)
       apply EqTm.symm_tm; apply eqt.trans_tm
       apply EqTm.symm_tm; gcongr
-      assumption
     )⟩
   | ~q(.neut $n (.pi $k $k' $vA $vB)) => do
     let ⟨vBa, vBpost⟩ ← evalClosTp q($vB) q($va)
@@ -719,7 +720,7 @@ partial def evalFst (vp : Q(Val $χ)) : TypecheckerM ((v : Q(Val $χ)) ×
         apply EqTm.fst_pair Beq.wf_left t u |>.symm_tm.trans_tm
         gcongr
         apply EqTm.trans_tm _ eqt.symm_tm
-        gcongr <;> assumption
+        gcongr
       apply v.conv_nf (this.conv_eq Aeq) Aeq.symm_tp
     )⟩
   | ~q(.neut $n (.sigma $k $k' $vA $vB)) =>
@@ -753,14 +754,14 @@ partial def evalSnd (vp : Q(Val $χ)) : TypecheckerM ((v : Q(Val $χ)) ×
         apply EqTm.fst_pair Beq.wf_left t u |>.symm_tm.trans_tm
         gcongr
         apply EqTm.trans_tm _ eqt.symm_tm
-        gcongr <;> assumption
+        gcongr
       replace w := w.conv_tp <| Beq.symm_tp.subst_eq (EqSb.toSb feq)
       apply w.conv_tm
       apply EqTm.snd_pair Beq.wf_left t u |>.symm_tm.conv_eq
         (Beq'.wf_left.subst_eq (EqSb.toSb feq)) |>.trans_tm _
       apply EqTm.symm_tm; gcongr
       apply eqt.trans_tm
-      apply EqTm.symm_tm; gcongr <;> assumption
+      apply EqTm.symm_tm; gcongr
     )⟩
   | ~q(.neut $n (.sigma $k $k' $vA $vB)) => do
     let ⟨vf, vfpost⟩ ← evalFst q($vp)
@@ -805,7 +806,7 @@ partial def evalIdRec (l' : Q(Nat)) (cM : Q(Clos $χ)) (vr vh : Q(Val $χ)) :
         apply EqTm.symm_tm
         apply EqTm.cong_idRec (.refl_tm t) (.refl_tp M) (.refl_tm vr.wf_tm) tu
         refine ?eq
-        apply EqTm.trans_tm _ <| eqt.symm_tm.conv_eq _ <;> gcongr; assumption
+        apply EqTm.trans_tm _ <| eqt.symm_tm.conv_eq _ <;> gcongr
       . apply M.subst_eq <| EqSb.snoc (EqSb.toSb tu) (.Id_bvar t) (autosubst% ?eq)
     )⟩
   | ~q(.neut $nh (.Id $l $vA $va $vb)) => do

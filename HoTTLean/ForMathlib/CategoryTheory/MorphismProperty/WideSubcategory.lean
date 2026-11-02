@@ -135,7 +135,7 @@ lemma WideSubcategory.hext {X X' : P.WideSubcategory} (hX : X.1 ≍ X'.1) : X �
 lemma WideSubcategory.hom_hext {X X' Y Y' : P.WideSubcategory} (hX : X.1 ≍ X'.1)
     (hY : Y.1 ≍ Y'.1) (f : X ⟶ Y) (f' : X' ⟶ Y') (hf : f.1 ≍ f'.1) : f ≍ f' := by
   cases X; cases X'; cases Y; cases Y'; subst hX hY
-  simp only [Set.mem_setOf_eq, heq_eq_eq] at *
+  simp only [Set.mem_ofPred_eq, heq_eq_eq] at *
   apply hom_ext
   assumption
 
