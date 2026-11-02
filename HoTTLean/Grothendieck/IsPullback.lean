@@ -45,7 +45,7 @@ def toPCat : ∫ A ⥤ PCat.{v₁,u₁} :=
 
 -- formerly duplicated as `toPCat_comp_forgetPoint` and `comm_sq`
 theorem toPCat_forgetToCat : toPCat A ⋙ PCat.forgetToCat
-  = Grothendieck.forget A ⋙ A :=
+    = Grothendieck.forget A ⋙ A :=
   rfl
 
 namespace IsPullback

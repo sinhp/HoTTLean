@@ -43,7 +43,7 @@ def sUnit' : (𝟭_ Ctx) ⟶ uHomSeq[1].Tm :=
   uHomSeq.code (Nat.zero_lt_succ _) sUnit
 
 @[simp]
-def sUnit'_tp : sUnit' ≫ uHomSeq[1].tp = (uHomSeq.homSucc 0).wkU _ := by
+theorem sUnit'_tp : sUnit' ≫ uHomSeq[1].tp = (uHomSeq.homSucc 0).wkU _ := by
   exact uHomSeq.code_tp _ _
 
 def I : Interpretation Lean.Name uHomSeq where

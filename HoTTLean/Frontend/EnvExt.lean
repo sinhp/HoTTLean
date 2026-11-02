@@ -26,7 +26,7 @@ namespace SynthLean
 open Lean Qq
 
 variable {m : Type → Type} [Monad m] [MonadLiftT IO m]
-  [MonadOptions m] [MonadEnv m] [MonadError m] [MonadQuotation m]
+  [MonadOptions m] [MonadEnv m] [MonadError m]
 
 /-- A theory-updating entry.
 

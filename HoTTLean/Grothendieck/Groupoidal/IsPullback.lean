@@ -170,7 +170,7 @@ def sec : Γ ⥤ ∫(A) :=
     ((sec A α h).map f).fiber = PGrpd.mapFiber' h f :=
   rfl
 
-@[simp] def sec_toPGrpd : sec A α h ⋙ toPGrpd _ = α := by
+@[simp] theorem sec_toPGrpd : sec A α h ⋙ toPGrpd _ = α := by
   apply Grothendieck.FunctorTo.hext
   · rw [Functor.assoc, toPGrpd_forgetToGrpd, sec, ← Functor.assoc, h]
     rfl
@@ -179,7 +179,7 @@ def sec : Γ ⥤ ∫(A) :=
   · intro x y f
     exact PGrpd.mapFiber'_heq h f
 
-@[simp] def sec_forget : sec A α h ⋙ forget = 𝟭 _ :=
+@[simp] theorem sec_forget : sec A α h ⋙ forget = 𝟭 _ :=
   rfl
 
 theorem sec_eq_lift : sec A α h = (isPullback A).lift α (𝟭 _) (by simp [h, Functor.id_comp]) := by

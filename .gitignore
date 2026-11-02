@@ -15,6 +15,7 @@ blueprint/src/chapter/auto
 blueprint/lean_decls
 blueprint/print/
 home_page/blueprint
+home_page/_site/
 *.pdf
 ## Docs
 docs/_includes/sorries.md
@@ -46,7 +47,3 @@ docs/_includes/sorries.md
 *.pdfsync
 *.json
 *.auctex-auto
-
-## Local repair workspaces
-.unity/
-.worktrees/

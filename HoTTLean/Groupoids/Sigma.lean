@@ -131,8 +131,8 @@ set_option backward.isDefEq.respectTransparency false in
 @[simp] theorem sigmaMap_comp_map {B : ∫(A) ⥤ Grpd.{v₃,u₃}} {x y z : Γ} {f : x ⟶ y} {g : y ⟶ z}
     {p q : sigmaObj B x} (hpq : p ⟶ q)
     {h1 : (sigmaMap B (f ≫ g)).obj p = (sigmaMap B g).obj ((sigmaMap B f).obj p)}
-    {h2 : (sigmaMap B g).obj ((sigmaMap B f).obj q) = (sigmaMap B (f ≫ g)).obj q}
-    : (sigmaMap B (f ≫ g)).map hpq =
+    {h2 : (sigmaMap B g).obj ((sigmaMap B f).obj q) = (sigmaMap B (f ≫ g)).obj q} :
+    (sigmaMap B (f ≫ g)).map hpq =
     eqToHom h1 ≫ (sigmaMap B g).map ((sigmaMap B f).map hpq) ≫ eqToHom h2 := by
   have h : B.map ((ιNatTrans (f ≫ g)).app q.base) =
     B.map ((ιNatTrans f).app q.base)
@@ -181,7 +181,7 @@ theorem sigma_naturality_aux (x) :
   rfl
 
 lemma whiskerRight_ιNatTrans_naturality {x y : Δ} (f : x ⟶ y) :
-  Functor.whiskerRight (ιNatTrans f) (pre A σ ⋙ B) =
+    Functor.whiskerRight (ιNatTrans f) (pre A σ ⋙ B) =
     eqToHom (sigma_naturality_aux B σ x) ≫ Functor.whiskerRight (ιNatTrans (σ.map f)) B ≫
     eqToHom (by simp [Functor.assoc, sigma_naturality_aux B σ y]) := by
   aesop

@@ -40,8 +40,7 @@ Furthermore, the correctness proof `eq_synthLvl` needs zero metatheory.
 Does this imply we could omit level annotations from the syntax?
 In the interpretation function, we'd invoke `synthLvl.go` on `ExtSeq`.  -/
 noncomputable def synthLvl (Γ : Ctx χ) (e : Expr χ) : Nat :=
-  go (Γ.map (·.2)) e
-where
+  go (Γ.map (·.2)) e where
   go (Γ : List Nat) : Expr χ → Nat
   | .ax _ A => go Γ A
   | .bvar i => Γ[i]? |>.getD default

@@ -558,8 +558,8 @@ theorem Hom.hext' (h : F = F') {X Y : ∫ F} {X' Y' : ∫ F'} (hX : HEq X X') (h
 theorem FunctorTo.hext (G H : D ⥤ ∫ F)
     (hbase : G ⋙ forget _ = H ⋙ forget _)
     (hfiber_obj : ∀ x : D, HEq (G.obj x).fiber (H.obj x).fiber)
-    (hfiber_map : ∀ {x y : D} (f : x ⟶ y), HEq (G.map f).fiber (H.map f).fiber)
-    : G = H := by
+    (hfiber_map : ∀ {x y : D} (f : x ⟶ y), HEq (G.map f).fiber (H.map f).fiber) :
+    G = H := by
   fapply CategoryTheory.Functor.ext
   · intro x
     apply Grothendieck.hext
@@ -585,11 +585,11 @@ def transport (x : ∫ F) {c : C} (t : x.base ⟶ c) : ∫ F :=
   mk c ((F.map t).toFunctor.obj x.fiber)
 
 @[simp]
-def transport_base (x : ∫ F) {c : C} (t : x.base ⟶ c) : (transport x t).base = c :=
+theorem transport_base (x : ∫ F) {c : C} (t : x.base ⟶ c) : (transport x t).base = c :=
   rfl
 
 @[simp]
-def transport_fiber (x : ∫ F) {c : C} (t : x.base ⟶ c) :
+theorem transport_fiber (x : ∫ F) {c : C} (t : x.base ⟶ c) :
     (transport x t).fiber = (F.map t).toFunctor.obj x.fiber :=
   rfl
 
@@ -603,11 +603,11 @@ def toTransport (x : ∫ F) {c : C} (t : x.base ⟶ c) : x ⟶ x.transport t :=
   Hom.mk t (𝟙 _)
 
 @[simp]
-def toTransport_base (x : ∫ F) {c : C} (t : x.base ⟶ c) : (toTransport x t).base = t :=
+theorem toTransport_base (x : ∫ F) {c : C} (t : x.base ⟶ c) : (toTransport x t).base = t :=
   rfl
 
 @[simp]
-def toTransport_fiber (x : ∫ F) {c : C} (t : x.base ⟶ c) :
+theorem toTransport_fiber (x : ∫ F) {c : C} (t : x.base ⟶ c) :
     (toTransport x t).fiber = 𝟙 _ :=
   rfl
 
@@ -637,7 +637,7 @@ lemma toTransport_eqToHom {X: C} {X' : ∫ F} (hX': (forget F).obj X' = X):
 
 set_option backward.isDefEq.respectTransparency false in
 lemma transport_comp (x : ∫ F) {c d: C} (t : x.base ⟶ c) (t': c ⟶ d):
-      transport x (t ≫ t') = transport (c:= d) (transport x t) t' := by
+    transport x (t ≫ t') = transport (c:= d) (transport x t) t' := by
   simp [transport]
 
 set_option backward.isDefEq.respectTransparency false in
@@ -1186,8 +1186,8 @@ theorem ι_comp_forget : ι F c ⋙ forget _ = (const (F.obj c)).obj c :=
 
 -- Match the wrapped Cat functors during dependent fiber comparison.
 set_option backward.isDefEq.respectTransparency false in
-@[simp] theorem ι_comp_pre (G : D ⥤ C) (x : D)
-    : ι (G ⋙ F) x ⋙ pre F G = ι F (G.obj x) := by
+@[simp] theorem ι_comp_pre (G : D ⥤ C) (x : D) :
+    ι (G ⋙ F) x ⋙ pre F G = ι F (G.obj x) := by
   apply Grothendieck.FunctorTo.hext
   · rw [ι_comp_forget, Functor.assoc, pre_comp_forget, ← Functor.assoc, ι_comp_forget]
     apply Functor.ext <;> simp
@@ -1256,12 +1256,12 @@ def functorFrom : ∫ F ⥤ E where
 theorem map_eqToHom_base_pf {G1 G2 : Grothendieck F} (eq : G1 = G2) :
     F.obj G1.base = F.obj G2.base := by subst eq; rfl
 
-theorem map_eqToHom_base {G1 G2 : Grothendieck F} (eq : G1 = G2)
-    : F.map (eqToHom eq).base = eqToHom (map_eqToHom_base_pf eq) := by
+theorem map_eqToHom_base {G1 G2 : Grothendieck F} (eq : G1 = G2) :
+    F.map (eqToHom eq).base = eqToHom (map_eqToHom_base_pf eq) := by
   simp [eqToHom_map]
 
 theorem map_eqToHom_obj_base {F G : C ⥤ Cat.{v,u}} (h : F = G)
-  (x) : ((Grothendieck.map (eqToHom h)).obj x).base = x.base := rfl
+    (x) : ((Grothendieck.map (eqToHom h)).obj x).base = x.base := rfl
 
 theorem map_forget {F G : C ⥤ Cat.{v,u}} (α : F ⟶ G) :
     Grothendieck.map α ⋙ Grothendieck.forget G =
@@ -1389,8 +1389,8 @@ theorem functorFrom_ext {K K' : Grothendieck F ⥤ E}
 theorem functorFrom_hext {K K' : Grothendieck F ⥤ E}
     (hfib : ∀ c, ι F c ⋙ K = ι F c ⋙ K')
     (hhom : ∀ {c c' : C} (f : c ⟶ c'), Functor.whiskerRight (ιNatTrans f) K ≍
-      Functor.whiskerRight (ιNatTrans f) K')
-    : K = K' := by
+      Functor.whiskerRight (ιNatTrans f) K') :
+    K = K' := by
   fapply functorFrom_ext
   · assumption
   · intros
@@ -1545,17 +1545,17 @@ namespace AsSmall
   AsSmall.up.map (AsSmall.down.map f) = f := rfl
 
 theorem comp_up_inj {C : Type u} [Category.{v} C]
-  {D : Type u₁} [Category.{v₁} D] {F G : C ⥤ D}
+    {D : Type u₁} [Category.{v₁} D] {F G : C ⥤ D}
     (h : F ⋙ (AsSmall.up : D ⥤ AsSmall.{w} D) = G ⋙ AsSmall.up) : F = G := by
   have h' := congrArg (fun H : C ⥤ AsSmall.{w} D => H ⋙ AsSmall.down) h
   change F = G at h'
   exact h'
 
 theorem comp_down_inj {C : Type u} [Category.{v} C]
-  {D : Type u₁} [Category.{v₁} D]
+    {D : Type u₁} [Category.{v₁} D]
     {F G : C ⥤ AsSmall.{w} D}
-    (h : F ⋙ AsSmall.down = G ⋙ AsSmall.down)
-    : F = G := by
+    (h : F ⋙ AsSmall.down = G ⋙ AsSmall.down) :
+    F = G := by
   have h' := congrArg (fun H : C ⥤ D => H ⋙ (AsSmall.up : D ⥤ AsSmall.{w} D)) h
   change F = G at h'
   exact h'

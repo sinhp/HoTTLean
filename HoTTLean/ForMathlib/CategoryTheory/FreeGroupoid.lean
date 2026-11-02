@@ -62,9 +62,9 @@ open Quiver in
 promotes the prefunctor `C ⥤q FreeGroupoid C` into a functor
 `C ⥤ Quotient (FreeGroupoid.homRel C)`. -/
 inductive FreeGroupoid.homRel : HomRel (Quiver.FreeGroupoid C) where
-| map_id (X : C) : homRel ((FreeGroupoid.of C).map (𝟙 X)) (𝟙 ((FreeGroupoid.of C).obj X))
-| map_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : homRel ((FreeGroupoid.of C).map (f ≫ g))
-  ((FreeGroupoid.of C).map f ≫ (FreeGroupoid.of C).map g)
+  | map_id (X : C) : homRel ((FreeGroupoid.of C).map (𝟙 X)) (𝟙 ((FreeGroupoid.of C).obj X))
+  | map_comp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) : homRel ((FreeGroupoid.of C).map (f ≫ g))
+    ((FreeGroupoid.of C).map f ≫ (FreeGroupoid.of C).map g)
 
 /-- The underlying type of the free groupoid on a category,
 defined by quotienting the free groupoid on the underlying quiver of `C`
@@ -191,8 +191,8 @@ open Category.FreeGroupoid
 @[simps]
 def free : Cat.{u,u} ⥤ Grpd.{u,u} where
   obj C := Grpd.of <| Category.FreeGroupoid C
-  map {C D} F := map F.toFunctor
-  map_id C := Category.FreeGroupoid.map_id
+  map {_ _} F := map F.toFunctor
+  map_id _ := Category.FreeGroupoid.map_id
   map_comp F G := Category.FreeGroupoid.map_comp F.toFunctor G.toFunctor
 
 /-- The unit of the free-forgetful adjunction between `Grpd` and `Cat`. -/

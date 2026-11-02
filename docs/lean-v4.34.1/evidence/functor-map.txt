@@ -1,9 +1,0 @@
-$ lake env lean docs/lean-v4.34.1/evidence/FunctorMapProbe.lean
-CategoryTheory.functorMapMigrationProbe_functor_map.{u, v, _uniq.122, _uniq.123} {C : Type u} [Category.{v, u} C]
-  {X Y : C} (f g : X ⟶ Y) (h : f = g) {D : Type _uniq.123} [Category.{_uniq.122, _uniq.123} D] (F : C ⥤ D) :
-  F.map f = F.map g
-CategoryTheory.functorMapMigrationProbe_functor_map_assoc.{u, v, _uniq.122, _uniq.123} {C : Type u} [Category.{v, u} C]
-  {X Y : C} (f g : X ⟶ Y) (h : f = g) {D : Type _uniq.123} [Category.{_uniq.122, _uniq.123} D] (F : C ⥤ D) {Z : D}
-  (h✝ : F.obj Y ⟶ Z) : F.map f ≫ h✝ = F.map g ≫ h✝
-
-Exit status: 0

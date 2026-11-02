@@ -389,8 +389,8 @@ end
 theorem Functor.hext (F G : Γ ⥤ PGrpd)
     (hbase : F ⋙ forgetToGrpd = G ⋙ forgetToGrpd)
     (hfiber_obj : ∀ x : Γ, HEq (F.obj x).fiber (G.obj x).fiber)
-    (hfiber_map : ∀ {x y : Γ} (f : x ⟶ y), HEq (F.map f).fiber (G.map f).fiber)
-    : F = G :=
+    (hfiber_map : ∀ {x y : Γ} (f : x ⟶ y), HEq (F.map f).fiber (G.map f).fiber) :
+    F = G :=
   Grothendieck.FunctorTo.hext F G hbase hfiber_obj hfiber_map
 
 section

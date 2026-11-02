@@ -191,18 +191,18 @@ variable {p : Γ ⥤ PGrpd}
   (p_tp : p ⋙ PGrpd.forgetToGrpd = FunctorOperation.Id a0_tp a1_tp)
 
 def unpathFibObj : (x : Grpd.Interval × Γ) → A.obj x.2
-| ⟨⟨⟨.false⟩⟩, x2⟩ => PGrpd.objFiber' a0_tp x2
-| ⟨⟨⟨.true⟩⟩, x2⟩ => PGrpd.objFiber' a1_tp x2
+  | ⟨⟨⟨.false⟩⟩, x2⟩ => PGrpd.objFiber' a0_tp x2
+  | ⟨⟨⟨.true⟩⟩, x2⟩ => PGrpd.objFiber' a1_tp x2
 
 -- The inverse uses the groupoid structure through the bundled fiber coercion.
 set_option backward.isDefEq.respectTransparency false in
 def unpathFibMap : {x y : Grpd.Interval × Γ} → (f : x ⟶ y) →
     ((A.map f.2).obj (unpathFibObj a0_tp a1_tp x) ⟶ unpathFibObj a0_tp a1_tp y)
-| ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => PGrpd.mapFiber' a0_tp f.2
-| ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f => (PGrpd.mapFiber' a0_tp f.2) ≫ (PGrpd.objFiber' p_tp y2).1
-| ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, y2⟩, f =>
-  (PGrpd.mapFiber' a1_tp f.2) ≫ inv (PGrpd.objFiber' p_tp y2).1
-| ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, _⟩, f => PGrpd.mapFiber' a1_tp f.2
+  | ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => PGrpd.mapFiber' a0_tp f.2
+  | ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f => (PGrpd.mapFiber' a0_tp f.2) ≫ (PGrpd.objFiber' p_tp y2).1
+  | ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, y2⟩, f =>
+    (PGrpd.mapFiber' a1_tp f.2) ≫ inv (PGrpd.objFiber' p_tp y2).1
+  | ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, _⟩, f => PGrpd.mapFiber' a1_tp f.2
 
 lemma unpathFibMap_id (x : Grpd.Interval × Γ) : unpathFibMap a0_tp a1_tp p_tp (𝟙 x) =
     eqToHom (by simp) := by
@@ -738,9 +738,9 @@ variable (σ : Δ ⟶ Γ) (p0 : Γ ⟶ U.{v}.Tm) (p : cylinder.I.obj Γ ⟶ U.Ty
 set_option backward.isDefEq.respectTransparency false in
 @[simp]
 def liftObj : Grpd.Interval × Γ → U.{v}.Tm
-| ⟨⟨⟨.false⟩⟩, x2⟩ => p0.obj x2
-| ⟨⟨⟨.true⟩⟩, x2⟩ => tpClovenIsofibration.liftObj (p.map (FunctorOperation.Path.ft x2))
-    (Functor.congr_obj p0_tp x2)
+  | ⟨⟨⟨.false⟩⟩, x2⟩ => p0.obj x2
+  | ⟨⟨⟨.true⟩⟩, x2⟩ => tpClovenIsofibration.liftObj (p.map (FunctorOperation.Path.ft x2))
+      (Functor.congr_obj p0_tp x2)
 
 set_option backward.isDefEq.respectTransparency false in
 @[simp]
@@ -753,11 +753,11 @@ set_option backward.isDefEq.respectTransparency false in
 @[simp]
 def liftMap : {x y : Grpd.Interval × Γ} → (f : x ⟶ y) →
     liftObj p0 p p0_tp x ⟶ liftObj p0 p p0_tp y
-| ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => p0.map f.2
-| ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f => p0.map f.2 ≫ liftMap0 p0 p p0_tp (ft y2)
-| ⟨⟨⟨.true⟩⟩, x2⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => inv (liftMap0 p0 p p0_tp (ft x2)) ≫ p0.map f.2
-| ⟨⟨⟨.true⟩⟩, x2⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f => inv (liftMap0 p0 p p0_tp (ft x2)) ≫
-  p0.map f.2 ≫ liftMap0 p0 p p0_tp (ft y2)
+  | ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => p0.map f.2
+  | ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f => p0.map f.2 ≫ liftMap0 p0 p p0_tp (ft y2)
+  | ⟨⟨⟨.true⟩⟩, x2⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => inv (liftMap0 p0 p p0_tp (ft x2)) ≫ p0.map f.2
+  | ⟨⟨⟨.true⟩⟩, x2⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f => inv (liftMap0 p0 p p0_tp (ft x2)) ≫
+    p0.map f.2 ≫ liftMap0 p0 p p0_tp (ft y2)
 
 lemma liftMap_id (x) : liftMap p0 p p0_tp (𝟙 x) = 𝟙 (liftObj p0 p p0_tp x) := by
   rcases x with ⟨⟨⟨_|_⟩⟩, _⟩ <;> simp

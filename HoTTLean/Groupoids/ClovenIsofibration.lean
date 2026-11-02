@@ -160,8 +160,7 @@ def classifier.map.map  {X Y} (f: X ⟶ Y) {a b : F.Fiber X} (m : a ⟶ b) :
   let i := Groupoid.inv i1 ≫ Fiber.fiberInclusion.map m ≫ i2
   have e :𝟙 Y = eqToHom (by simp[obj_liftObj]) ≫
       F.map (CategoryTheory.inv i1 ≫ Fiber.fiberInclusion.map m ≫ i2) ≫
-        eqToHom (by simp[obj_liftObj])
-     := by
+        eqToHom (by simp[obj_liftObj]) := by
        simp [i1, i2, Fiber.functor_map_fiberInclusion_map, Functor.map_inv, map_liftIso']
   have : F.IsHomLift (𝟙 Y) i := by
     simp only[i, e]
@@ -171,7 +170,7 @@ def classifier.map.map  {X Y} (f: X ⟶ Y) {a b : F.Fiber X} (m : a ⟶ b) :
   Fiber.homMk F _ i
 
 lemma classifier.map.map_id {X Y} (f : X ⟶ Y) (a: F.Fiber X):
-  map.map I f (𝟙 a) = 𝟙 (map.obj I f a) := by
+    map.map I f (𝟙 a) = 𝟙 (map.obj I f a) := by
    ext
    simp [map, Fiber.homMk, Fiber.fiberInclusion, classifier.map.obj]
    rfl
@@ -179,7 +178,7 @@ lemma classifier.map.map_id {X Y} (f : X ⟶ Y) (a: F.Fiber X):
 -- Allow fiber projections to reduce when simplifying the conjugated composite.
 set_option backward.isDefEq.respectTransparency false in
 lemma classifier.map.map_comp {X Y} (f: X ⟶ Y) {a b c: F.Fiber X} (m1 : a ⟶ b) (m2: b ⟶ c):
-  map.map I f (m1 ≫ m2) = map.map I f m1 ≫ map.map I f m2 := by
+    map.map I f (m1 ≫ m2) = map.map I f m1 ≫ map.map I f m2 := by
    ext
    simp only [Functor.map_comp]
    simp [classifier.map.map, Fiber.homMk, Fiber.fiberInclusion, Category.assoc]
@@ -208,7 +207,7 @@ lemma classifier.map_id (X : Γ) : classifier.map I (𝟙 X) = 𝟙 (Grpd.of (F.
 -- Reduce fiber projections in the dependent composition proof.
 set_option backward.isDefEq.respectTransparency false in
 lemma classifier.map_comp {X Y Z: Γ} (f : X⟶ Y) (g : Y ⟶ Z):
- classifier.map I (f ≫ g) = classifier.map I f ⋙ classifier.map I g := by
+    classifier.map I (f ≫ g) = classifier.map I f ⋙ classifier.map I g := by
   fapply Functor.ext
   · intro a
     simp[map.obj, liftObj_comp]
@@ -241,7 +240,7 @@ lemma grothendieckClassifierIso.hom.map_aux {X Y: Γ} (f: X ⟶ Y) (a: I.classif
   rfl
 
 lemma grothendieckClassifierIso.hom.map_aux2
- (X: Γ) (a: I.classifier.obj X) : F.obj a.1 = X := by
+    (X: Γ) (a: I.classifier.obj X) : F.obj a.1 = X := by
   simp[classifier] at a
   simp[a.2]
 
@@ -292,7 +291,7 @@ def grothendieckClassifierIso.hom : ∫ I.classifier ⥤ E :=
   (by intro X Y Z f g; ext; simp[hom.hom,liftIso_comp])
 
 def grothendieckClassifierIso.inv.fibMap {X Y}(f : X ⟶ Y) :
- ((F ⋙ I.classifier).map f).obj ⟨X,rfl⟩  ⟶ ⟨Y, rfl⟩  := by
+    ((F ⋙ I.classifier).map f).obj ⟨X,rfl⟩  ⟶ ⟨Y, rfl⟩  := by
   refine @Fiber.homMk _ _ _ _ F (F.obj Y) _ _ ?_ ?_
   · exact CategoryTheory.inv (I.liftIso (F.map f) rfl) ≫ f
   · simp
@@ -450,7 +449,7 @@ lemma forget.isHomLift {X Y: C} (f : X ⟶ Y) {X' : F.Groupoidal}
   apply IsHomLift.of_fac' (ha := rfl) (hb := by simp [liftObj])
   simp [liftIso, Groupoidal.forget_map, Groupoidal.toTransport_base]
 
-def toTransport_IsIso (x : F.Groupoidal) {c : C} (t : x.base ⟶ c) :
+theorem toTransport_IsIso (x : F.Groupoidal) {c : C} (t : x.base ⟶ c) :
     IsIso (Groupoidal.toTransport x t) :=
   inferInstance
 
@@ -466,13 +465,13 @@ instance {X Y: C} (f : X ⟶ Y) [IsIso f] {X' : F.Groupoidal}
     (hX': Groupoidal.forget.obj X' = X) : IsIso (forget.liftIso f hX') := by
   apply toTransport_IsIso
 
-def forget.liftObj_id {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
+theorem forget.liftObj_id {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
     forget.liftObj (𝟙 X) hX' = X' := by
   simp [liftObj, Groupoidal.transport_eqToHom]
 
 -- The cast and transport equations require unfolding semireducible definitions.
 set_option backward.isDefEq.respectTransparency false in
-def forget.liftIso_id {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
+theorem forget.liftIso_id {X: C} {X' : F.Groupoidal} (hX': Groupoidal.forget.obj X' = X) :
     forget.liftIso (𝟙 X) hX' = eqToHom (by simp [forget.liftObj_id]) := by
   dsimp [liftIso]
   rw! (castMode :=.all)[Category.comp_id]

@@ -30,7 +30,7 @@ instance : LE (Axioms χ) where
   le E E' := ∀ ⦃c p⦄, (E c) = some p → (E' c) = some p
 
 instance : Std.Refl (· ≤ · : Axioms χ → Axioms χ → Prop) where
-  refl E _ _ h := h
+  refl _ _ _ h := h
 
 instance : IsTrans (Axioms χ) (· ≤ ·) where
   trans _ _ _ h h' _ _ Ec := h' (h Ec)

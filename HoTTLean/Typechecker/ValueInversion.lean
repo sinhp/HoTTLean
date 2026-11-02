@@ -139,7 +139,7 @@ theorem ValEqTm.inv_neut {Γ vA A vt t l} : ValEqTm E Γ l (.neut vt vA) t A →
   all_goals grind [NeutEqTm.conv_neut, ValEqTp.conv_tp]
 
 theorem NeutEqTm.inv_ax {Γ C c vA t l₀} : NeutEqTm E Γ l₀ (.ax c vA) t C → ∃ Al,
-   l₀ = Al.val.2 ∧ E c = some Al ∧ ValEqTp E Γ Al.val.2 vA Al.val.1 ∧
+    l₀ = Al.val.2 ∧ E c = some Al ∧ ValEqTp E Γ Al.val.2 vA Al.val.1 ∧
     (E ∣ Γ ⊢[l₀] t ≡ .ax c Al.val.1 : C) ∧ (E ∣ Γ ⊢[l₀] C ≡ Al.val.1) := by
   suffices ∀ {Γ l₀ vt t C}, NeutEqTm E Γ l₀ vt t C → ∀ {c vA}, vt = .ax c vA → ∃ Al,
       l₀ = Al.val.2 ∧ E c = some Al ∧ ValEqTp E Γ Al.val.2 vA Al.val.1 ∧

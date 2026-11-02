@@ -32,7 +32,7 @@ def tp' : AsSmall.{max u (v+1)} PGrpd.{v,v}
   AsSmall.down ⋙ PGrpd.forgetToGrpd ⋙ AsSmall.up
 
 theorem liftTm'_tp' : Cat.homOf liftTm'.{v,u} ≫ Cat.homOf tp'.{v+1, max u (v+2)} =
-  Cat.homOf tp'.{v, max u (v+2)} ≫ Cat.homOf liftTy'.{v,u} := rfl
+    Cat.homOf tp'.{v, max u (v+2)} ≫ Cat.homOf liftTy'.{v,u} := rfl
 
 /--
 The following square is a meta-theoretic pullback

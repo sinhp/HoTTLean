@@ -34,15 +34,15 @@ def groupoidalAsSmallFunctorToPGrpd :
   (by aesop_cat)
   (by aesop_cat)
 
-@[simp] def pGrpdToGroupoidalAsSmallFunctor_groupoidalAsSmallFunctorToPGrpd :
+@[simp] theorem pGrpdToGroupoidalAsSmallFunctor_groupoidalAsSmallFunctorToPGrpd :
     groupoidalAsSmallFunctorToPGrpd ⋙ pGrpdToGroupoidalAsSmallFunctor = 𝟭 _ :=
   rfl
 
-@[simp] def groupoidalAsSmallFunctorToPGrpd_pGrpdToGroupoidalAsSmallFunctor :
+@[simp] theorem groupoidalAsSmallFunctorToPGrpd_pGrpdToGroupoidalAsSmallFunctor :
     pGrpdToGroupoidalAsSmallFunctor ⋙ groupoidalAsSmallFunctorToPGrpd = 𝟭 _ :=
   rfl
 
-@[simp] def pGrpdToGroupoidalAsSmallFunctor_forget : pGrpdToGroupoidalAsSmallFunctor
+@[simp] theorem pGrpdToGroupoidalAsSmallFunctor_forget : pGrpdToGroupoidalAsSmallFunctor
     ⋙ Groupoidal.forget = PGrpd.forgetToGrpd :=
   rfl
 

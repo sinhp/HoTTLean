@@ -1,3 +1,0 @@
-$ git diff --check 39e8eb63
-
-Exit status: 0

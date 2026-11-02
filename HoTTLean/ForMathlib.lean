@@ -178,7 +178,7 @@ variable {C : Type u₁} [Category.{v₁} C]
 variable {P X Y Z : C} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
 
 theorem of_iso_isPullback (h : IsPullback fst snd f g) {Q} (i : Q ≅ P) :
-      IsPullback (i.hom ≫ fst) (i.hom ≫ snd) f g := by
+    IsPullback (i.hom ≫ fst) (i.hom ≫ snd) f g := by
   have : HasPullback f g := ⟨ h.cone , h.isLimit ⟩
   refine IsPullback.of_iso_pullback (by simp [h.w]) (i ≪≫ h.isoPullback) (by simp) (by simp)
 
@@ -217,11 +217,11 @@ namespace AsSmall
   AsSmall.up.map (AsSmall.down.map f) = f := rfl
 
 theorem comp_up_inj {C : Type u} [Category.{v} C]
-  {D : Type u₁} [Category.{v₁} D]
+    {D : Type u₁} [Category.{v₁} D]
     {F G : C ⥤ D}
     (h : F ⋙ (AsSmall.up : D ⥤ AsSmall.{w} D) =
-      G ⋙ AsSmall.up)
-    : F = G := by
+      G ⋙ AsSmall.up) :
+    F = G := by
   have h' := congrArg (fun K : C ⥤ AsSmall.{w} D => K ⋙ AsSmall.down) h
   have h'' : F ⋙ (AsSmall.up ⋙ AsSmall.down) =
       G ⋙ (AsSmall.up ⋙ AsSmall.down) := by
@@ -231,10 +231,10 @@ theorem comp_up_inj {C : Type u} [Category.{v} C]
   exact h''
 
 theorem comp_down_inj {C : Type u} [Category.{v} C]
-  {D : Type u₁} [Category.{v₁} D]
+    {D : Type u₁} [Category.{v₁} D]
     {F G : C ⥤ AsSmall.{w} D}
-    (h : F ⋙ AsSmall.down = G ⋙ AsSmall.down)
-    : F = G := by
+    (h : F ⋙ AsSmall.down = G ⋙ AsSmall.down) :
+    F = G := by
   have h' := congrArg (fun K : C ⥤ D => K ⋙ AsSmall.up) h
   convert h' using 1 <;> rfl
 
@@ -349,7 +349,7 @@ def isLimitProdCone (X Y : D) : IsLimit (e.prodCone X Y) :=
     (e.inverse.obj X) (e.inverse.obj Y))))
   (BinaryFan.ext (eqToIso rfl) (by simp [prodCone]) (by simp [prodCone]))
 
-def chosenFiniteProducts [CartesianMonoidalCategory C] : CartesianMonoidalCategory D :=
+abbrev chosenFiniteProducts : CartesianMonoidalCategory D :=
   .ofChosenFiniteProducts
     { cone := asEmptyCone e.chosenTerminal
       isLimit := e.chosenTerminalIsTerminal }
@@ -362,8 +362,8 @@ end Equivalence
 
 section equivalence
 
-def functorToAsSmallEquiv {D : Type u₁} [Category.{v₁} D] {C : Type u} [Category.{v} C]
-    : D ⥤ AsSmall.{w} C ≃ D ⥤ C where
+def functorToAsSmallEquiv {D : Type u₁} [Category.{v₁} D] {C : Type u} [Category.{v} C] :
+    D ⥤ AsSmall.{w} C ≃ D ⥤ C where
   toFun A := A ⋙ AsSmall.down
   invFun A := A ⋙ AsSmall.up
   left_inv _ := rfl
@@ -459,7 +459,7 @@ def psigmaCongrProp {α₁ α₂} {β₁ : α₁ → Prop} {β₂ : α₂ → Pr
     (F : ∀ a, β₁ a ≃ β₂ (f a)) (x : Sigma β₁) : (sigmaCongr f F x).fst = f x.fst := by
   simp [sigmaCongr]
 
-@[simp] def sigmaCongr_apply_snd {α₁ α₂} {β₁ : α₁ → Sort _} {β₂ : α₂ → Sort _} (f : α₁ ≃ α₂)
+@[simp] theorem sigmaCongr_apply_snd {α₁ α₂} {β₁ : α₁ → Sort _} {β₂ : α₂ → Sort _} (f : α₁ ≃ α₂)
     (F : ∀ a, β₁ a ≃ β₂ (f a)) (x : Sigma β₁) : (sigmaCongr f F x).snd = F x.fst x.snd := by
   rfl
 
@@ -659,7 +659,7 @@ lemma Discrete.functor_eq {X C : Type*} [Category C] {F : Discrete X ⥤ C} :
   fapply CategoryTheory.Functor.ext
   · aesop
   · intro x y f
-    cases x ; rcases f with ⟨⟨h⟩⟩
+    cases x; rcases f with ⟨⟨h⟩⟩
     simp
 
 lemma Discrete.functor_ext_explicit {X C : Type*} [Category C] (F G : Discrete X ⥤ C)

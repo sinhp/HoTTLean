@@ -318,8 +318,8 @@ theorem mk_comp_right {Γ : Ctx} (M : Universe Ctx)
 theorem ext {AB AB' : y(Γ) ⟶ M.Ptp.obj X}
     (A := fst M AB) (eq : fst M AB = A := by rfl)
     (h1 : fst M AB = fst M AB')
-    (h2 : snd M AB A eq = snd M AB' A (h1 ▸ eq))
-    : AB = AB' := UvPoly.Equiv.ext' _ _ _ h1 h2
+    (h2 : snd M AB A eq = snd M AB' A (h1 ▸ eq)) :
+    AB = AB' := UvPoly.Equiv.ext' _ _ _ h1 h2
 
 theorem eta (AB : y(Γ) ⟶ M.Ptp.obj X) : mk M (fst M AB) (snd M AB) = AB :=
   .symm <| ext _ _ rfl (by simp) (by simp)
@@ -908,8 +908,7 @@ def toI : y(ii.motiveCtx a) ⟶ ie.i :=
 lemma toI_comp_i1 : ie.toI a ≫ ie.i1 = M.var _ := by
   exact ie.i_isPullback.lift_fst _ _ _
 
-lemma toI_comp_i2 : ie.toI a ≫ ie.i2 = ym(M.disp _) ≫ ii.toK a :=
-  by
+lemma toI_comp_i2 : ie.toI a ≫ ie.i2 = ym(M.disp _) ≫ ii.toK a := by
     exact ie.i_isPullback.lift_snd _ _ _
 
 lemma toI_comp_left {Δ} (σ : Δ ⟶ Γ) : toI ie (ym(σ) ≫ a) =

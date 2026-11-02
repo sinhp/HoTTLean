@@ -22,7 +22,7 @@ variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
   subst h
   rfl
 
-def comp_inclusion_injective {l0 l1 : D ⥤ Core C}
+theorem comp_inclusion_injective {l0 l1 : D ⥤ Core C}
     (hl : l0 ⋙ inclusion C = l1 ⋙ inclusion C) : l0 = l1 := by
   fapply Functor.ext
   · intro x
@@ -60,7 +60,7 @@ variable {C' : Type u₃} [Category.{v₃} C']
 
 @[simp]
 theorem functorToCore_comp_inclusion (H : G ⥤ C) :
-  functorToCore H ⋙ inclusion _ = H := rfl
+    functorToCore H ⋙ inclusion _ = H := rfl
 
 theorem functorToCoreEquiv_symm_apply_comp_left (H : G ⥤ Core C) (F : G' ⥤ G) :
     functorToCoreEquiv.symm (F ⋙ H) = F ⋙ functorToCoreEquiv.symm H :=
@@ -71,7 +71,7 @@ theorem functorToCoreEquiv_symm_apply_comp_right (H : G ⥤ Core C) (F : C ⥤ C
   rfl
 
 theorem eqToIso_iso_hom {a b : Core C} (h1 : a = b)
-  (h2 : (inclusion C).obj a = (inclusion C).obj b) :
+    (h2 : (inclusion C).obj a = (inclusion C).obj b) :
     (eqToHom h1).iso.hom = eqToHom h2 := by
   cases h1
   rfl
@@ -131,17 +131,17 @@ def lift : E ⥤ Core C where
     let f' : F.obj (En.obj x) ≅ F.obj (En.obj y) :=
       (eqToIso hE).app x ≪≫ (Ew.map f).iso ≪≫ (eqToIso hE.symm).app y
     have hnat : F.map (En.map f) ≫ _
-      = _ ≫ (inclusion D).map (Ew.map f)
-      := (eqToHom hE).naturality f
+      = _ ≫ (inclusion D).map (Ew.map f) :=
+      (eqToHom hE).naturality f
     have h : F.map (En.map f) = f'.hom := by
       simp only [eqToHom_app, comp_eqToHom_iff] at hnat
       simp [hnat, f', Core.inclusion]
     have : IsIso (F.map (En.map f)) := by rw [h]; exact Iso.isIso_hom f'
     exact Functor.ReflectsIsomorphisms.reflects F (En.map f) ⟩
 
-def fac_left : lift F En Ew hE ⋙ inclusion C = En := rfl
+theorem fac_left : lift F En Ew hE ⋙ inclusion C = En := rfl
 
-def fac_right : lift F En Ew hE ⋙ F.core = Ew := by
+theorem fac_right : lift F En Ew hE ⋙ F.core = Ew := by
   apply comp_inclusion_injective
   exact hE
 

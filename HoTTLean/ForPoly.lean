@@ -60,7 +60,7 @@ theorem pushforwardPullbackIsoSquare_eq {C} [Category C] [HasPullbacks C] {X Y Z
   simp [pushforwardPullbackIsoSquare, Over.pushforwardPullbackTwoSquare]
   ext1; rfl
 
-open ExponentiableMorphism Functor in
+open ExponentiableMorphism CategoryTheory.Functor in
 theorem ev_naturality {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
     (e : E ⟶ E') (b : B ⟶ B')
     (hp : IsPullback P.p e b P'.p) :
@@ -119,24 +119,24 @@ theorem ev_naturality {E B E' B' : C} {P : UvPoly E B} {P' : UvPoly E' B'}
 theorem associator_eq_id {C D E E'} [Category C] [Category D] [Category E] [Category E']
     (F : C ⥤ D) (G : D ⥤ E) (H : E ⥤ E') : Functor.associator F G H = Iso.refl (F ⋙ G ⋙ H) := rfl
 
-open Functor in
+open CategoryTheory.Functor in
 theorem whiskerRight_left' {C D E B} [Category C] [Category D] [Category E] [Category B]
     (F : B ⥤ C) {G H : C ⥤ D} (α : G ⟶ H) (K : D ⥤ E) :
     whiskerRight (whiskerLeft F α) K = whiskerLeft F (whiskerRight α K) := by
   aesop_cat
 
-open Functor in
+open CategoryTheory.Functor in
 theorem id_whiskerLeft' {C D} [Category C] [Category D] {G H : C ⥤ D} (α : G ⟶ H) :
     whiskerLeft (𝟭 C) α = α := by
   aesop_cat
 
-open Functor in
+open CategoryTheory.Functor in
 theorem whiskerLeft_twice' {C D E B} [Category C] [Category D] [Category E] [Category B]
     (F : B ⥤ C) (G : C ⥤ D) {H K : D ⥤ E} (α : H ⟶ K) :
     whiskerLeft F (whiskerLeft G α) = whiskerLeft (F ⋙ G) α := by
   aesop_cat
 
-open Functor in
+open CategoryTheory.Functor in
 theorem whiskerRight_twice' {C D E B} [Category C] [Category D] [Category E] [Category B]
     {H K : B ⥤ C} (F : C ⥤ D) (G : D ⥤ E) (α : H ⟶ K) :
     whiskerRight (whiskerRight α F) G = whiskerRight α (F ⋙ G) := by
@@ -145,7 +145,7 @@ theorem whiskerRight_twice' {C D E B} [Category C] [Category D] [Category E] [Ca
 variable [HasTerminal C]
 
 -- This local setting lets simp reduce the mate through the TwoSquare wrapper.
-open Over ExponentiableMorphism Functor in
+open Over ExponentiableMorphism CategoryTheory.Functor in
 set_option backward.isDefEq.respectTransparency false in
 @[simp]
 lemma cartesianNatTrans_fstProj {E B E' B' : C} (P : UvPoly E B) (P' : UvPoly E' B')
@@ -160,7 +160,7 @@ lemma cartesianNatTrans_fstProj {E B E' B' : C} (P : UvPoly E B) (P' : UvPoly E'
   rw [pullback.condition, ← Category.assoc]; congr 1
   simpa [fstProj, UvPoly.apply, functor] using Over.w (m.app X)
 
-open ExponentiableMorphism Functor in
+open ExponentiableMorphism CategoryTheory.Functor in
 -- Let tactics reduce the slice functor objects in this mate calculation.
 set_option backward.defeqAttrib.useBackward true in
 set_option backward.isDefEq.respectTransparency false in

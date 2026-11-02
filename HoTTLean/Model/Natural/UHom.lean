@@ -34,7 +34,7 @@ def Hom.comp {M N O : Universe Ctx} (α : Hom M N) (β : Hom N O) : Hom M O wher
   mapTy := α.mapTy ≫ β.mapTy
   pb := α.pb.paste_horiz β.pb
 
-def Hom.comp_assoc {M N O P : Universe Ctx} (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
+theorem Hom.comp_assoc {M N O P : Universe Ctx} (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp]
 
@@ -125,7 +125,7 @@ def UHom.comp {M N O : Universe Ctx} (α : UHom M N) (β : UHom N O) : UHom M O 
   asTm := α.asTm ≫ β.mapTm
   U_pb := α.U_pb.paste_horiz β.pb
 
-def UHom.comp_assoc {M N O P : Universe Ctx} (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
+theorem UHom.comp_assoc {M N O P : Universe Ctx} (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp, Hom.comp]
 
@@ -282,14 +282,14 @@ Given `i0 ≤ i1` and `j0 ≤ j1`
 -/
 def cartesianNatTransTm (i0 i1 j0 j1 : Nat)
     (ii : i0 ≤ i1 := by get_elem_tactic) (ilen : i1 < s.length + 1 := by get_elem_tactic)
-    (jj : j0 ≤ j1 := by get_elem_tactic) (jlen : j1 < s.length + 1 := by get_elem_tactic)
-    : s[i0].Ptp.obj s[j0].Tm ⟶ s[i1].Ptp.obj s[j1].Tm :=
+    (jj : j0 ≤ j1 := by get_elem_tactic) (jlen : j1 < s.length + 1 := by get_elem_tactic) :
+    s[i0].Ptp.obj s[j0].Tm ⟶ s[i1].Ptp.obj s[j1].Tm :=
   (s.cartesianNatTrans i0 i1).app s[j0].Tm ≫
   s[i1].Ptp.map (s.homOfLe j0 j1).mapTm
 
 theorem mk_comp_cartesianNatTransTm {i0 i1 j0 j1 ii ilen jj jlen}
-    {Γ X} (A : y(Γ) ⟶ s[i0].Ty) (B : y(s[i0].ext A) ⟶ s[j0].Tm)
-    : PtpEquiv.mk s[i0] A B ≫ s.cartesianNatTransTm i0 i1 j0 j1 ii ilen jj jlen =
+    {Γ X} (A : y(Γ) ⟶ s[i0].Ty) (B : y(s[i0].ext A) ⟶ s[j0].Tm) :
+    PtpEquiv.mk s[i0] A B ≫ s.cartesianNatTransTm i0 i1 j0 j1 ii ilen jj jlen =
       PtpEquiv.mk s[i1] (A ≫ (s.homOfLe i0 i1).mapTy)
         (ym(substCons _ (s[i1].disp _) _ (s.unliftVar i0 i1 ii ilen A rfl) (by simp))
           ≫ B ≫ (s.homOfLe j0 j1).mapTm) := by
@@ -307,14 +307,14 @@ theorem cartesianNatTransTm_fstProj {i0 i1 j0 j1 ii ilen jj jlen} :
 
 def cartesianNatTransTy (i0 i1 j0 j1 : Nat)
     (i0len : i0 ≤ i1 := by get_elem_tactic) (i1len : i1 < s.length + 1 := by get_elem_tactic)
-    (j0len : j0 ≤ j1 := by get_elem_tactic) (j1len : j1 < s.length + 1 := by get_elem_tactic)
-    : s[i0].Ptp.obj s[j0].Ty ⟶ s[i1].Ptp.obj s[j1].Ty :=
+    (j0len : j0 ≤ j1 := by get_elem_tactic) (j1len : j1 < s.length + 1 := by get_elem_tactic) :
+    s[i0].Ptp.obj s[j0].Ty ⟶ s[i1].Ptp.obj s[j1].Ty :=
   (s.cartesianNatTrans i0 i1).app s[j0].Ty ≫
   s[i1].Ptp.map (s.homOfLe j0 j1).mapTy
 
 theorem mk_comp_cartesianNatTransTy {i0 i1 j0 j1 ii ilen jj jlen}
-    {Γ X} (A : y(Γ) ⟶ s[i0].Ty) (B : y(s[i0].ext A) ⟶ s[j0].Ty)
-    : PtpEquiv.mk s[i0] A B ≫ s.cartesianNatTransTy i0 i1 j0 j1 ii ilen jj jlen =
+    {Γ X} (A : y(Γ) ⟶ s[i0].Ty) (B : y(s[i0].ext A) ⟶ s[j0].Ty) :
+    PtpEquiv.mk s[i0] A B ≫ s.cartesianNatTransTy i0 i1 j0 j1 ii ilen jj jlen =
       PtpEquiv.mk s[i1] (A ≫ (s.homOfLe i0 i1).mapTy)
         (ym(substCons _ (s[i1].disp _) _ (s.unliftVar i0 i1 ii ilen A rfl) (by simp))
           ≫ B ≫ (s.homOfLe j0 j1).mapTy) := by
@@ -447,7 +447,7 @@ def Pi : s[i].Ptp.obj s[j].Ty ⟶ s[max i j].Ty :=
 def lam : s[i].Ptp.obj s[j].Tm ⟶ s[max i j].Tm :=
   s.cartesianNatTransTm i (max i j) j (max i j) ≫ (nmPi (max i j)).lam
 
-def Pi_pb :
+theorem Pi_pb :
     IsPullback (s.lam ilen jlen) (s[i].Ptp.map s[j].tp) s[max i j].tp (s.Pi ilen jlen) := by
   have p1 : NatTrans.IsCartesian (s.cartesianNatTrans i (max i j)) := by
    dsimp only [UHomSeq.cartesianNatTrans]
@@ -673,7 +673,7 @@ def pair : UvPoly.compDom s[i].uvPolyTp s[j].uvPolyTp ⟶ s[max i j].Tm :=
       (s.homOfLe j (max i j)).pb.flip
   l ≫ (nmSig (max i j)).pair
 
-def Sig_pb : IsPullback
+theorem Sig_pb : IsPullback
     (s.pair ilen jlen)
   (s[i].uvPolyTp.compP s[j].uvPolyTp) s[max i j].tp
     (s.Sig ilen jlen) :=

@@ -1,7 +1,0 @@
-$ lake -R -Kenv=dev update doc-gen4
-info: toolchain not updated; already up-to-date
-info: mathlib: running post-update hooks
-Current branch: HEAD
-Using cache from origin: (some leanprover-community/mathlib4)
-No files to download
-Already decompressed 8908 file(s)

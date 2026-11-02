@@ -139,9 +139,9 @@ def ofCartesianMonoidalCategoryLeft [CartesianMonoidalCategory Ctx] (Interval : 
 ```
     y
 Γ -----> Y
-|        |
-|δ0      |f
-|        |
+  |        |
+  |δ0      |f
+  |        |
 V        V
 I;Γ ---> X
 ```
@@ -183,9 +183,9 @@ This means that the lift of the following square is just `π ≫ y`
 ```
     y
 Γ --------------> Y
-|             ↗  |
-|δ0         y⧸    |
-|           ⧸     |
+  |             ↗  |
+  |δ0         y⧸    |
+  |           ⧸     |
 V          ⧸      V
 I;Γ ---> Γ -----> X
      π       x
@@ -228,9 +228,9 @@ and "cubical paths" `(i:I);Γ ⊢ p i : A` such that `p 0 = a` and `p 1 = b`
 ```
      p
 I;Γ -----> Tm
-|          |
-|          |tp
-|          |
+  |          |
+  |          |tp
+  |          |
 V          V
 Γ ------> Ty
      A
@@ -404,7 +404,7 @@ abbrev ev : cyl.I.obj (U0.ext (P0.polymorphicIdIntro.weakenId a a_tp)) ⟶ U0.Tm
 
 /-
                     ev
-       ⌐----------------------------¬
+       +----------------------------¬
        |      substCons             V
 I;Γ.(x:A).Id(a,x) ····> Γ.A -------> Tm
     |                   |             |

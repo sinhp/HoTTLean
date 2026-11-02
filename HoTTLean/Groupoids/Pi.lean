@@ -65,8 +65,7 @@ set_option backward.isDefEq.respectTransparency false in
 instance {A B : Type*} [Category A] [Groupoid B] (F : B ⥤ A) :
     IsGroupoid (Section F) where
   all_isIso {x y} f := {
-    out := ⟨⟨ CategoryTheory.inv f.1,
-      by
+    out := ⟨⟨ CategoryTheory.inv f.1, by
         simp only [IsOverId, Category.id_comp, eqToHom_trans, Set.mem_ofPred_eq]
         change Functor.whiskerRight ((ObjectProperty.ι (IsSection F)).map (inv f.1)) F = _
         rw [Functor.map_inv, ← Functor.inv_whiskerRight]
@@ -319,7 +318,7 @@ lemma conjugatingObjNatTransEquiv₁_id_inv {x : Γ} (S) (T)
 -- Dependent rewriting unfolds bundled groupoid coercions.
 set_option backward.isDefEq.respectTransparency false in
 lemma conjugatingObjNatTransEquiv₁_comp_inv {x y z : Γ} (f1 : x ⟶ y) (f2 : y ⟶ z)
-      (S0 : (A.obj x) ⥤ (B.obj x))
+    (S0 : (A.obj x) ⥤ (B.obj x))
       (S1 : (A.obj y) ⥤ (B.obj y))
       (S2 : (A.obj z) ⥤ (B.obj z))
       (g01 : A.map (inv f1) ⋙ S0 ⋙ B.map f1 ⟶ S1)
@@ -347,12 +346,12 @@ variable {Γ : Type u₂} [Groupoid.{v₂} Γ] {A : Γ ⥤ Grpd.{u₁,u₁}}
 
 def functorObj (x : Γ) : Grpd.{u₁,u₁} := Grpd.of (Section (φ.app x))
 
-def obj_hext {A A' : Grpd.{u₁,u₁}} (hA : A ≍ A') {B B' : Grpd.{u₁,u₁}} (hB : B ≍ B')
+theorem obj_hext {A A' : Grpd.{u₁,u₁}} (hA : A ≍ A') {B B' : Grpd.{u₁,u₁}} (hB : B ≍ B')
     {F : A ⟶ B} {F' : A' ⟶ B'} (hF : F ≍ F') (x : Section F) (x' : Section F')
     (hx : x.obj.obj ≍ x'.obj.obj) : x ≍ x' := by
   aesop
 
-def hom_hext {A A' : Grpd.{u₁,u₁}} (hA : A ≍ A') {B B' : Grpd.{u₁,u₁}} (hB : B ≍ B')
+theorem hom_hext {A A' : Grpd.{u₁,u₁}} (hA : A ≍ A') {B B' : Grpd.{u₁,u₁}} (hB : B ≍ B')
     {F : A ⟶ B} {F' : A' ⟶ B'} (hF : F ≍ F') {x y : Section F} {x' y' : Section F'}
     {f : x ⟶ y} {f' : x' ⟶ y'} (hx : x ≍ x')
     (hy : y ≍ y') (hf : f.1 ≍ f'.1) :
@@ -362,7 +361,7 @@ def hom_hext {A A' : Grpd.{u₁,u₁}} (hA : A ≍ A') {B B' : Grpd.{u₁,u₁}}
   apply MorphismProperty.WideSubcategory.hom_ext
   apply hf
 
-def hom_hext' {A A' : Grpd.{u₁,u₁}} (hA : A ≍ A') {B B' : Grpd.{u₁,u₁}} (hB : B ≍ B')
+theorem hom_hext' {A A' : Grpd.{u₁,u₁}} (hA : A ≍ A') {B B' : Grpd.{u₁,u₁}} (hB : B ≍ B')
     {F : A ⟶ B} {F' : A' ⟶ B'} (hF : F ≍ F') {x y : Section F} {x' y' : Section F'}
     {f : x ⟶ y} {f' : x' ⟶ y'} (hx : x ≍ x')
     (hy : y ≍ y') (hf : ∀ k k', k ≍ k' → f.1.hom.app k ≍ f'.1.hom.app k') :
@@ -710,8 +709,8 @@ lemma comm_sq_of_comp_mono {C : Type*} [Category C]
     (hh : h ≫ mW = mX ≫ h')
     (hg : g ≫ mZ = mY ≫ g')
     (hi : i ≫ mZ = mW ≫ i')
-    [e : Mono mZ]
-    : f ≫ g = h ≫ i := by
+    [e : Mono mZ] :
+    f ≫ g = h ≫ i := by
   apply e.right_cancellation
   calc (f ≫ g) ≫ mZ
     _ = f ≫ mY ≫ g' := by aesop

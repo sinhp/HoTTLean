@@ -1,1 +1,0 @@
-PASS: source and tests meet the 100-character non-URL limit and use precise imports.

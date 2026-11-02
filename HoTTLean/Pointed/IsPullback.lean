@@ -22,7 +22,7 @@ namespace CategoryTheory
 namespace PGrpd
 
 lemma forgetToPCat_forgetToCat :
-  PGrpd.forgetToPCat.{v,u} ⋙ PCat.forgetToCat.{v,u} =
+    PGrpd.forgetToPCat.{v,u} ⋙ PCat.forgetToCat.{v,u} =
     PGrpd.forgetToGrpd.{v,u} ⋙ Grpd.forgetToCat.{v,u} :=
   rfl
 
@@ -38,7 +38,7 @@ The following square is a (meta-theoretic) pullback
       Grpd------forgetToCat------->Cat
 -/
 def isPullback : Functor.IsPullback forgetToPCat.{v,u} forgetToGrpd.{v,u}
-      PCat.forgetToCat Grpd.forgetToCat :=
+    PCat.forgetToCat Grpd.forgetToCat :=
   Functor.Grothendieck.isPullback _
 
 /--
