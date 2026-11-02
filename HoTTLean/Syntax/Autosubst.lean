@@ -271,10 +271,10 @@ attribute [autosubst]
   id_eq
 
 /-- Decides equality of substitutions applied to expressions. -/
-macro "autosubst" : tactic => `(tactic| simp only [autosubst])
+macro "autosubst" : tactic => `(tactic| simp only [autosubst, Function.comp_apply])
 
 /-- Use a term modulo `autosubst` conversion. -/
-macro "autosubst% " t:term : term => `(by convert ($t) using 1 <;> autosubst)
+macro "autosubst% " t:term : term => `(by convert ($t) using 1 <;> first | rfl | autosubst)
 
 /-! Lemmas that come up in a few proofs -/
 

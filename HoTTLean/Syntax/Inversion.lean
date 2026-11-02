@@ -75,7 +75,8 @@ theorem inv_all :
     (∀ {Γ l A t u}, E ∣ Γ ⊢[l] t ≡ u : A →
       (WfCtx E Γ) ∧ (E ∣ Γ ⊢[l] A) ∧ (E ∣ Γ ⊢[l] t : A) ∧ (E ∣ Γ ⊢[l] u : A)) := by
   mutual_induction WfCtx
-  all_goals dsimp; try intros
+  all_goals try dsimp
+  all_goals try intros
   case bvar => grind [WfCtx.lookup_wf]
   case cong_pi' => grind [WfTp.pi']
   case cong_sigma' => grind [WfTp.sigma']
@@ -252,7 +253,7 @@ theorem comp : WfSb E Θ σ Δ → WfSb E Δ σ' Γ → WfSb E Θ (Expr.comp σ 
   intro σ σ'
   apply mk σ.wf_dom σ'.wf_cod
   intro _ _ _ lk
-  exact autosubst% σ'.lookup lk |>.subst σ
+  simpa only [autosubst, Expr.comp, Function.comp_apply] using (σ'.lookup lk).subst σ
 
 theorem toSb : E ∣ Γ ⊢[l] t : A → WfSb E Γ t.toSb ((A, l) :: Γ) :=
   fun t => SubstProof.wfSb_toSb t.wf_ctx t.wf_tp t

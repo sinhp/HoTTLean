@@ -22,15 +22,13 @@ variable {C : Type u} [Category.{v} C] {D : Type u₁} [Category.{v₁} D]
   subst h
   rfl
 
-def comp_inclusion_injective {l0 l1 : D ⥤ Core C} (hl : l0 ⋙ inclusion C = l1 ⋙ inclusion C) : l0 = l1 := by
-  fapply Functor.ext
-  · intro x
-    ext
-    exact Functor.congr_obj hl x
-  · intro x y f
-    ext
-    convert Functor.congr_hom hl f
-    simp
+theorem comp_inclusion_injective {l0 l1 : D ⥤ Core C}
+    (hl : l0 ⋙ inclusion C = l1 ⋙ inclusion C) : l0 = l1 := by
+  exact Functor.ext (fun x => Core.obj_ext (Functor.congr_obj hl x))
+    (by
+      intro x y f
+      apply Core.hom_ext
+      simpa [Core.inclusion] using Functor.congr_hom hl f)
 
 lemma core_comp_inclusion (F : C ⥤ D) :
     F.core ⋙ inclusion D = inclusion C ⋙ F :=
@@ -38,7 +36,7 @@ lemma core_comp_inclusion (F : C ⥤ D) :
 
 def map : Cat.{v,u} ⥤ Grpd.{v,u} where
   obj C := Grpd.of (Core C)
-  map F := Grpd.homOf (F.core)
+  map F := Grpd.homOf (F.toFunctor.core)
 
 variable {Γ : Type u} [Groupoid.{v} Γ]
 
@@ -50,9 +48,8 @@ def functorToCoreEquiv : Γ ⥤ D ≃ Γ ⥤ Core D where
   invFun := forgetFunctorToCore.obj
   left_inv _ := rfl
   right_inv _ := by
-    fapply Functor.ext
-    · aesop_cat
-    · aesop_cat
+    apply comp_inclusion_injective
+    rfl
 
 variable {C : Type u₁} [Category.{v₁} C]
 variable {G : Type u₂} [Groupoid.{v₂} G]
@@ -61,18 +58,7 @@ variable {C' : Type u₃} [Category.{v₃} C']
 
 @[simp]
 theorem functorToCore_comp_inclusion (H : G ⥤ C) :
-  functorToCore H ⋙ inclusion _ = H := rfl
-
-theorem functorToCore_comp_left (H : G ⥤ C) (F : G' ⥤ G) :
-    functorToCore (F ⋙ H) = F ⋙ functorToCore H := by
-  apply Functor.ext
-  · simp [functorToCore]
-  · intro
-    rfl
-
-theorem functorToCore_comp_right (H : G ⥤ C) (F : C ⥤ C') :
-    functorToCore (H ⋙ F) = functorToCore H ⋙ F.core := by
-  rfl
+    functorToCore H ⋙ inclusion _ = H := rfl
 
 theorem functorToCoreEquiv_symm_apply_comp_left (H : G ⥤ Core C) (F : G' ⥤ G) :
     functorToCoreEquiv.symm (F ⋙ H) = F ⋙ functorToCoreEquiv.symm H :=
@@ -83,7 +69,7 @@ theorem functorToCoreEquiv_symm_apply_comp_right (H : G ⥤ Core C) (F : C ⥤ C
   rfl
 
 theorem eqToIso_iso_hom {a b : Core C} (h1 : a = b)
-  (h2 : (inclusion C).obj a = (inclusion C).obj b) :
+    (h2 : (inclusion C).obj a = (inclusion C).obj b) :
     (eqToHom h1).iso.hom = eqToHom h2 := by
   cases h1
   rfl
@@ -94,23 +80,13 @@ def adjunction : Grpd.forgetToCat ⊣ Core.map where
   unit := {
     app G := Grpd.homOf (Core.functorToCore (Functor.id _))
     naturality _ _ F := by
-      simp [Core.map, Grpd.comp_eq_comp,
-        ← functorToCore_comp_left,
-        ← functorToCore_comp_right,
-        Functor.id_comp, Functor.comp_id, Grpd.forgetToCat]}
+      change F ⋙ Core.functorToCore (Functor.id _) =
+        Core.functorToCore (Functor.id _) ⋙ F.core
+      apply comp_inclusion_injective
+      rfl}
   counit := {app C := Cat.homOf (Core.inclusion C)}
 
 /-- Mildly evil. -/
-theorem inclusion_comp_functorToCore : inclusion G ⋙ functorToCore (𝟭 G) = Functor.id (Core G) := by
-    apply Functor.ext
-    · intro x y f
-      simp only [Core.inclusion, Core.functorToCore, Functor.id_map,
-        Functor.comp_map, Groupoid.inv_eq_inv, IsIso.Iso.inv_hom,
-        eqToHom_refl, Category.comp_id, Category.id_comp]
-      rfl
-    · intro
-      rfl
-
 theorem functorToCore_inclusion_apply {C : Type u} [Category.{v} C] :
     Core.functorToCore (Core.inclusion C) = Functor.id (Core C) :=
   rfl
@@ -129,7 +105,7 @@ instance {G : Type u} [Groupoid.{v} G] :
 
 end Adjunction
 
-open Functor
+open _root_.CategoryTheory.Functor
 
 instance : IsLeftAdjoint Grpd.forgetToCat :=
   IsLeftAdjoint.mk ⟨ Core.map , ⟨ adjunction ⟩ ⟩
@@ -152,28 +128,24 @@ def lift : E ⥤ Core C where
     let f' : F.obj (En.obj x) ≅ F.obj (En.obj y) :=
       (eqToIso hE).app x ≪≫ (Ew.map f).iso ≪≫ (eqToIso hE.symm).app y
     have hnat : F.map (En.map f) ≫ _
-      = _ ≫ (inclusion D).map (Ew.map f)
-      := (eqToHom hE).naturality f
-    have h : F.map (En.map f) = f'.hom := by
+      = _ ≫ (inclusion D).map (Ew.map f) :=
+      (eqToHom hE).naturality f
+    have h : F.map (En.map f) = f'.hom :=
+      set_option backward.isDefEq.respectTransparency false in by
       simp only [eqToHom_app, comp_eqToHom_iff] at hnat
-      simp [hnat, f', Core.inclusion]
+      simpa [f', Core.inclusion, eqToIso.hom, eqToHom_app] using hnat
     have : IsIso (F.map (En.map f)) := by rw [h]; exact Iso.isIso_hom f'
     exact Functor.ReflectsIsomorphisms.reflects F (En.map f) ⟩
 
-def fac_left : lift F En Ew hE ⋙ inclusion C = En := rfl
+theorem fac_left : lift F En Ew hE ⋙ inclusion C = En := rfl
 
-def fac_right : lift F En Ew hE ⋙ F.core = Ew := by
-  fapply Functor.ext
-  · intro x
-    ext
-    exact Functor.congr_obj hE x
-  · intro x y f
-    ext
-    convert Functor.congr_hom hE f
-    simp
+theorem fac_right : lift F En Ew hE ⋙ F.core = Ew := by
+  apply comp_inclusion_injective
+  exact hE
 
 def universal : (lift : E ⥤ Core C) ×' lift ⋙ inclusion C = En ∧ lift ⋙ F.core = Ew ∧
-    ∀ {l0 l1 : E ⥤ Core C}, l0 ⋙ inclusion C = l1 ⋙ inclusion C → l0 ⋙ F.core = l1 ⋙ F.core → l0 = l1 :=
+    ∀ {l0 l1 : E ⥤ Core C}, l0 ⋙ inclusion C = l1 ⋙ inclusion C →
+      l0 ⋙ F.core = l1 ⋙ F.core → l0 = l1 :=
   ⟨ lift F En Ew hE, fac_left _ _ _ _, fac_right _ _ _ _,
     fun hl _ => comp_inclusion_injective hl ⟩
 
@@ -182,7 +154,7 @@ end IsPullback
 variable {C : Type u} [Category.{v} C] {D : Type u} [Category.{v} D]
   (F : C ⥤ D) [F.ReflectsIsomorphisms]
 
-open IsPullback
+open _root_.CategoryTheory.Core.IsPullback
 
 /--
   In the category of categories,

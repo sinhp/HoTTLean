@@ -289,7 +289,8 @@ theorem WfTm.inv_pair {Γ B C t u l₀ l l'} : E ∣ Γ ⊢[l₀] .pair l l' B t
           (E ∣ Γ ⊢[l₂] u' : B.subst t'.toSb) ∧
           (E ∣ Γ ⊢[l] C ≡ .sigma l₁ l₂ A B) from
     fun h => this h rfl
-  mutual_induction WfCtx <;> grind [WfTp.sigma, WfTm.wf_tp, EqTp.refl_tp, EqTp.symm_tp, EqTp.trans_tp]
+  mutual_induction WfCtx <;>
+    grind [WfTp.sigma, WfTm.wf_tp, EqTp.refl_tp, EqTp.symm_tp, EqTp.trans_tp]
 
 theorem WfTm.inv_fst {Γ A B C p l₀ l l'} : E ∣ Γ ⊢[l₀] .fst l l' A B p : C →
     l₀ = l ∧ (E ∣ Γ ⊢[max l l'] p : .sigma l l' A B) ∧ (E ∣ Γ ⊢[l₀] C ≡ A) := by

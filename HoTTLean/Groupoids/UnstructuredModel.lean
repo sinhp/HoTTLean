@@ -9,6 +9,8 @@ import HoTTLean.Groupoids.IsPullback
 Here we construct universes for the groupoid natural model.
 -/
 
+set_option backward.isDefEq.respectTransparency false
+
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 
 noncomputable section
@@ -43,10 +45,10 @@ def asSmallClosedType : (tensorUnit _ : Ctx) ⟶ Ty.{v+1, max u (v+2)} :=
 def isoExtAsSmallClosedTypeHom :
     Core (AsSmall.{max u (v+2)} Grpd.{v,v})
     ⥤ ∫(toCoreAsSmallEquiv (asSmallClosedType.{v, max u (v + 2)})) where
-  obj X := objMk ⟨⟨⟩⟩ ⟨AsSmall.up.obj.{_,_,v+1} (AsSmall.down.obj X.of)⟩
+  obj X := objMk ⟨⟨⟩⟩ ⟨AsSmall.up.obj (AsSmall.down.obj X.of)⟩
   map {X Y} F := homMk (𝟙 _) ⟨{
-    hom := AsSmall.up.map.{_,_,v+1} (AsSmall.down.map F.iso.hom)
-    inv := AsSmall.up.map.{_,_,v+1} (AsSmall.down.map (F.iso.inv))
+    hom := AsSmall.up.map (AsSmall.down.map F.iso.hom)
+    inv := AsSmall.up.map (AsSmall.down.map (F.iso.inv))
     hom_inv_id := by
       simp only [← Functor.map_comp, Iso.hom_inv_id]
       rfl
@@ -57,11 +59,11 @@ def isoExtAsSmallClosedTypeHom :
 def isoExtAsSmallClosedTypeInv :
     ∫(toCoreAsSmallEquiv (asSmallClosedType.{v, max u (v + 2)})) ⥤
     Core (AsSmall.{max u (v+2)} Grpd.{v,v}) where
-  obj X := ⟨AsSmall.up.obj (AsSmall.down.obj.{_,_,v+1} X.fiber.of)⟩
+  obj X := ⟨AsSmall.up.obj (AsSmall.down.obj X.fiber.of)⟩
   map {X Y} F := ⟨{
-    hom := AsSmall.up.map.{_,_,max u (v+2)}
+    hom := AsSmall.up.map
       (AsSmall.down.map F.fiber.iso.hom)
-    inv := AsSmall.up.map.{_,_,max u (v+2)}
+    inv := AsSmall.up.map
       (AsSmall.down.map F.fiber.iso.inv)
     hom_inv_id := by
       simp only [← Functor.map_comp, Iso.hom_inv_id]
@@ -99,11 +101,15 @@ namespace U
 theorem substWk_eq (A : Γ ⟶ U.Ty.{v}) (σA : Δ ⟶ U.Ty.{v}) (eq) :
     U.substWk σ A σA eq =
     map (eqToHom (by subst eq; rfl)) ⋙ pre (toCoreAsSmallEquiv A) σ := by
+  subst σA
   apply (U.disp_pullback A).hom_ext
   · rw [substWk_var]
     simp [var, Grpd.comp_eq_comp]
-    rw [← toCoreAsSmallEquiv_symm_apply_comp_left, Functor.assoc, pre_toPGrpd,
-      map_eqToHom_toPGrpd]
+    simp only [map_id_eq]
+    change _ = pre (toCoreAsSmallEquiv A) σ ⋙
+      toCoreAsSmallEquiv.symm (toPGrpd (toCoreAsSmallEquiv A))
+    rw [← toCoreAsSmallEquiv_symm_apply_comp_left, pre_toPGrpd]
+    rfl
   · rw [substWk_disp]
     simp [Grpd.comp_eq_comp, Functor.assoc]
     erw [pre_comp_forget, ← Functor.assoc, map_forget]

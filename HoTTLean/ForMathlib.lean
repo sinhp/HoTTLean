@@ -1,10 +1,10 @@
 import Mathlib.CategoryTheory.Limits.Shapes.Pullback.PullbackCone
 import Mathlib.CategoryTheory.Groupoid.Discrete
-import Mathlib.CategoryTheory.Limits.Shapes.Pullback.CommSq
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 import Mathlib.CategoryTheory.Category.ULift
 import Mathlib.Logic.Function.ULift
 import Mathlib.CategoryTheory.Category.Cat
-import Mathlib.CategoryTheory.Category.Grpd
+import Mathlib.CategoryTheory.Groupoid.Grpd.Basic
 import Mathlib.Data.Part
 import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 import Mathlib.CategoryTheory.Core
@@ -19,8 +19,10 @@ to be upstreamed. -/
 This comment space is for notes about mathlib definitions/theorems that should be fixed, refactored,
 or redesigned.
 
-- AsSmall.down and AsSmall.up should have their universe level order changed so that the third value comes first.
-- currently I often write AsSmall.{_,_,w} because the first two can be inferred but not the max universe.
+- AsSmall.down and AsSmall.up should have their universe level order changed
+  so that the third value comes first.
+- currently I often write AsSmall.{_,_,w} because the first two can be inferred
+  but not the max universe.
 
 -/
 
@@ -35,8 +37,13 @@ theorem Limits.PullbackCone.IsLimit.comp_lift {C : Type*} [Category C]
     (σ : W' ⟶ W) (ht : Limits.IsLimit t) (h : W ⟶ X) (k : W ⟶ Y) (w : h ≫ f = k ≫ g) :
     σ ≫ ht.lift (PullbackCone.mk h k w) =
       ht.lift (PullbackCone.mk (σ ≫ h) (σ ≫ k) (by simp [w])) := by
-  refine ht.hom_ext fun j => ?_
-  rcases j with _ | _ | _ <;> simp
+  apply PullbackCone.IsLimit.hom_ext ht
+  · change (σ ≫ PullbackCone.IsLimit.lift ht h k w) ≫ t.fst =
+      PullbackCone.IsLimit.lift ht (σ ≫ h) (σ ≫ k) _ ≫ t.fst
+    simp [Category.assoc]
+  · change (σ ≫ PullbackCone.IsLimit.lift ht h k w) ≫ t.snd =
+      PullbackCone.IsLimit.lift ht (σ ≫ h) (σ ≫ k) _ ≫ t.snd
+    simp [Category.assoc]
 
 end CategoryTheory
 
@@ -101,29 +108,29 @@ namespace CategoryTheory.Cat
 
 /-- This is the proof of equality used in the eqToHom in `Cat.eqToHom_hom` -/
 theorem eqToHom_hom_aux {C1 C2 : Cat.{v,u}} (x y: C1) (eq : C1 = C2) :
-    (x ⟶ y) = ((eqToHom eq).obj x ⟶ (eqToHom eq).obj y) := by
+    (x ⟶ y) = ((eqToHom eq).toFunctor.obj x ⟶ (eqToHom eq).toFunctor.obj y) := by
   cases eq
   simp[CategoryStruct.id]
 
 /-- This is the turns the hom part of eqToHom functors into a cast-/
 theorem eqToHom_hom {C1 C2 : Cat.{v,u}} {x y: C1} (f : x ⟶ y) (eq : C1 = C2) :
-    (eqToHom eq).map f = (cast (Cat.eqToHom_hom_aux x y eq) f) := by
+    (eqToHom eq).toFunctor.map f = (cast (Cat.eqToHom_hom_aux x y eq) f) := by
   cases eq
   simp[CategoryStruct.id]
 
 /-- This turns the object part of eqToHom functors into casts -/
 theorem eqToHom_obj {C1 C2 : Cat.{v,u}} (x : C1) (eq : C1 = C2) :
-    (eqToHom eq).obj x = cast (congrArg Bundled.α eq) x := by
+    (eqToHom eq).toFunctor.obj x = cast (congrArg Bundled.α eq) x := by
   cases eq
   simp[CategoryStruct.id]
 
 abbrev homOf {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D) :
-    Cat.of C ⟶ Cat.of D := F
+    Cat.of C ⟶ Cat.of D := F.toCatHom
 
 @[simps] def ULift_lte_iso_self {C : Type (max u u₁)} [Category.{v} C] :
     Cat.of (ULift.{u} C) ≅ Cat.of C where
-  hom := ULift.downFunctor
-  inv := ULift.upFunctor
+  hom := ULift.downFunctor.toCatHom
+  inv := ULift.upFunctor.toCatHom
 
 @[simp] def ULift_succ_iso_self {C : Type (u + 1)} [Category.{v} C] :
     of (ULift.{u, u + 1} C) ≅ of C := ULift_lte_iso_self.{v,u,u+1}
@@ -136,7 +143,7 @@ def ofULift (C : Type u) [Category.{v} C] : Cat.{v, max u w} :=
 
 def uLiftFunctor : Cat.{v,u} ⥤ Cat.{v, max u w} where
   obj X := Cat.ofULift.{w} X
-  map F := Cat.homOf $ ULift.downFunctor ⋙ F ⋙ ULift.upFunctor
+  map F := Cat.homOf $ ULift.downFunctor ⋙ F.toFunctor ⋙ ULift.upFunctor
 
 end CategoryTheory.Cat
 
@@ -171,7 +178,7 @@ variable {C : Type u₁} [Category.{v₁} C]
 variable {P X Y Z : C} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ Z} {g : Y ⟶ Z}
 
 theorem of_iso_isPullback (h : IsPullback fst snd f g) {Q} (i : Q ≅ P) :
-      IsPullback (i.hom ≫ fst) (i.hom ≫ snd) f g := by
+    IsPullback (i.hom ≫ fst) (i.hom ≫ snd) f g := by
   have : HasPullback f g := ⟨ h.cone , h.isLimit ⟩
   refine IsPullback.of_iso_pullback (by simp [h.w]) (i ≪≫ h.isoPullback) (by simp) (by simp)
 
@@ -210,26 +217,19 @@ namespace AsSmall
   AsSmall.up.map (AsSmall.down.map f) = f := rfl
 
 theorem comp_up_inj {C : Type u} [Category.{v} C]
-  {D : Type u₁} [Category.{v₁} D]
+    {D : Type u₁} [Category.{v₁} D]
     {F G : C ⥤ D}
     (h : F ⋙ (AsSmall.up : D ⥤ AsSmall.{w} D) =
-      G ⋙ AsSmall.up)
-    : F = G := by
-  convert_to F ⋙ (AsSmall.up : D ⥤ AsSmall.{w} D)
-    ⋙ AsSmall.down
-    = G ⋙ (AsSmall.up : D ⥤ AsSmall.{w} D)
-    ⋙ AsSmall.down
-  simp only [← Functor.assoc, h]
+      G ⋙ AsSmall.up) :
+    F = G := by
+  exact congrArg (fun K => K ⋙ AsSmall.down) h
 
 theorem comp_down_inj {C : Type u} [Category.{v} C]
-  {D : Type u₁} [Category.{v₁} D]
+    {D : Type u₁} [Category.{v₁} D]
     {F G : C ⥤ AsSmall.{w} D}
-    (h : F ⋙ AsSmall.down = G ⋙ AsSmall.down)
-    : F = G := by
-  convert_to F ⋙ AsSmall.down
-    ⋙ AsSmall.up
-    = G ⋙ AsSmall.down ⋙ AsSmall.up
-  simp only [← Functor.assoc, h]
+    (h : F ⋙ AsSmall.down = G ⋙ AsSmall.down) :
+    F = G := by
+  exact congrArg (fun K => K ⋙ AsSmall.up) h
 
 @[simp] theorem up_comp_down
     {C : Type u₁} [Category.{v₁, u₁} C] :
@@ -250,6 +250,14 @@ namespace Groupoid
 instance asSmallGroupoid (Γ : Type u) [Groupoid.{v} Γ] :
     Groupoid (AsSmall.{w} Γ) where
   inv f := AsSmall.up.map (inv (AsSmall.down.map f))
+  inv_comp f := by
+    apply ULift.ext
+    change inv f.down ≫ f.down = 𝟙 _
+    simp
+  comp_inv f := by
+    apply ULift.ext
+    change f.down ≫ inv f.down = 𝟙 _
+    simp
 
 end Groupoid
 
@@ -330,9 +338,9 @@ def isLimitProdCone (X Y : D) : IsLimit (e.prodCone X Y) :=
   BinaryFan.isLimitCompLeftIso _ (e.counit.app _) (
   isLimitCartesianMonoidalCategoryOfPreservesLimits e.functor
     (e.inverse.obj X) (e.inverse.obj Y))))
-  (BinaryFan.ext (eqToIso rfl) (by aesop_cat) (by aesop_cat))
+  (BinaryFan.ext (eqToIso rfl) (by simp [prodCone]) (by simp [prodCone]))
 
-def chosenFiniteProducts [CartesianMonoidalCategory C] : CartesianMonoidalCategory D :=
+abbrev chosenFiniteProducts : CartesianMonoidalCategory D :=
   .ofChosenFiniteProducts
     { cone := asEmptyCone e.chosenTerminal
       isLimit := e.chosenTerminalIsTerminal }
@@ -345,8 +353,8 @@ end Equivalence
 
 section equivalence
 
-def functorToAsSmallEquiv {D : Type u₁} [Category.{v₁} D] {C : Type u} [Category.{v} C]
-    : D ⥤ AsSmall.{w} C ≃ D ⥤ C where
+def functorToAsSmallEquiv {D : Type u₁} [Category.{v₁} D] {C : Type u} [Category.{v} C] :
+    D ⥤ AsSmall.{w} C ≃ D ⥤ C where
   toFun A := A ⋙ AsSmall.down
   invFun A := A ⋙ AsSmall.up
   left_inv _ := rfl
@@ -376,7 +384,7 @@ lemma functorToAsSmallEquiv_symm_apply_comp_right (F : C ⥤ E) :
 
 end
 
-open ULift
+open CategoryTheory.ULift
 
 instance (C : Type u) [Category.{v} C] :
     (downFunctor : ULift.{w} C ⥤ C).ReflectsIsomorphisms :=
@@ -401,16 +409,16 @@ variable {Γ : Type u₂} [Category.{v₂} Γ] {A : Γ ⥤ Grpd.{v₁,u₁}}
 
 @[simp] theorem Cat.map_id_obj {A : Γ ⥤ Cat.{v₁,u₁}}
     {x : Γ} {a : A.obj x} :
-    (A.map (𝟙 x)).obj a = a := by
+    (A.map (𝟙 x)).toFunctor.obj a = a := by
   have : A.map (𝟙 x) = 𝟙 (A.obj x) := by simp
-  exact Functor.congr_obj this a
+  exact Functor.congr_obj (congrArg Cat.Hom.toFunctor this) a
 
 theorem Cat.map_id_map {A : Γ ⥤ Cat.{v₁,u₁}}
     {x : Γ} {a b : A.obj x} {f : a ⟶ b} :
-    (A.map (𝟙 x)).map f = eqToHom Cat.map_id_obj
+    (A.map (𝟙 x)).toFunctor.map f = eqToHom Cat.map_id_obj
       ≫ f ≫ eqToHom Cat.map_id_obj.symm := by
   have : A.map (𝟙 x) = 𝟙 (A.obj x) := by simp
-  exact Functor.congr_hom this f
+  exact Functor.congr_hom (congrArg Cat.Hom.toFunctor this) f
 
 end
 
@@ -442,9 +450,9 @@ def psigmaCongrProp {α₁ α₂} {β₁ : α₁ → Prop} {β₂ : α₂ → Pr
     (F : ∀ a, β₁ a ≃ β₂ (f a)) (x : Sigma β₁) : (sigmaCongr f F x).fst = f x.fst := by
   simp [sigmaCongr]
 
-@[simp] def sigmaCongr_apply_snd {α₁ α₂} {β₁ : α₁ → Sort _} {β₂ : α₂ → Sort _} (f : α₁ ≃ α₂)
+@[simp] theorem sigmaCongr_apply_snd {α₁ α₂} {β₁ : α₁ → Sort _} {β₂ : α₂ → Sort _} (f : α₁ ≃ α₂)
     (F : ∀ a, β₁ a ≃ β₂ (f a)) (x : Sigma β₁) : (sigmaCongr f F x).snd = F x.fst x.snd := by
-  simp [sigmaCongr]
+  rfl
 
 end Equiv
 
@@ -457,8 +465,8 @@ noncomputable def pullbackHomEquiv {A B C: 𝒞} {Γ : 𝒞} {f : A ⟶ C} {g : 
     (fst : Γ ⟶ A) × (snd : Γ ⟶ B) ×' (fst ≫ f = snd ≫ g) where
   toFun h := ⟨h ≫ pullback.fst f g, h ≫ pullback.snd f g, by simp[pullback.condition]⟩
   invFun x := pullback.lift x.1 x.2.1 x.2.2
-  left_inv _ := pullback.hom_ext (by simp) (by simp)
-  right_inv := by rintro ⟨_,_,_⟩; congr!; simp; simp
+  left_inv _ := pullback.hom_ext (by simp [pullback.lift_fst]) (by simp [pullback.lift_snd])
+  right_inv := by rintro ⟨_,_,_⟩; congr! <;> simp [pullback.lift_fst, pullback.lift_snd]
 
 end CategoryTheory.Limits
 
@@ -524,12 +532,14 @@ lemma ofYoneda_isPullback {C : Type u} [Category.{v} C] {TL TR BL BR : C}
   apply IsPullback.of_isLimit (c := c)
   apply c.isLimitAux (fun s => lift (PullbackCone.fst s) (PullbackCone.snd s) (by
       simp [PullbackCone.condition s]))
-  · simp [c, top_lift]
-  · simp [c, lift_comp_left]
+  · intro s; change lift s.fst s.snd _ ≫ ofYoneda top top_comp = s.fst
+    simp only [ofYoneda_comp_left, top_lift]
+  · intro s; exact lift_comp_left _ _ _
   · intro s m h
     apply lift_uniq
     · specialize h (some .left)
-      simpa [c] using h
+      change m ≫ ofYoneda top top_comp = s.fst at h
+      exact (ofYoneda_comp_left top top_comp m).symm.trans h
     · specialize h (some .right)
       exact h
 
@@ -545,11 +555,11 @@ variable (F) in
 -/
 def yonedaIso : yoneda.op ⋙ yoneda.obj F ≅ F :=
   NatIso.ofComponents (fun _ => Equiv.toIso yonedaEquiv)
-    (fun f => by ext : 1; dsimp; rw [yonedaEquiv_naturality'])
+    (fun f => by ext α; exact (yonedaEquiv_naturality' _ _).symm)
 
 def yonedaIsoMap : yoneda.op ⋙ yoneda.obj F ⟶ yoneda.op ⋙ yoneda.obj G where
-  app _ := app
-  naturality _ _ _ := by ext : 1; apply naturality
+  app _ := ↾app
+  naturality _ _ f := by ext α; exact naturality f.unop α
 
 /-- Build natural transformations between presheaves on a small category
   by defining their action when precomposing by a morphism with
@@ -564,7 +574,8 @@ theorem NatTrans.yonedaMk_app {X : C} (α : yoneda.obj X ⟶ F) :
 
 namespace Functor
 
-theorem precomp_heq_of_heq_id {A B : Type u} {C : Type*} [Category.{v} A] [Category.{v} B] [Category C]
+theorem precomp_heq_of_heq_id {A B : Type u} {C : Type*}
+    [Category.{v} A] [Category.{v} B] [Category C]
     (hAB : A = B) (h0 : HEq (inferInstance : Category A) (inferInstance : Category B)) {F : A ⥤ B}
     (h : HEq F (𝟭 B)) (G : B ⥤ C) : HEq (F ⋙ G) G := by
   subst hAB
@@ -620,17 +631,10 @@ lemma Discrete.functor_eq {X C : Type*} [Category C] {F : Discrete X ⥤ C} :
   fapply CategoryTheory.Functor.ext
   · aesop
   · intro x y f
-    cases x ; rcases f with ⟨⟨h⟩⟩
-    cases h
-    simp
-
-lemma Discrete.functor_ext {X C : Type*} [Category C] (F G : Discrete X ⥤ C)
-    (h : ∀ x : X, F.obj ⟨x⟩ = G.obj ⟨x⟩) :
-    F = G :=
-  calc F
-    _ = Discrete.functor (fun x => F.obj ⟨x⟩) := Discrete.functor_eq
-    _ = Discrete.functor (fun x => G.obj ⟨x⟩) := Discrete.functor_ext' h
-    _ = G := Discrete.functor_eq.symm
+    cases x
+    cases y
+    cases f with
+    | mk h => cases h; simp
 
 lemma Discrete.hext {X Y : Type u} (a : Discrete X) (b : Discrete Y) (hXY : X ≍ Y)
     (hab : a.1 ≍ b.1) : a ≍ b := by
@@ -640,7 +644,7 @@ lemma Discrete.Hom.hext {α β : Type u} {x y : Discrete α} (x' y' : Discrete �
     (hx : x ≍ x') (hy : y ≍ y') (f : x ⟶ y) (f' : x' ⟶ y') : f ≍ f' := by
   aesop_cat
 
-open Prod in
+open CategoryTheory.Prod in
 lemma Prod.sectR_comp_snd {C : Type u₁} [Category.{v₁} C] (Z : C)
     (D : Type u₂) [Category.{v₂} D] : sectR Z D ⋙ snd C D = 𝟭 D :=
   rfl

@@ -26,7 +26,7 @@ namespace SynthLean
 open Lean Qq
 
 variable {m : Type → Type} [Monad m] [MonadLiftT IO m]
-  [MonadOptions m] [MonadEnv m] [MonadError m] [MonadQuotation m]
+  [MonadOptions m] [MonadEnv m] [MonadError m]
 
 /-- A theory-updating entry.
 
@@ -70,6 +70,7 @@ For the initial shallow environment,
 we pull in a custom prelude with `Type`-valued identity types. -/
 def mkInitTheoryData (modNm mainModule : Name) : m TheoryData := do
   -- TODO: check if the `.olean` exists and print a better error if not.
+  liftM (m := IO) <| unsafe enableInitializersExecution
   let mut thyEnv ← importModules #[{ module := `HoTTLean.Prelude }]
     (← getOptions) (leakEnv := true) (loadExts := true)
   thyEnv := thyEnv.setMainModule mainModule
@@ -107,7 +108,7 @@ private initialize theoryExt : TheoryExt ←
               | .axiomInfo i => pure <| .axiomDecl i | .defnInfo i => pure <| .defnDecl i
               | _ => throwThe IO.Error s!"unsupported constant kind at '{ci.name}'"
             -- Q: no extension entries added after the prelude; will this break elaboration?
-            let .ok thyEnv := thyData.env.addDeclCore 0 decl none (doCheck := false)
+            let .ok thyEnv := thyData.env.addDeclCore 0 0 decl none (doCheck := false)
               | throwThe IO.Error "internal error" /- cannot happen with `doCheck := false` -/
             thyMap := thyMap.insert thyNm { thyData with env := thyEnv }
       return ([], thyMap)
@@ -116,7 +117,7 @@ private initialize theoryExt : TheoryExt ←
     -- Note: because we `cons` local entries onto the list,
     -- this array has the latest entry first
     -- and has to be read in reverse order when imported.
-    exportEntriesFnEx _ s _ := s.1.toArray
+    exportEntriesFnEx _ s := .uniform s.1.toArray
     -- TODO: statsFn, asyncMode, replay?
   }
 

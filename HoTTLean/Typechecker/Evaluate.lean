@@ -119,7 +119,7 @@ partial def evalTm (env : Q(List (Val $χ))) (t' : Q(Expr $χ)) :
       introv env t
       have ⟨_, lk, eq⟩ := t.inv_bvar
       apply ValEqTm.conv_tp _ (eq.subst env.wf_sb).symm_tp
-      convert env.lookup_eq lk using 1
+      convert env.lookup_eq lk using 1 <;> try rfl
       subst $v
       have ⟨_, h⟩ := List.getElem?_eq_some_iff.mp ($this).symm
       rw [h]
@@ -174,7 +174,7 @@ partial def evalTm (env : Q(List (Val $χ))) (t' : Q(Expr $χ)) :
       introv env t
       obtain ⟨rfl, p, eq⟩ := t.inv_snd
       apply ValEqTm.conv_tp _ (eq.subst env.wf_sb).symm_tp
-      convert ($vpost) ($vppost env p) using 1
+      convert ($vpost) ($vppost env p) using 1 <;> try rfl
       autosubst
     )⟩
   | ~q(.refl $l $u) => do
@@ -392,7 +392,7 @@ partial def evalNeutTm (env : Q(List (Val $χ))) (nt : Q(Neut $χ)) :
       have ⟨_, lk, eqt, eq⟩ := nt.inv_bvar
       apply ValEqTm.conv_tm _ (eqt.subst env.wf_sb).symm_tm
       apply ValEqTm.conv_tp _ (eq.subst env.wf_sb).symm_tp
-      convert env.lookup_eq lk using 1
+      convert env.lookup_eq lk using 1 <;> try rfl
       subst $v
       obtain ⟨_, rfl⟩ := List.getElem?_eq_some_iff.mp ($this).symm
       congr 3
@@ -408,7 +408,7 @@ partial def evalNeutTm (env : Q(List (Val $χ))) (nt : Q(Neut $χ)) :
       subst_vars
       apply ValEqTm.conv_tm _ (eqt.subst env.wf_sb).symm_tm
       apply ValEqTm.conv_tp _ (eq.subst env.wf_sb).symm_tp
-      convert ($vpost ($vfpost env nf) ($vapost env va)) using 1
+      convert ($vpost ($vfpost env nf) ($vapost env va)) using 1 <;> try rfl
       autosubst
     )⟩
   | ~q(.fst $k $k' $np) =>
@@ -431,7 +431,7 @@ partial def evalNeutTm (env : Q(List (Val $χ))) (nt : Q(Neut $χ)) :
       subst_vars
       apply ValEqTm.conv_tm _ (eqt.subst env.wf_sb).symm_tm
       apply ValEqTm.conv_tp _ (eq.subst env.wf_sb).symm_tp
-      convert ($vpost ($vppost env np_eq)) using 1
+      convert ($vpost ($vppost env np_eq)) using 1 <;> try rfl
       autosubst
     )⟩
   | ~q(.idRec $k $k' $vA $va $cM $vr $vh) =>
@@ -682,7 +682,6 @@ partial def evalApp (vf va : Q(Val $χ)) : TypecheckerM ((v : Q(Val $χ)) ×
       apply EqTm.cong_app (EqTp.refl_tp b.wf_tp) _ (EqTm.refl_tm va.wf_tm)
       apply EqTm.symm_tm; apply eqt.trans_tm
       apply EqTm.symm_tm; gcongr
-      assumption
     )⟩
   | ~q(.neut $n (.pi $k $k' $vA $vB)) => do
     let ⟨vBa, vBpost⟩ ← evalClosTp q($vB) q($va)
@@ -719,7 +718,7 @@ partial def evalFst (vp : Q(Val $χ)) : TypecheckerM ((v : Q(Val $χ)) ×
         apply EqTm.fst_pair Beq.wf_left t u |>.symm_tm.trans_tm
         gcongr
         apply EqTm.trans_tm _ eqt.symm_tm
-        gcongr <;> assumption
+        gcongr
       apply v.conv_nf (this.conv_eq Aeq) Aeq.symm_tp
     )⟩
   | ~q(.neut $n (.sigma $k $k' $vA $vB)) =>
@@ -753,14 +752,14 @@ partial def evalSnd (vp : Q(Val $χ)) : TypecheckerM ((v : Q(Val $χ)) ×
         apply EqTm.fst_pair Beq.wf_left t u |>.symm_tm.trans_tm
         gcongr
         apply EqTm.trans_tm _ eqt.symm_tm
-        gcongr <;> assumption
+        gcongr
       replace w := w.conv_tp <| Beq.symm_tp.subst_eq (EqSb.toSb feq)
       apply w.conv_tm
       apply EqTm.snd_pair Beq.wf_left t u |>.symm_tm.conv_eq
         (Beq'.wf_left.subst_eq (EqSb.toSb feq)) |>.trans_tm _
       apply EqTm.symm_tm; gcongr
       apply eqt.trans_tm
-      apply EqTm.symm_tm; gcongr <;> assumption
+      apply EqTm.symm_tm; gcongr
     )⟩
   | ~q(.neut $n (.sigma $k $k' $vA $vB)) => do
     let ⟨vf, vfpost⟩ ← evalFst q($vp)
@@ -805,7 +804,7 @@ partial def evalIdRec (l' : Q(Nat)) (cM : Q(Clos $χ)) (vr vh : Q(Val $χ)) :
         apply EqTm.symm_tm
         apply EqTm.cong_idRec (.refl_tm t) (.refl_tp M) (.refl_tm vr.wf_tm) tu
         refine ?eq
-        apply EqTm.trans_tm _ <| eqt.symm_tm.conv_eq _ <;> gcongr; assumption
+        apply EqTm.trans_tm _ <| eqt.symm_tm.conv_eq _ <;> gcongr
       . apply M.subst_eq <| EqSb.snoc (EqSb.toSb tu) (.Id_bvar t) (autosubst% ?eq)
     )⟩
   | ~q(.neut $nh (.Id $l $vA $va $vb)) => do

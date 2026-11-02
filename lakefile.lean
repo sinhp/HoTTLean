@@ -1,13 +1,12 @@
 import Lake
 open Lake DSL
 
-require Poly from git "https://github.com/sinhp/Poly" @ "master"
-
-require checkdecls from git "https://github.com/PatrickMassot/checkdecls.git"
+-- Lean v4.34.1 port, proposed in sinhp/Poly#41.
+require Poly from git "https://github.com/sosudo/Poly" @ "ba73d5149ac19b1186b6e58648217b52db6b8cdb"
 
 meta if get_config? env = some "dev" then
 require «doc-gen4» from git
-  "https://github.com/leanprover/doc-gen4" @ "v4.25.0-rc2"
+  "https://github.com/leanprover/doc-gen4" @ "v4.34.1"
 
 package hottlean where
   -- Settings applied to both builds and interactive editing
@@ -37,4 +36,4 @@ lean_lib HoTTLean where
   needs := #[Prelude]
 
 @[test_driver]
-lean_lib test where
+lean_lib HoTTLeanTest where

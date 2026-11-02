@@ -311,11 +311,12 @@ private theorem wf_expr :
     (∀ {Γ l vt t A}, ValEqTm E Γ l vt t A → E ∣ Γ ⊢[l] t : A) ∧
     (∀ {Γ l vt t A}, NeutEqTm E Γ l vt t A → E ∣ Γ ⊢[l] t : A) ∧
     (∀ {Γ l l' A vB B}, ClosEqTp E Γ l l' A vB B → E ∣ (A, l) :: Γ ⊢[l'] B) ∧
-    (∀ {Γ A l B l' l'' cC C}, Clos₂EqTp E Γ A l B l' l'' cC C → E ∣ (B, l') :: (A, l) :: Γ ⊢[l''] C) ∧
+    (∀ {Γ A l B l' l'' cC C},
+      Clos₂EqTp E Γ A l B l' l'' cC C → E ∣ (B, l') :: (A, l) :: Γ ⊢[l''] C) ∧
     (∀ {Γ l l' A B vb b}, ClosEqTm E Γ l l' A B vb b → E ∣ (A, l) :: Γ ⊢[l'] b : B) ∧
     (∀ {Γ Eᵥ σ Γ'}, EnvEqSb E Γ Eᵥ σ Γ' → WfSb E Γ σ Γ') := by
   mutual_induction ValEqTp
-  all_goals dsimp; intros
+  all_goals intros
   case ax => apply WfTm.ax <;> assumption
   case conv_tp => grind [EqTp.wf_right]
   case conv_nf tt' AA' _ => exact tt'.wf_right.conv AA'
@@ -496,7 +497,7 @@ private theorem wk_all :
     apply ValEqTm.pair this (iht C) (autosubst% ihu C)
   case conv_nf => grind [ValEqTm.conv_nf, EqTp.subst, EqTm.subst, WfSb.wk]
   case bvar Γ lk _ _ C =>
-    convert NeutEqTm.bvar (Γ.snoc C) (.succ _ lk) using 1; grind
+    convert NeutEqTm.bvar (Γ.snoc C) (.succ _ lk) using 1 <;> first | rfl | grind
   case app ihA ihf iha _ _ C =>
     exact autosubst% NeutEqTm.app (ihA C) (ihf C) (iha C)
   case snd ih _ _ C =>

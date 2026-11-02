@@ -8,6 +8,8 @@ universe v u
 
 noncomputable section
 
+set_option backward.isDefEq.respectTransparency false
+
 open CategoryTheory Opposite MonoidalCategory
 
 namespace Model
@@ -35,7 +37,8 @@ def Hom.comp {M N O : UnstructuredUniverse Ctx} (α : Hom M N) (β : Hom N O) : 
   mapTy := α.mapTy ≫ β.mapTy
   pb := α.pb.paste_horiz β.pb
 
-def Hom.comp_assoc {M N O P : UnstructuredUniverse Ctx} (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
+theorem Hom.comp_assoc {M N O P : UnstructuredUniverse Ctx}
+    (α : Hom M N) (β : Hom N O) (γ : Hom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp]
 
@@ -55,10 +58,10 @@ def Hom.subst (M : UnstructuredUniverse Ctx)
     Hom (M.pullback ((σ) ≫ A)) (M.pullback A) :=
   let Aσ := (σ) ≫ A
   { mapTm :=
-    (M.disp_pullback A).lift (M.var Aσ) (M.disp Aσ ≫ σ) (by aesop_cat)
+    (M.disp_pullback A).lift (M.var Aσ) (M.disp Aσ ≫ σ) (by simp [Aσ])
     mapTy := (σ)
     pb := by
-      convert IsPullback.of_right' (M.disp_pullback Aσ) (M.disp_pullback A)}
+      exact IsPullback.of_right' (M.disp_pullback Aσ) (M.disp_pullback A)}
 
 @[simp] def Hom.extIsoExt {M N : UnstructuredUniverse Ctx} (h : Hom M N)
     {Γ} (A : Γ ⟶ M.Ty) : (N.ext (A ≫ h.mapTy)) ≅ (M.ext A) :=
@@ -99,7 +102,8 @@ def UHom.comp {M N O : UnstructuredUniverse Ctx} (α : UHom M N) (β : UHom N O)
   asTm := α.asTm ≫ β.mapTm
   U_pb := α.U_pb.paste_horiz β.pb
 
-def UHom.comp_assoc {M N O P : UnstructuredUniverse Ctx} (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
+theorem UHom.comp_assoc {M N O P : UnstructuredUniverse Ctx}
+    (α : UHom M N) (β : UHom N O) (γ : UHom O P) :
     comp (comp α β) γ = comp α (comp β γ) := by
   simp [comp, Hom.comp]
 
@@ -135,7 +139,8 @@ def Hom.extCompMapTyIsoExt : N.ext (A ≫ α.mapTy) ≅ M.ext A :=
   (N.disp_pullback (A ≫ α.mapTy)).isoIsPullback _ _
   (IsPullback.paste_horiz (M.disp_pullback A) α.pb)
 
-lemma Hom.extCompMapTyIsoExt_hom_comp_substWk  :
+omit [ChosenTerminal Ctx] in
+lemma Hom.extCompMapTyIsoExt_hom_comp_substWk :
     (α.extCompMapTyIsoExt σA).hom ≫ M.substWk σ A σA eq =
     N.substWk σ (A ≫ α.mapTy) (σA ≫ α.mapTy) (by simp [← eq]) ≫ (α.extCompMapTyIsoExt A).hom := by
   apply (disp_pullback ..).hom_ext
@@ -370,7 +375,7 @@ class PiSeq (s : UHomSeq Ctx) where
 -- Re-export for use with dot notation.
 abbrev polyPi := @PiSeq.polyPi
 
-def PiSeq.ofMonomorphic
+abbrev PiSeq.ofMonomorphic
     (nmPi : (i : Nat) → (ilen : i < s.length + 1 := by get_elem_tactic) →
     s[i].PolymorphicPi s[i] s[i]) : PiSeq s where
   polyPi i j _ _ := .ofMonomorphic (nmPi (max i j)) (s.homOfLe _ _) (s.homOfLe _ _)

@@ -266,7 +266,7 @@ partial def equateNeutTm (d : Q(Nat)) (nt nu : Q(Neut $χ)) :
       refine ⟨TUeq, ?_⟩
       apply eqt.trans_tm _ |>.trans_tm (eqt'.conv_eq TUeq.symm_tp).symm_tm
       apply EqTm.conv_eq _ eq.symm_tp
-      gcongr
+      exact EqTm.cong_app Beq feq aeq
     )
   | ~q(.fst _ $k' $p), ~q(.fst _ $m' $p') => do
     let km' ← equateNat q($k') q($m')
@@ -296,10 +296,10 @@ partial def equateNeutTm (d : Q(Nat)) (nt nu : Q(Neut $χ)) :
       have ⟨_, _, _, Aeq, Beq⟩ := Seq.inv_sigma
       refine have TUeq := ?_; ⟨TUeq, ?_⟩
       . apply eq.trans_tp _ |>.trans_tp eq'.symm_tp
-        gcongr; apply EqSb.toSb; gcongr
+        exact Beq.subst_eq (EqSb.toSb (EqTm.cong_fst Aeq Beq peq))
       . apply eqt.trans_tm _ |>.trans_tm (eqt'.conv_eq TUeq.symm_tp).symm_tm
         apply EqTm.conv_eq _ eq.symm_tp
-        gcongr
+        exact EqTm.cong_snd Aeq Beq peq
     )
   | ~q(.idRec $k $k' $vA $va $cM $vr $nh), ~q(.idRec $m $m' $vA' $va' $cM' $vr' $nh') => do
     let km ← equateNat q($k) q($m)
@@ -341,7 +341,7 @@ partial def equateNeutTm (d : Q(Nat)) (nt nu : Q(Neut $χ)) :
           autosubst; gcongr
           exact aeq.wf_right
           exact aeq.symm_tm
-        gcongr
+        exact EqTm.cong_idRec aeq Meq this beq heq
     )
   | nt, nu =>
     throwError "cannot prove neutral terms are equal\

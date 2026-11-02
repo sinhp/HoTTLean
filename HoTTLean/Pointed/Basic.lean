@@ -1,4 +1,4 @@
-import Mathlib.CategoryTheory.Category.Grpd
+import Mathlib.CategoryTheory.Groupoid.Grpd.Basic
 import HoTTLean.ForMathlib
 import HoTTLean.Grothendieck.Groupoidal.Basic
 import HoTTLean.ForMathlib.CategoryTheory.Functor.IsPullback
@@ -7,6 +7,8 @@ import HoTTLean.ForMathlib.CategoryTheory.Functor.IsPullback
 Here we define pointed categories and pointed groupoids as well as prove some basic lemmas.
 -/
 
+set_option backward.isDefEq.respectTransparency false
+
 universe w v u v₁ u₁ v₂ u₂
 
 noncomputable section
@@ -14,8 +16,9 @@ noncomputable section
 namespace CategoryTheory
 
 attribute [local simp] eqToHom_map Grpd.id_eq_id Grpd.comp_eq_comp Functor.id_comp
+  Cat.Hom.obj Cat.Hom.map Cat.Hom.comp_toFunctor Cat.Hom.id_toFunctor
 
-open Functor
+open CategoryTheory.Functor
 
 abbrev PCat := ∫ 𝟭 Cat.{v,u}
 
@@ -36,6 +39,8 @@ postfix:max "⟱" => forgetToCat.map
 
 lemma forgetToCat_map {C D : PCat} (F : C ⟶ D) :
     F⟱ = F.base := rfl
+
+attribute [local simp] forgetToCat_map
 
 @[simp]
 theorem id_obj {C : PCat} (X : C.base) : (𝟙 C)⟱.obj X = X :=
@@ -124,7 +129,9 @@ theorem mapFiber_inv {x y} (f : x ⟶ y) [IsIso f] :
 end
 
 theorem eqToHom_base_map {x y : PCat} (eq : x = y) {a b} (f : a ⟶ b) :
-    (eqToHom eq).base.map f = eqToHom (by simp) ≫ (eqToHom (by simp [eq] : x.base = y.base)).map f ≫ eqToHom (by simp) := by
+    (eqToHom eq).base.map f =
+      eqToHom (by simp) ≫ (eqToHom (by simp [eq] : x.base = y.base)).map f ≫
+        eqToHom (by simp) := by
   cases eq
   simp
 
@@ -168,6 +175,8 @@ postfix:max "⟱" => forgetToGrpd.map
 
 lemma forgetToGrpd_map {C D : PGrpd} (F : C ⟶ D) :
     F⟱ = F.base := rfl
+
+attribute [local simp] forgetToGrpd_map
 
 @[simp]
 theorem id_obj {C : PGrpd} (X : C.base) : (𝟙 C)⟱.obj X = X :=
@@ -385,8 +394,8 @@ end
 theorem Functor.hext (F G : Γ ⥤ PGrpd)
     (hbase : F ⋙ forgetToGrpd = G ⋙ forgetToGrpd)
     (hfiber_obj : ∀ x : Γ, HEq (F.obj x).fiber (G.obj x).fiber)
-    (hfiber_map : ∀ {x y : Γ} (f : x ⟶ y), HEq (F.map f).fiber (G.map f).fiber)
-    : F = G :=
+    (hfiber_map : ∀ {x y : Γ} (f : x ⟶ y), HEq (F.map f).fiber (G.map f).fiber) :
+    F = G :=
   Grothendieck.FunctorTo.hext F G hbase hfiber_obj hfiber_map
 
 section

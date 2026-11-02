@@ -10,6 +10,8 @@ macro "simp_part" loc:(Lean.Parser.Tactic.location)? : tactic =>
     Part.map_some, Part.mem_bind_iff, Part.mem_some_iff,
     exists_true_left, exists_const] $(loc)?)
 
+set_option backward.isDefEq.respectTransparency false
+
 universe v u
 
 open CategoryTheory Limits
@@ -91,8 +93,7 @@ def disp {Γ Γ' : 𝒞} : s.ExtSeq Γ Γ' → (Γ' ⟶ Γ)
 Δ ⊢ σ : Γ  d : Γ ≤ Γ'
 -----------------------------
 Δ ≤ Δ.d[σ]  Δ.d[σ] ⊢ σ.d : Γ'
-```
-where
+``` where
 ```
 Δ ⊢ σ : Γ  d : Γ ≤ Γ.Aₙ.….A₁
 -----------------------------
@@ -477,6 +478,7 @@ theorem mem_ofTerm_app {Γ l i j B f a} {llen : l < s.length + 1} {x} :
     ∃ h, x = s.mkApp ilen llen _ B' f' h a' eq := by
   dsimp only [ofTerm]; simp_part; simp only [exists_prop_eq']
 
+set_option maxHeartbeats 800000 in
 @[simp]
 theorem mem_ofTerm_pair {Γ l i j B t u} {llen : l < s.length + 1} {x} :
     x ∈ I.ofTerm Γ l (.pair i j B t u) llen ↔
@@ -700,7 +702,7 @@ theorem mem_ofType_ofTerm_subst' {full}
     simp [ofTerm_bvar] at H
     simp [Expr.subst]
     induction σ generalizing i with simp [CSb.toSb, *]
-    | wk => exact CObj.mem_var_succ.2 ⟨_, ‹_›, rfl⟩
+    | wk => exact ⟨_, ‹_›, rfl⟩
     | @comp _ _ _ _ _ full σ τ ih1 ih2 =>
       simp [Expr.comp]
       cases full with
@@ -796,7 +798,9 @@ theorem mem_ofType_of_isClosed {e l} (e_cl : e.isClosed)
     isTerminal_yUnit.from y(Γ.1) ≫ se ∈ I.ofType Γ l e hl := by
   rcases Γ with ⟨_, ext⟩
   induction ext
-  · convert se_mem; simp
+  · convert se_mem <;> try rfl
+    have h : isTerminal.from (𝟭_ 𝒞) = 𝟙 _ := isTerminal.hom_ext _ _
+    simp []
   · rename_i X se_mem
     have := I.mem_ofType_wk (X := X) (by omega) se_mem
     convert this using 1 <;>
@@ -1060,7 +1064,8 @@ theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
   refine ⟨_, hΓ, _, _,
     (I.mem_ofType_ofTerm_subst _ (.snoc (.sub1 _ _ _ utp hu) _ _ _ ?_ hh) ?_).1 hM, _,
     I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, ?b, _, hM, _, hr, ?a, _, hu, utp, _, hh, htp, rfl⟩,
-    I.mem_ofTerm_idRec.2 ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
+    I.mem_ofTerm_idRec.2
+      ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
     mkIdRec_tp ..⟩
   · rw [htp, Beq, comp_mkId]
     · congr 1 <;> simp
@@ -1167,7 +1172,8 @@ theorem EqTmIH.pair_fst_snd {Γ A B p l l'} :
     exact
       have h1 := I.mem_ofTerm_fst.2 ⟨by omega, _, hA, _, hB, _, hp, ptp, rfl⟩
       have h2 := I.mem_ofTerm_snd.2 ⟨by omega, _, hA, _, hB, _, hp, ptp, rfl⟩
-      have pr := I.mem_ofTerm_pair.2 ⟨rfl, _, h1, _, mkFst_tp .., _, hB, _, h2, mkSnd_tp .., by simp⟩
+      have pr := I.mem_ofTerm_pair.2
+        ⟨rfl, _, h1, _, mkFst_tp .., _, hB, _, h2, mkSnd_tp .., by simp⟩
       ⟨_, hΓ, _, _, hP, _, hp, pr, ptp⟩
 
 theorem EqTmIH.code_el {Γ a l} :

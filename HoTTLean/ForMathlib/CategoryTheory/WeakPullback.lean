@@ -33,17 +33,19 @@ def coherentLift [HasPullbacks C] : W ⟶ P :=
 
 @[simp]
 lemma coherentLift_fst [HasPullbacks C] : wp.coherentLift a b h ≫ fst = a := by
-  simp [coherentLift]
+  simp [coherentLift, pullback.lift_fst]
 
 @[simp]
 lemma coherentLift_snd [HasPullbacks C] : wp.coherentLift a b h ≫ snd = b := by
-  simp [coherentLift]
+  simp [coherentLift, pullback.lift_snd]
 
 lemma coherentLift_comp_left [HasPullbacks C] {W'} (σ : W' ⟶ W) :
     σ ≫ wp.coherentLift a b h =
     wp.coherentLift (σ ≫ a) (σ ≫ b) (by simp [h]) := by
-  simp only [coherentLift, ← Category.assoc]
-  congr 1; ext <;> simp
+  dsimp [coherentLift]
+  rw [← Category.assoc]
+  congr 1
+  apply pullback.hom_ext <;> simp [Category.assoc, pullback.lift_fst, pullback.lift_snd]
 
 end WeakPullback
 end CategoryTheory

@@ -6,14 +6,15 @@ together with a proof mode for developing mathematics synthetically in those typ
 HoTTLean is work-in-progress.
 
 It currently contains the following components:
+
 - A deep embedding of MLTT syntax with Π, Σ, Id types, and base constants (`HoTTLean.Syntax`).
 - **SynthLean**, a proof assistant for these deeply embedded theories
   (`HoTTLean.Frontend`).
   It includes a certifying typechecker (`HoTTLean.Typechecker`).
 - Natural model semantics of MLTT in presheaf categories (`HoTTLean.Model`)
   and a proof that this semantics is sound for the syntax (`ofType_ofTerm_sound`).
-
-- A `sorry`-free construction of the groupoid model of type theory with Π, Σ, Id types (`HoTTLean.Groupoids`).
+- A `sorry`-free construction of the groupoid model of type theory with Π, Σ, Id types
+  (`HoTTLean.Groupoids`).
 - Pieces of general mathematics and category theory
   such as the Grothendieck construction for groupoids
   (`HoTTLean.ForMathlib`, `HoTTLean.Grothendieck`, `HoTTLean.Pointed`).
@@ -23,7 +24,8 @@ Documentation of the Lean code can be found
 [here](https://sinhp.github.io/HoTTLean/docs/).
 (We also have [a blueprint](https://sinhp.github.io/HoTTLean/),
 but it is very outdated.)
-Relevant papers to this project are listed below
+Relevant papers to this project are listed below:
+
 - [A Certifying Proof Assistant for Synthetic
 Mathematics in Lean](https://voidma.in/assets/papers/2026nawrocki_certifying_proof_assistant_synthetic_mathematics_lean.pdf)
 - [Path Types in Algebraic Type Theory](https://arxiv.org/abs/2601.06567v1)
@@ -34,6 +36,13 @@ Mathematics in Lean](https://voidma.in/assets/papers/2026nawrocki_certifying_pro
 We rely on [Mathlib](https://github.com/leanprover-community/mathlib4)
 and [Poly](https://github.com/sinhp/Poly/),
 a formalization of polynomial functors.
+
+The project uses Lean and Mathlib v4.34.1.
+The required Lean version is recorded in [`lean-toolchain`](lean-toolchain),
+and dependency revisions are pinned in `lake-manifest.json`.
+The Poly dependency currently uses the Lean v4.34.1 port from
+[`sosudo/Poly`](https://github.com/sosudo/Poly/), proposed in
+[Poly PR #41](https://github.com/sinhp/Poly/pull/41).
 
 ### How can I try out HoTTLean?
 
@@ -46,15 +55,18 @@ then in a terminal execute
 lake exe cache get
 # Build the project
 lake build
+# Build the alternative natural model
+lake build NaturalModel
 # Run tests (optional)
 lake test
 ```
 
-Examples demonstrating the usage of SynthLean (for internal reasoning)
-and of our model definitions (for external reasoning)
-can be found under `test/`:
-- `test/unitt` specifies a type theory with a unit type.
-- `test/hott0` defines HoTT0,
+Examples demonstrating SynthLean and our model definitions are in `HoTTLeanTest/`.
+These are checked by `lake test`, including an interpretation of the unit type
+in the groupoid model:
+
+- [`HoTTLeanTest/unitt.lean`](HoTTLeanTest/unitt.lean) specifies a type theory with a unit type.
+- [`HoTTLeanTest/hott0.lean`](HoTTLeanTest/hott0.lean) defines HoTT0,
   a version of HoTT where univalence only holds for h-sets.
 
 ### Can I contribute to HoTTLean?

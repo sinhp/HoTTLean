@@ -10,6 +10,8 @@ Here we construct universes for the groupoid natural model.
 -- TODO: flip all the diagrams in this file
 -/
 
+set_option backward.isDefEq.respectTransparency false
+
 universe w v u v₁ u₁ v₂ u₂ v₃ u₃
 
 noncomputable section
@@ -32,7 +34,7 @@ def tp' : AsSmall.{max u (v+1)} PGrpd.{v,v}
   AsSmall.down ⋙ PGrpd.forgetToGrpd ⋙ AsSmall.up
 
 theorem liftTm'_tp' : Cat.homOf liftTm'.{v,u} ≫ Cat.homOf tp'.{v+1, max u (v+2)} =
-  Cat.homOf tp'.{v, max u (v+2)} ≫ Cat.homOf liftTy'.{v,u} := rfl
+    Cat.homOf tp'.{v, max u (v+2)} ≫ Cat.homOf liftTy'.{v,u} := rfl
 
 /--
 The following square is a meta-theoretic pullback
@@ -88,8 +90,8 @@ def isPullback_liftTm' : Functor.IsPullback
 
 theorem isPullback_liftTm'_in_Cat : IsPullback
     (Cat.homOf liftTm'.{v,max u (v+2)})
-    tp'.{_,max u (v+2)}
-    tp'.{v+1,max u (v+2)}
+    (Cat.homOf tp'.{_,max u (v+2)})
+    (Cat.homOf tp'.{v+1,max u (v+2)})
     (Cat.homOf liftTy'.{v,max u (v+2)}) :=
   Cat.isPullback rfl isPullback_liftTm'
 
@@ -105,7 +107,7 @@ The small universes form pullbacks
 -/
 theorem liftTm_isPullback : IsPullback liftTm.{v,max u (v+2)} U.tp.{v, max u (v+2)}
     U.tp.{v+1, max u (v+2)} liftTy.{v,max u (v+2)} := by
-  convert Functor.map_isPullback Core.map isPullback_liftTm'_in_Cat.{v,u}
+  convert Functor.map_isPullback Core.map isPullback_liftTm'_in_Cat.{v,u} <;> rfl
 
 variable {Γ : Ctx} (A : Γ ⥤ Grpd)
 
@@ -194,8 +196,9 @@ def isPullbackClassifierOfCoreAsSmall (A : Γ ⟶ Ty) :
   (by
     dsimp [functorToAsSmallEquiv]
     convert_to (toPGrpd (toCoreAsSmallEquiv A) ⋙ forgetToGrpd) ⋙ AsSmall.up = _
-    erw [toPGrpd_forgetToGrpd, Core.functorToCoreEquiv_apply, Core.functorToCore_comp_inclusion,
-      Functor.assoc])
+    all_goals simp [← Functor.assoc, toPGrpd_forgetToGrpd,
+      toCoreAsSmallEquiv, functorToAsSmallEquiv, Core.functorToCoreEquiv]
+    all_goals rfl)
   (isPullbackClassifierOfAsSmall (toCoreAsSmallEquiv A))
   (by
     dsimp [Ctx.coreAsSmallFunctor, Grpd.homOf]
@@ -222,8 +225,9 @@ def isPullbackClassifierOfCoreAsSmall (A : Γ ⟶ Ty) :
      Γ --------- A ------> Ty
 -/
 theorem disp_pullback (A : Γ ⟶ Ty) : IsPullback (var A) forget tp A := by
-  convert Grpd.isPullback (isPullbackClassifierOfCoreAsSmall A)
-  simp
+  convert Grpd.isPullback (isPullbackClassifierOfCoreAsSmall A) <;>
+    try rfl
+  exact (toCoreAsSmallEquiv.symm_apply_apply A).symm
 
 end IsPullback
 end GroupoidModel

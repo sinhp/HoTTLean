@@ -40,7 +40,7 @@ instance : CartesianMonoidalCategory Grpd :=
       isLimit := isLimitProdCone X Y })
 
 theorem eqToHom_obj
-  {C1 C2 : Grpd.{v,u}} (x : C1) (eq : C1 = C2) :
+    {C1 C2 : Grpd.{v,u}} (x : C1) (eq : C1 = C2) :
     (eqToHom eq).obj x = cast (congrArg Bundled.α eq) x := by
   cases eq
   simp [id_eq_id]
@@ -80,8 +80,7 @@ variable {Γ : Type u₂} [Category.{v₂} Γ] {A : Γ ⥤ Grpd.{v₁,u₁}}
 theorem map_comp_map'
     {x y z : Γ} {f : x ⟶ y} {g : y ⟶ z} {a b : A.obj x} {φ : a ⟶ b} :
     (A.map g).map ((A.map f).map φ)
-    = eqToHom Grpd.map_comp_obj.symm ≫ (A.map (f ≫ g)).map φ ≫ eqToHom Grpd.map_comp_obj
-    := by
+    = eqToHom Grpd.map_comp_obj.symm ≫ (A.map (f ≫ g)).map φ ≫ eqToHom Grpd.map_comp_obj := by
   simp [Grpd.map_comp_map]
 end
 
@@ -110,7 +109,7 @@ theorem eqToHom_hom_aux {C1 C2 : Grpd.{v,u}} (x y: C1) (eq : C1 = C2) :
 theorem eqToHom_hom {C1 C2 : Grpd.{v,u}} {x y: C1} (f : x ⟶ y) (eq : C1 = C2) :
     (eqToHom eq).map f = (cast (Grpd.eqToHom_hom_aux x y eq) f) := by
   cases eq
-  simp only [eqToHom_refl, id_eq_id, Functor.id_map, cast_eq]
+  simp [CategoryStruct.id]
 
 @[simp] theorem map_eqToHom_map {x y : Γ} (h : x = y) {t s} (f : t ⟶ s) :
     (F.map (eqToHom h)).map f =
@@ -150,12 +149,12 @@ def Grpd.Functor.iso (A : Γ ⥤ Grpd) {x y : Γ} (f : x ⟶ y) : A.obj x ≅≅
 
 -- Note: this should not be a simp lemma, because we want simp to
 -- see the Functor.Iso structure
-def Grpd.Functor.iso_hom (A : Γ ⥤ Grpd) {x y : Γ} (f : x ⟶ y) :
+theorem Grpd.Functor.iso_hom (A : Γ ⥤ Grpd) {x y : Γ} (f : x ⟶ y) :
     (iso A f).hom = A.map f := rfl
 
 -- Note: this should not be a simp lemma, because we want simp to
 -- see the Functor.Iso structure
-def Grpd.Functor.iso_inv (A : Γ ⥤ Grpd) {x y : Γ} (f : x ⟶ y) :
+theorem Grpd.Functor.iso_inv (A : Γ ⥤ Grpd) {x y : Γ} (f : x ⟶ y) :
     (iso A f).inv = A.map (inv f) := rfl
 
 @[simp]
@@ -191,8 +190,8 @@ lemma Grpd.whiskerLeft_hcongr_right {C D : Type*} [Category C] [Category D]
 
 lemma Grpd.comp_hcongr {C C' D D' E E' : Grpd.{v,u}} (hC : C ≍ C') (hD : D ≍ D')
     (hE : E ≍ E') {F : C ⥤ D} {F' : C' ⥤ D'} {G : D ⥤ E} {G' : D' ⥤ E'}
-    (hF : F ≍ F') (hG : G ≍ G')
-    : F ⋙ G ≍ F' ⋙ G' := by
+    (hF : F ≍ F') (hG : G ≍ G') :
+    F ⋙ G ≍ F' ⋙ G' := by
   subst hC hD hE hF hG
   rfl
 
@@ -228,8 +227,8 @@ attribute [simp] comp_eq_comp id_eq_id in
 def mkIso {Δ Γ : Grpd} (F : Δ ≅≅ Γ) : Δ ≅ Γ where
   hom := F.hom
   inv := F.inv
-  hom_inv_id := by simp
-  inv_hom_id := by simp
+  hom_inv_id := F.hom_inv_id
+  inv_hom_id := F.inv_hom_id
 
 attribute [simp] comp_eq_comp id_eq_id in
 @[simps]
@@ -237,8 +236,8 @@ def mkIso' {Δ Γ : Type u} [Groupoid.{v} Δ] [Groupoid.{v} Γ] (F : Δ ≅≅ �
     Grpd.of Δ ≅ Grpd.of Γ where
   hom := F.hom
   inv := F.inv
-  hom_inv_id := by simp
-  inv_hom_id := by simp
+  hom_inv_id := F.hom_inv_id
+  inv_hom_id := F.inv_hom_id
 
 open MonoidalCategory
 

@@ -9,7 +9,9 @@ structure Caches where
   checkTm : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq) Expr := {}
   synthTm : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq) (Expr × Expr) := {}
   equateTp : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq) Expr := {}
-  equateTm : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq) Expr := {}
+  equateTm :
+    Std.HashMap
+      (ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq) Expr := {}
   equateNeutTm : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq) Expr := {}
   evalTp : Std.HashMap (ExprStructEq × ExprStructEq) (Expr × Expr) := {}
   evalTm : Std.HashMap (ExprStructEq × ExprStructEq) (Expr × Expr) := {}
@@ -19,14 +21,16 @@ structure Caches where
   evalClosTp : Std.HashMap (ExprStructEq × ExprStructEq) (Expr × Expr) := {}
   forceClosTp : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq) (Expr × Expr) := {}
   evalClos₂Tp : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq) (Expr × Expr) := {}
-  forceClos₂Tp : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq) (Expr × Expr) := {}
+  forceClos₂Tp :
+    Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq) (Expr × Expr) := {}
   evalClosTm : Std.HashMap (ExprStructEq × ExprStructEq) (Expr × Expr) := {}
   forceClosTm : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq) (Expr × Expr) := {}
   evalEl : Std.HashMap (ExprStructEq) (Expr × Expr) := {}
   evalApp : Std.HashMap (ExprStructEq × ExprStructEq) (Expr × Expr) := {}
   evalFst : Std.HashMap (ExprStructEq) (Expr × Expr) := {}
   evalSnd : Std.HashMap (ExprStructEq) (Expr × Expr) := {}
-  evalIdRec : Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq) (Expr × Expr) := {}
+  evalIdRec :
+    Std.HashMap (ExprStructEq × ExprStructEq × ExprStructEq × ExprStructEq) (Expr × Expr) := {}
 
 inductive TypecheckerM.CacheEntry
   | checkTp (vΓ l T : ExprStructEq)

@@ -16,12 +16,14 @@ open CategoryTheory Limits
 
 noncomputable section
 
+set_option backward.isDefEq.respectTransparency false
+
 namespace Model.UnstructuredUniverse
 
 open SynthLean
 
-variable {𝒞 : Type u} [Category 𝒞] (M : UnstructuredUniverse 𝒞)
-variable [ChosenTerminal 𝒞]
+variable {𝒞 : Type u} [Category.{v} 𝒞] (M : UnstructuredUniverse 𝒞)
+variable [ChosenTerminal.{v} 𝒞]
 
 open ChosenTerminal
 
@@ -56,7 +58,7 @@ where `Γ` is a prefix of `Γ'`.
 It witnesses a sequence of context extension operations in `s`
 that built `Γ'` on top of `Γ`.
 We write `Γ ≤ Γ'`. -/
-inductive ExtSeq (s : UHomSeq 𝒞) (Γ : 𝒞) : 𝒞 → Type u where
+inductive ExtSeq (s : UHomSeq 𝒞) (Γ : 𝒞) : 𝒞 → Type (max u v) where
   | nil : s.ExtSeq Γ Γ
   | snoc {Γ'} {l : Nat} (d : s.ExtSeq Γ Γ') (llen : l < s.length + 1) (A : Γ' ⟶ s[l].Ty) :
     s.ExtSeq Γ (s[l].ext A)
@@ -94,8 +96,7 @@ def disp {Γ Γ' : 𝒞} : s.ExtSeq Γ Γ' → (Γ' ⟶ Γ)
 Δ ⊢ σ : Γ  d : Γ ≤ Γ'
 -----------------------------
 Δ ≤ Δ.d[σ]  Δ.d[σ] ⊢ σ.d : Γ'
-```
-where
+``` where
 ```
 Δ ⊢ σ : Γ  d : Γ ≤ Γ.Aₙ.….A₁
 -----------------------------
@@ -209,7 +210,7 @@ i.e., one of the form `1.Aₙ₋₁.….A₀`,
 together with the extension sequence `[Aₙ₋₁ :: … :: A₀]`.
 
 This kind of object can be destructured. -/
-def CObj (s : UHomSeq 𝒞) : Type u := Σ Γ : 𝒞, s.ExtSeq (𝟭_ 𝒞) Γ
+def CObj (s : UHomSeq 𝒞) : Type (max u v) := Σ Γ : 𝒞, s.ExtSeq (𝟭_ 𝒞) Γ
 
 def nilCObj (s : UHomSeq 𝒞) : s.CObj :=
   ⟨𝟭_ 𝒞, .nil⟩
@@ -398,11 +399,10 @@ end
 
 def ofCtx : Ctx χ → Part s.CObj
   | [] => return s.nilCObj
-  | (A,l) :: Γ => do
-    Part.assert (l < s.length + 1) fun llen => do
-    let sΓ ← ofCtx Γ
-    let sA ← I.ofType sΓ l A
-    return sΓ.snoc llen sA
+  | (A,l) :: Γ =>
+    Part.assert (l < s.length + 1) fun llen =>
+      Part.bind (ofCtx Γ) fun sΓ =>
+        Part.map (fun sA => sΓ.snoc llen sA) (I.ofType sΓ l A)
 
 @[simp]
 theorem mem_ofType_pi {Γ l i j A B} {llen : l < s.length + 1} {x} :
@@ -567,8 +567,7 @@ theorem mem_ofType_univ {Γ l i} {llen : l < s.length + 1} {x} :
 @[simp]
 theorem mem_ofCtx_snoc {Γ A l sΓ'} : sΓ' ∈ I.ofCtx ((A,l) :: Γ) ↔
     ∃ sΓ ∈ I.ofCtx Γ, ∃ llen, ∃ sA ∈ I.ofType sΓ l A llen, sΓ' = sΓ.snoc llen sA := by
-  simp only [ofCtx, Part.pure_eq_some, Part.bind_eq_bind, Part.mem_assert_iff, Part.mem_bind_iff,
-    Part.mem_some_iff]
+  simp only [ofCtx, Part.mem_assert_iff, Part.mem_bind_iff, Part.mem_map_iff]
   tauto
 
 /-! ## Semantic substitutions -/
@@ -704,7 +703,7 @@ theorem mem_ofType_ofTerm_subst' {full}
     simp [ofTerm_bvar] at H
     simp [Expr.subst]
     induction σ generalizing i with simp [CSb.toSb, *]
-    | wk => exact CObj.mem_var_succ.2 ⟨_, ‹_›, rfl⟩
+    | wk => exact ⟨_, ‹_›, rfl⟩
     | @comp _ _ _ _ _ full σ τ ih1 ih2 =>
       simp [Expr.comp]
       cases full with
@@ -803,7 +802,8 @@ theorem mem_ofType_of_isClosed {e l} (e_cl : e.isClosed)
     isTerminal.from Γ.1 ≫ se ∈ I.ofType Γ l e hl := by
   rcases Γ with ⟨_, ext⟩
   induction ext
-  · convert se_mem; simp
+  · convert se_mem <;> try rfl
+    simp
   · rename_i X se_mem
     have := I.mem_ofType_wk (X := X) (by omega) se_mem
     convert this using 1 <;>
@@ -1070,7 +1070,8 @@ theorem EqTmIH.idRec {Γ A M M' t t' r r' u u' h h' l l'} :
   refine ⟨_, hΓ, _, _,
     (I.mem_ofType_ofTerm_subst _ (.snoc (.sub1 _ _ _ utp hu) _ _ _ ?_ hh) ?_).1 hM, _,
     I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, ?b, _, hM, _, hr, ?a, _, hu, utp, _, hh, htp, rfl⟩,
-    I.mem_ofTerm_idRec.2 ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
+    I.mem_ofTerm_idRec.2
+      ⟨_, _, ht', _, ttp, B, ?b, _, hM', _, hr', ?a, _, hu', utp, _, hh', htp, rfl⟩,
     idRec_tp (I_eq := _) ..⟩
   · rw [htp, Beq, ← Id_comp]
     congr 1 <;> simp [sAeq]
@@ -1152,7 +1153,7 @@ theorem EqTmIH.idRec_refl {Γ A M t r l l'} :
     have sr := rtp ▸ Part.mem_unique hR sM
     have ir := I.mem_ofTerm_idRec.2 ⟨_, _, ht, _, ttp, B, by simp [Beq, sAeq],
       _, hM, _, hr, by simp [ttp, sr], _, ht, ttp, _, h1, by simp [ttp],
-        by rw! [ttp, PolymorphicIdElim.idRec_refl (I_eq := _)]⟩
+        by rw! [ttp, PolymorphicIdElim.idRec_refl (I_eq := _)]; rfl⟩
     ⟨_, hΓ, _, _, sM, _, ir, hr, sr⟩
   simp [Beq, ← Id_comp, sAeq, ttp]
 

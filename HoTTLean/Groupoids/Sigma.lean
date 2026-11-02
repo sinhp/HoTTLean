@@ -1,12 +1,16 @@
 import HoTTLean.Groupoids.UnstructuredModel
 import HoTTLean.ForMathlib.CategoryTheory.RepPullbackCone
 
+set_option backward.isDefEq.respectTransparency false
+
 noncomputable section
 
 namespace GroupoidModel
 
 open CategoryTheory Model UnstructuredUniverse Opposite Functor.Groupoidal PGrpd
 
+attribute [local simp] Cat.Hom.obj Cat.Hom.map Cat.Hom₂.app
+  Cat.Hom.comp_toFunctor Cat.Hom.id_toFunctor
 attribute [local simp] eqToHom_map Grpd.id_eq_id Grpd.comp_eq_comp Functor.id_comp
 
 namespace FunctorOperation
@@ -49,7 +53,8 @@ def sigmaMap : sigmaObj B x ⥤ sigmaObj B y :=
 @[simp] theorem sigmaMap_obj_fiber (a) :
     ((sigmaMap B f).obj a).fiber = (B.map ((ιNatTrans f).app a.base)).obj (a.fiber) := rfl
 
-theorem ιNatTrans_app_base (a : sigmaObj B x) : ((ιNatTrans f).app a.base) = homMk f (𝟙 (A.map f).obj a.base) :=
+theorem ιNatTrans_app_base (a : sigmaObj B x) :
+    ((ιNatTrans f).app a.base) = homMk f (𝟙 (A.map f).obj a.base) :=
   rfl
 
 @[simp] theorem sigmaMap_map_base {a b : sigmaObj B x} {p : a ⟶ b} :
@@ -111,14 +116,15 @@ variable {z : Γ} {f} {g : y ⟶ z}
   apply hext
   · simp
   · simp only [sigmaObj, Functor.comp_obj, pre_obj_fiber, map_obj_fiber, Functor.whiskerRight_app,
-      ιNatTrans_comp_app, Functor.map_comp, eqToHom_map, Grpd.comp_eq_comp, Grpd.eqToHom_obj, cast_heq_iff_heq, heq_eq_eq]
+      ιNatTrans_comp_app, Functor.map_comp, eqToHom_map, Grpd.comp_eq_comp, Grpd.eqToHom_obj,
+      cast_heq_iff_heq, heq_eq_eq]
     aesop_cat
 
 @[simp] theorem sigmaMap_comp_map {B : ∫(A) ⥤ Grpd.{v₃,u₃}} {x y z : Γ} {f : x ⟶ y} {g : y ⟶ z}
     {p q : sigmaObj B x} (hpq : p ⟶ q)
     {h1 : (sigmaMap B (f ≫ g)).obj p = (sigmaMap B g).obj ((sigmaMap B f).obj p)}
-    {h2 : (sigmaMap B g).obj ((sigmaMap B f).obj q) = (sigmaMap B (f ≫ g)).obj q}
-    : (sigmaMap B (f ≫ g)).map hpq =
+    {h2 : (sigmaMap B g).obj ((sigmaMap B f).obj q) = (sigmaMap B (f ≫ g)).obj q} :
+    (sigmaMap B (f ≫ g)).map hpq =
     eqToHom h1 ≫ (sigmaMap B g).map ((sigmaMap B f).map hpq) ≫ eqToHom h2 := by
   have h : B.map ((ιNatTrans (f ≫ g)).app q.base) =
     B.map ((ιNatTrans f).app q.base)
@@ -167,7 +173,7 @@ theorem sigma_naturality_aux (x) :
   rfl
 
 lemma whiskerRight_ιNatTrans_naturality {x y : Δ} (f : x ⟶ y) :
-  Functor.whiskerRight (ιNatTrans f) (pre A σ ⋙ B) =
+    Functor.whiskerRight (ιNatTrans f) (pre A σ ⋙ B) =
     eqToHom (sigma_naturality_aux B σ x) ≫ Functor.whiskerRight (ιNatTrans (σ.map f)) B ≫
     eqToHom (by simp [Functor.assoc, sigma_naturality_aux B σ y]) := by
   aesop
@@ -326,7 +332,7 @@ lemma assocFibMap_comp {x y z : ∫ B} (f : x ⟶ y) (g : y ⟶ z) :
       · simp
       · simp
     conv => left; rw! (castMode := .all) [this]
-    simp only [Functor.comp_obj, Grpd.map_comp_map, Category.assoc, eqRec_heq_iff_heq,
+    simp only [Functor.comp_obj, Grpd.map_comp_map, Category.assoc, eqRec_heq_iff,
       eqToHom_comp_heq_iff, heq_eq_eq]
     congr 1
     simp [← heq_eq_eq]
@@ -412,7 +418,8 @@ lemma assocFibMap_assocHom_app {c c' : Γ} (f : c ⟶ c') (x : sigmaObj B c) :
 end
 
 def assoc : ∫ B ≅≅ ∫ sigma A B := .symm <| functorIsoFrom
-  (assocFib B) (assocHom B) (by simp) (by simp [assocHom_comp])
+  (assocFib B) (assocHom B) (by simp)
+  (by intro c₁ c₂ c₃ f g; rw [assocHom_comp]; rfl)
   (forget ⋙ forget) assocFibObj assocFibMap assocFibMap_id assocFibMap_comp
   assocFib_comp_forget assocFibObj_assocFib_obj assocFibMap_assocFib_map
   assocFib_forget_comp_forget_obj assocHom_app_comp_pre_map_assocFibMap
@@ -457,11 +464,7 @@ lemma assoc_hom_map_fiber_base {x y} (f : x ⟶ y) : ((assoc B).hom.map f).fiber
 
 @[simp]
 lemma assoc_hom_map_fiber_fiber {x y} (f : x ⟶ y) : ((assoc B).hom.map f).fiber.fiber =
-    eqToHom (by
-      simp [assoc_hom]
-      rw [← Functor.comp_obj, ← Grpd.comp_eq_comp, ← Functor.map_comp]
-      congr 2
-      fapply Hom.ext <;> simp) ≫ f.fiber :=
+    eqToHom (assocFibMap_aux f) ≫ f.fiber :=
   rfl
 
 @[simp]
@@ -478,8 +481,8 @@ lemma assoc_inv_obj_fiber (x) :  ((assoc B).inv.obj x).fiber = x.fiber.fiber :=
 
 @[simp]
 lemma assoc_inv_map_base_base {x y} (f : x ⟶ y) : ((assoc B).inv.map f).base.base = f.base := by
-  simp only [assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj, assocFib,
-    functorIsoFrom_hom_map, sigma_map, comp_base, pre_map_base, assocIso_hom_app_base_base,
+  simp only [assoc, Functor.Iso.symm_inv, assocFib,
+    functorIsoFrom_hom_map, comp_base, pre_map_base, assocIso_hom_app_base_base,
     ι_map_base, ι_obj_base]
   erw [Category.comp_id]
   rfl
@@ -487,22 +490,38 @@ lemma assoc_inv_map_base_base {x y} (f : x ⟶ y) : ((assoc B).inv.map f).base.b
 @[simp]
 lemma assoc_inv_map_base_fiber {x y} (f : x ⟶ y) : ((assoc B).inv.map f).base.fiber =
     eqToHom (by simp) ≫ f.fiber.base := by
-  simp only [assoc, Functor.Iso.symm_inv, functorIsoFrom_hom_obj, sigma_obj, assocFib,
-    functorIsoFrom_hom_map, sigma_map, comp_base, assocIso_hom_app_base_base,
-    Functor.Groupoidal.comp_fiber, assocIso_hom_app_base_fiber, Functor.comp_obj,
-    CategoryTheory.Functor.map_id, Category.id_comp]
-  rw! [pre_map_base, ι_map_fiber]
+  dsimp only [assoc, functorIsoFrom, Functor.Grothendieck.functorIsoFrom,
+    Functor.Grothendieck.functorFrom, assocFib]
+  simp [assocHom, assocIso]
+  dsimp only [pre, Functor.Grothendieck.pre, Functor.Grothendieck.functorTo]
+  simp [preNatIso, Functor.Grothendieck.preNatIso, Functor.Grothendieck.transportIso]
+  dsimp [Hom.base, Hom.fiber, ι, Functor.Groupoidal.functorTo, ιNatIso,
+    Functor.Groupoidal.isoMk]
   simp
+  dsimp [ιNatTrans, Functor.Grothendieck.ιNatTrans, Functor.Grothendieck.ι,
+    Functor.Grothendieck.forget, Functor.Grothendieck.functorTo]
+  rw! (transparency := .all) [CategoryTheory.Functor.map_id (A.map (𝟙 y.base))]
+  rw! (transparency := .all) [Category.id_comp, eqToHom_trans_assoc]
   rfl
 
 @[simp]
 lemma assoc_inv_map_fiber {x y} (f : x ⟶ y) : ((assoc B).inv.map f).fiber =
     eqToHom (by
-      simp only [assoc_inv_obj_fiber, sigma_map,
-        Functor.comp_map, sigmaMap_obj_fiber]
+      simp only [assoc_inv_obj_fiber,
+        Functor.comp_map]
+      change (B.map ((assoc B).inv.map f).base).obj x.fiber.fiber =
+        (B.map ((ι A y.base).map f.fiber.base)).obj
+          ((B.map ((ιNatTrans f.base).app x.fiber.base)).obj x.fiber.fiber)
       conv => rhs; rw [← Functor.comp_obj, ← Grpd.comp_eq_comp, ← Functor.map_comp]
       rfl) ≫ f.fiber.fiber := by
-  simp [assoc]
+  dsimp only [assoc, functorIsoFrom, Functor.Grothendieck.functorIsoFrom,
+    Functor.Grothendieck.functorFrom, assocFib, pre, Functor.Grothendieck.pre,
+    Functor.Grothendieck.functorTo, Hom.fiber]
+  simp [assocHom, assocIso, preNatIso, Functor.Grothendieck.preNatIso,
+    Functor.Grothendieck.transportIso, Functor.Grothendieck.isoMk]
+  change eqToHom _ ≫ (B.map _).map (𝟙 _) ≫ f.fiber.fiber = _
+  rw! (castMode := .all) (transparency := .all) [CategoryTheory.Functor.map_id]
+  simp
   rfl
 
 lemma assocFibMap_pre_pre_map {Δ : Type u₄} [Groupoid.{v₄} Δ] {σ : Δ ⥤ Γ} {x y} (f : x ⟶ y) :
@@ -511,6 +530,7 @@ lemma assocFibMap_pre_pre_map {Δ : Type u₄} [Groupoid.{v₄} Δ] {σ : Δ ⥤
     rw [pre_obj_base, pre_obj_base]
   have pre_pre_obj_base_fiber (x) : ((pre B (pre A σ)).obj x).base.fiber = x.base.fiber := by
     rw! (castMode := .all) [pre_obj_base, pre_obj_fiber]
+    rfl
   simp [assocFibMap]
   apply Hom.hext'
   · rw [sigma_naturality_aux]
@@ -524,10 +544,12 @@ lemma assocFibMap_pre_pre_map {Δ : Type u₄} [Groupoid.{v₄} Δ] {σ : Δ ⥤
     simp only [← heq_eq_eq, cast_heq_iff_heq]
     apply Functor.Groupoidal.hext'
     · rw! (castMode := .all) [sigma_naturality_aux, pre_pre_obj_base_base]
+      rfl
     · simp
     · simp
   · apply Functor.Groupoidal.hext'
     · rw! (castMode := .all) [sigma_naturality_aux, pre_pre_obj_base_base]
+      rfl
     · simp [pre_pre_obj_base_fiber]
     · simp
   · simp only [sigmaMap_obj_base, objMk_base, homMk_base, Functor.comp_obj, Functor.comp_map]
@@ -537,7 +559,7 @@ lemma assocFibMap_pre_pre_map {Δ : Type u₄} [Groupoid.{v₄} Δ] {σ : Δ ⥤
 lemma assoc_comp_fiber {Δ : Type u₄} [Groupoid.{v₄} Δ] (σ : Δ ⥤ Γ) {x y} (f : x ⟶ y) :
     Hom.fiber (((assoc (pre A σ ⋙ B)).hom ⋙ map (eqToHom (sigma_naturality ..).symm) ⋙
     pre (sigma A B) σ).map f) ≍ Hom.fiber ((pre B (pre A σ) ⋙ (assoc B).hom).map f) := by
-  simp only [assoc_hom, Functor.comp_obj, sigma_obj, Functor.comp_map, sigma_map, pre_map_fiber,
+  simp only [assoc_hom, Functor.comp_obj, Functor.comp_map, pre_map_fiber,
     map_map_fiber, Functor.Groupoidal.functorTo_obj_base, Functor.Groupoidal.forget_obj,
     Functor.Groupoidal.functorTo_map_base, forget_map, Grpd.comp_eq_comp,
     Functor.Groupoidal.functorTo_obj_fiber, assocFibObj, Functor.Groupoidal.functorTo_map_fiber,
@@ -560,7 +582,7 @@ lemma assoc_comp {Δ : Type u₄} [Groupoid.{v₄} Δ] (σ : Δ ⥤ Γ) :
     conv => right; rw [← Functor.assoc, pre_comp_forget]
     simp only [Functor.assoc, pre_comp_forget]
   · intro x
-    simp only [Functor.comp_obj, sigma_obj, pre_obj_fiber, map_obj_fiber, assoc_hom_obj_base,
+    simp only [Functor.comp_obj, pre_obj_fiber, map_obj_fiber, assoc_hom_obj_base,
       eqToHom_app, heq_eq_eq]
     rw [eqToHom_eq_homOf_map]
     apply Functor.Groupoidal.hext
@@ -571,6 +593,7 @@ lemma assoc_comp {Δ : Type u₄} [Groupoid.{v₄} Δ] (σ : Δ ⥤ Γ) :
       rw [eqToHom_app, Grpd.eqToHom_obj]
       simp
       rw! (castMode := .all) [assoc_hom_obj_fiber_fiber, assoc_hom_obj_fiber_fiber, pre_obj_fiber]
+      rfl
     · rw [← Functor.assoc, ι_comp_pre A σ x.base.base]
   · intro x y f
     apply assoc_comp_fiber B σ f
@@ -651,7 +674,7 @@ def assoc : U.ext B ≅ U.ext (Sig.{v₁,v₂,u} B) :=
   Grpd.mkIso' (sigma.assoc (toCoreAsSmallEquiv B)) ≪≫
     eqToIso (by dsimp [U.ext, Sig]; rw [toCoreAsSmallEquiv.apply_symm_apply])
 
-set_option maxHeartbeats 400000 in
+set_option maxHeartbeats 800000 in
 lemma assoc_comp : (assoc (U.substWk σ A σA eq ≫ B)).hom ≫ U.substWk σ (Sig.{v₁,v₂,u} B)
     (Sig.{v₁,v₂,u} (U.substWk σ A σA eq ≫ B)) (Sig_comp.{v₁,v₂,u} ..).symm =
     U.substWk (U.substWk σ A σA eq) B (U.substWk σ A σA eq ≫ B) rfl ≫ (assoc B).hom := by
@@ -662,7 +685,8 @@ lemma assoc_comp : (assoc (U.substWk σ A σA eq ≫ B)).hom ≫ U.substWk σ (S
   rw! (castMode := .all) [toCoreAsSmallEquiv.apply_symm_apply]
   rw! [U.substWk_eq]
   simp only [pre_comp, Functor.id_comp]
-  apply sigma.assoc_comp' (toCoreAsSmallEquiv B) (σ := σ) (toCoreAsSmallEquiv σA)
+  exact sigma.assoc_comp' (toCoreAsSmallEquiv B) (σ := σ) (toCoreAsSmallEquiv σA)
+    (by cases eq; rfl)
 
 lemma assoc_disp : (assoc B).hom ≫ U.disp (Sig.{v₁,v₂,u} B) = U.disp B ≫ U.disp A := by
   simpa [assoc] using sigma.assoc_hom_comp_forget _

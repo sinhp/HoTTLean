@@ -8,7 +8,15 @@ universe w v u v₁ u₁ v₂ u₂
 
 noncomputable section
 
+set_option backward.isDefEq.respectTransparency false
+
 open CategoryTheory
+
+attribute [local implicit_reducible] Grpd Grpd.Interval
+  CategoryTheory.Functor.Groupoidal CategoryTheory.Prod.sectR
+attribute [local simp] Cat.Hom.obj Cat.Hom.map Cat.Hom₂.app
+  Cat.Hom.comp_toFunctor Cat.Hom.id_toFunctor
+  PGrpd.forgetToGrpd_map
 
 namespace FunctorOperation
 
@@ -38,11 +46,11 @@ lemma IdMap_comp {X Y Z : Γ} (f1 : X ⟶ Y) (f2 : Y ⟶ Z) : IdMap a0_tp a1_tp 
   apply Discrete.functor_ext
   intro g
   apply Discrete.ext
-  simp only [Functor.comp_obj, Functor.Grothendieck.forget_obj, PGrpd.objFiber'_rfl, IdMap,
-    Functor.comp_map, Functor.Grothendieck.forget_map, PGrpd.mapFiber'_rfl,
+  simp only [Functor.comp_obj, PGrpd.objFiber'_rfl, IdMap,
+    Functor.comp_map, PGrpd.mapFiber'_rfl,
     Discrete.functor_obj_eq_as, Functor.map_comp, Functor.map_inv,
     Category.assoc, IsIso.eq_inv_comp]
-  simp only [PGrpd.mapFiber, PGrpd.map_comp_fiber, Functor.Grothendieck.forget_obj,
+  simp only [PGrpd.mapFiber, PGrpd.map_comp_fiber,
     Functor.Grothendieck.forget_map, ← Category.assoc, IsIso.inv_comp, inv_eqToHom,
     PGrpd.mapFiber', Functor.comp_obj, Functor.comp_map, PGrpd.objFiber'EqToHom,
     PGrpd.mapFiber'EqToHom, Functor.map_comp, eqToHom_map, eqToHom_trans, IsIso.hom_inv_id,
@@ -50,15 +58,17 @@ lemma IdMap_comp {X Y Z : Γ} (f1 : X ⟶ Y) (f2 : Y ⟶ Z) : IdMap a0_tp a1_tp 
     Category.comp_id, ← heq_eq_eq]
   congr 1
   rw! [Functor.map_comp]
-  simp only [Functor.Grothendieck.Hom.comp_base, Grpd.comp_eq_comp, Functor.comp_obj,
-    eqToHom_refl, Functor.comp_map, Category.id_comp, Category.assoc, ← heq_eq_eq]
+  simp only [
+    eqToHom_refl, Category.id_comp, Category.assoc, ← heq_eq_eq]
   congr 1
   have h := Functor.congr_hom a1_tp f2
-  simp only [Functor.comp_obj, Functor.Grothendieck.forget_obj, Functor.comp_map,
+  simp only [Functor.comp_obj, Functor.comp_map,
     Functor.Grothendieck.forget_map, Grpd.comp_eq_comp] at h
-  rw! [h]
+  rw! (castMode := .all) [h]
   simp only [← Grpd.comp_eq_comp, Grpd.comp_obj, ← Functor.comp_map, ← heq_eq_eq,
-    heq_eqToHom_comp_iff, heq_comp_eqToHom_iff, eqToHom_comp_heq_iff]
+    eqToHom_comp_heq_iff]
+  simp [Grpd.eqToHom_hom, PGrpd.forgetToGrpd_map] at *
+  rw! (castMode := .all) [h]
   simp [Grpd.eqToHom_hom]
 
 @[simps!]
@@ -67,6 +77,8 @@ def Id : Γ ⥤ Grpd where
   map := IdMap a0_tp a1_tp
   map_id := IdMap_id a0_tp a1_tp
   map_comp := IdMap_comp a0_tp a1_tp
+
+attribute [local implicit_reducible] Id
 
 lemma Id_comp : Id (A := σ ⋙ A) (a0 := σ ⋙ a0) (a1 := σ ⋙ a1)
     (by simp[Functor.assoc, a0_tp]) (by simp[Functor.assoc, a1_tp]) =
@@ -107,6 +119,7 @@ lemma path1_comp_forgetToGrpd : path1 p ⋙ PGrpd.forgetToGrpd = A := by
 lemma objFiber'_path0 (x) : PGrpd.objFiber' (path0_comp_forgetToGrpd p_tp) x =
     PGrpd.objFiber' p_tp (ff x) := by
   dsimp [PGrpd.objFiber', PGrpd.objFiber]
+  rfl
 
 @[simp]
 abbrev pathId : Γ ⥤ Grpd :=
@@ -122,9 +135,10 @@ lemma pathFibObj_comp (x : Δ) : pathFibObj (A := σ ⋙ A) (p := Functor.prod (
     (by simp [Functor.assoc, p_tp]; rfl) x = pathFibObj p_tp (σ.obj x) := by
   apply Discrete.ext
   simp only [Functor.comp_obj, pathFibObj_as, Functor.comp_map, PGrpd.mapFiber', snd_obj, snd_map,
-    Functor.prod_obj, Functor.id_obj, Functor.Grothendieck.forget_obj, PGrpd.objFiber'EqToHom,
+    Functor.prod_obj, Functor.id_obj, PGrpd.objFiber'EqToHom,
     Functor.prod_map, Functor.id_map, PGrpd.mapFiber'EqToHom, Grpd.eqToHom_hom, eqToHom_trans_assoc]
   rw! [CategoryTheory.Functor.map_id]
+  rfl
 
 lemma IdMap_path {x y} (f : x ⟶ y) :
     ((IdMap (path0_comp_forgetToGrpd p_tp) (path1_comp_forgetToGrpd p_tp) f).obj
@@ -136,16 +150,18 @@ lemma IdMap_path {x y} (f : x ⟶ y) :
   simp only [Functor.comp_obj, snd_obj, prod_comp, Functor.comp_map, snd_map, Grpd.map_id_map,
     Category.assoc, eqToHom_trans_assoc, ← heq_eq_eq, heq_eqToHom_comp_iff,
     eqToHom_comp_heq_iff] at h1
-  simp only [PGrpd.mapFiber'_naturality p_tp (sectR ⟨⟨.false⟩⟩ _), sectR_obj, sectR_map,
-    Functor.map_comp, eqToHom_map, PGrpd.mapFiber'_naturality p_tp (sectR ⟨⟨.true⟩⟩ _),
-    Category.assoc, IsIso.inv_comp_eq]
-  rw! [h1]
-  simp
+  simp only [PGrpd.mapFiber'_naturality p_tp (sectR ⟨⟨.false⟩⟩ _),
+    PGrpd.mapFiber'_naturality p_tp (sectR ⟨⟨.true⟩⟩ _),
+    IsIso.inv_comp_eq]
+  dsimp only [pathFibObj, ffm, ttm, ft, CategoryTheory.Prod.sectR] at h1 ⊢
+  apply eq_of_heq
+  simp only [Functor.map_comp, eqToHom_map, Category.assoc]
+  exact (eqToHom_comp_heq ..).trans h1
 
 def pathFibMap {x y : Γ} (f : x ⟶ y) :
     (IdMap (path0_comp_forgetToGrpd p_tp) (path1_comp_forgetToGrpd p_tp) f).obj
     (pathFibObj p_tp x) ⟶ pathFibObj p_tp y :=
-  ⟨⟨IdMap_path ..⟩⟩
+  ⟨IdMap_path ..⟩
 
 lemma pathFibMap_id (x : Γ) : pathFibMap p_tp (𝟙 x) = eqToHom (by simp [IdMap_id]) := by
   aesop_cat
@@ -158,7 +174,7 @@ lemma pathFibMap_comp {x y z : Γ} (f1 : x ⟶ y) (f2 : y ⟶ z) :
 
 def path : Γ ⥤ PGrpd :=
   PGrpd.functorTo (pathId p_tp) (pathFibObj p_tp) (pathFibMap p_tp)
-    (pathFibMap_id p_tp) (fun f1 f2 => by dsimp only; aesop_cat)
+    (pathFibMap_id p_tp) (pathFibMap_comp p_tp)
 
 lemma path_comp : path (A := σ ⋙ A) (p := Functor.prod (𝟭 _) σ ⋙ p)
     (by simp [Functor.assoc, p_tp]; rfl) = σ ⋙ path p_tp := by
@@ -168,14 +184,14 @@ lemma path_comp : path (A := σ ⋙ A) (p := Functor.prod (𝟭 _) σ ⋙ p)
   · intro x
     simp only [path, Functor.comp_obj, heq_eq_eq]
     -- rw [PGrpd.functorTo_obj_fiber] --FIXME why timeout?
-    convert_to pathFibObj (A := σ ⋙ A) (p := Functor.prod (𝟭 _) σ ⋙ p)
+    change pathFibObj (A := σ ⋙ A) (p := Functor.prod (𝟭 _) σ ⋙ p)
       (by simp [Functor.assoc, p_tp]; rfl) x =
       pathFibObj (A := A) (p := p) p_tp (σ.obj x)
     rw [pathFibObj_comp]
   · intro x y f
     simp only [path, Functor.comp_map]
     -- rw [PGrpd.functorTo_map_fiber]
-    convert_to pathFibMap (A := σ ⋙ A) (p := Functor.prod (𝟭 _) σ ⋙ p)
+    change pathFibMap (A := σ ⋙ A) (p := Functor.prod (𝟭 _) σ ⋙ p)
       (by simp [Functor.assoc, p_tp]; rfl) f ≍
       pathFibMap (A := A) (p := p) p_tp (σ.map f)
     rw! (castMode := .all) [pathFibObj_comp _ p_tp]
@@ -196,16 +212,17 @@ variable {p : Γ ⥤ PGrpd}
   (p_tp : p ⋙ PGrpd.forgetToGrpd = FunctorOperation.Id a0_tp a1_tp)
 
 def unpathFibObj : (x : Grpd.Interval × Γ) → A.obj x.2
-| ⟨⟨⟨.false⟩⟩, x2⟩ => PGrpd.objFiber' a0_tp x2
-| ⟨⟨⟨.true⟩⟩, x2⟩ => PGrpd.objFiber' a1_tp x2
+  | ⟨⟨⟨.false⟩⟩, x2⟩ => PGrpd.objFiber' a0_tp x2
+  | ⟨⟨⟨.true⟩⟩, x2⟩ => PGrpd.objFiber' a1_tp x2
 
 def unpathFibMap : {x y : Grpd.Interval × Γ} → (f : x ⟶ y) →
     ((A.map f.2).obj (unpathFibObj a0_tp a1_tp x) ⟶ unpathFibObj a0_tp a1_tp y)
-| ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => PGrpd.mapFiber' a0_tp f.2
-| ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f => (PGrpd.mapFiber' a0_tp f.2) ≫ (PGrpd.objFiber' p_tp y2).1
-| ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, y2⟩, f =>
-  (PGrpd.mapFiber' a1_tp f.2) ≫ inv (PGrpd.objFiber' p_tp y2).1
-| ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, _⟩, f => PGrpd.mapFiber' a1_tp f.2
+  | ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, _⟩, f => PGrpd.mapFiber' a0_tp f.2
+  | ⟨⟨⟨.false⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, y2⟩, f =>
+    (PGrpd.mapFiber' a0_tp f.2) ≫ (PGrpd.objFiber' p_tp y2).1
+  | ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.false⟩⟩, y2⟩, f =>
+    (PGrpd.mapFiber' a1_tp f.2) ≫ inv (PGrpd.objFiber' p_tp y2).1
+  | ⟨⟨⟨.true⟩⟩, _⟩, ⟨⟨⟨.true⟩⟩, _⟩, f => PGrpd.mapFiber' a1_tp f.2
 
 lemma unpathFibMap_id (x : Grpd.Interval × Γ) : unpathFibMap a0_tp a1_tp p_tp (𝟙 x) =
     eqToHom (by simp) := by
@@ -215,7 +232,7 @@ open PGrpd in
 lemma map_objFiber'_mapFiber' {x y} (f : x ⟶ y) :
     (A.map f).map (objFiber' p_tp x).as ≫ mapFiber' a1_tp f =
     mapFiber' a0_tp f ≫ (objFiber' p_tp y).as := by
-  simpa using (mapFiber' p_tp f).1.1
+  simpa using (mapFiber' p_tp f).eq
 
 open PGrpd in
 lemma map_objFiber'_mapFiber'_inv_objFiber' {x y} (f : x ⟶ y) :
@@ -265,11 +282,13 @@ lemma sectR_false_comp_unpath : sectR ⟨⟨.false⟩⟩ _ ⋙ unpath a0_tp a1_t
   · rw [Functor.assoc, unpath, Functor.Grothendieck.functorTo_forget, ← Functor.assoc,
       sectR_comp_snd, a0_tp, Functor.id_comp]
   · intro x
-    simp [unpath, PGrpd.objFiber', PGrpd.objFiber, Grpd.eqToHom_obj]
+    simp only [Functor.comp_obj, unpath,
+      Functor.Grothendieck.functorTo_obj_fiber, unpathFibObj]
+    exact PGrpd.objFiber'_heq a0_tp
   · intro x y f
-    simp [unpath, PGrpd.mapFiber', PGrpd.mapFiber'EqToHom, Grpd.eqToHom_hom]
-    apply HEq.trans (eqToHom_comp_heq _ _)
-    simp
+    simp only [Functor.comp_map, unpath,
+      Functor.Grothendieck.functorTo_map_fiber, unpathFibMap]
+    exact PGrpd.mapFiber'_heq a0_tp f
 
 @[simp]
 lemma sectR_true_comp_unpath : sectR ⟨⟨.true⟩⟩ _ ⋙ unpath a0_tp a1_tp p_tp = a1 := by
@@ -277,27 +296,21 @@ lemma sectR_true_comp_unpath : sectR ⟨⟨.true⟩⟩ _ ⋙ unpath a0_tp a1_tp 
   · rw [Functor.assoc, unpath, Functor.Grothendieck.functorTo_forget, ← Functor.assoc,
       sectR_comp_snd, a1_tp, Functor.id_comp]
   · intro x
-    simp [unpath, PGrpd.objFiber', PGrpd.objFiber, Grpd.eqToHom_obj]
+    simp only [Functor.comp_obj, unpath,
+      Functor.Grothendieck.functorTo_obj_fiber, unpathFibObj]
+    exact PGrpd.objFiber'_heq a1_tp
   · intro x y f
-    simp [unpath, PGrpd.mapFiber', PGrpd.mapFiber'EqToHom, Grpd.eqToHom_hom]
-    apply HEq.trans (eqToHom_comp_heq _ _)
-    simp
+    simp only [Functor.comp_map, unpath,
+      Functor.Grothendieck.functorTo_map_fiber, unpathFibMap]
+    exact PGrpd.mapFiber'_heq a1_tp f
 
 lemma path0_unpath : path0 (unpath a0_tp a1_tp p_tp) = a0 := by
-  apply Functor.Grothendieck.FunctorTo.hext
-  · simp
-  · intro x
-    simpa [unpath] using PGrpd.objFiber'_heq a0_tp
-  · intro x y f
-    simpa [unpath] using PGrpd.mapFiber'_heq a0_tp f
+  change sectR ⟨⟨.false⟩⟩ _ ⋙ unpath a0_tp a1_tp p_tp = a0
+  exact sectR_false_comp_unpath a0_tp a1_tp p_tp
 
 lemma path1_unpath : path1 (unpath a0_tp a1_tp p_tp) = a1 := by
-  apply Functor.Grothendieck.FunctorTo.hext
-  · simp
-  · intro x
-    simpa [unpath] using PGrpd.objFiber'_heq a1_tp
-  · intro x y f
-    simpa [unpath] using PGrpd.mapFiber'_heq a1_tp f
+  change sectR ⟨⟨.true⟩⟩ _ ⋙ unpath a0_tp a1_tp p_tp = a1
+  exact sectR_true_comp_unpath a0_tp a1_tp p_tp
 
 lemma pathFibObj_unpath (x) : pathFibObj (unpath_comp_forgetToGrpd a0_tp a1_tp p_tp) x =
     PGrpd.objFiber' p_tp x := by
@@ -315,6 +328,7 @@ lemma path_unpath : path (A := A) (unpath_comp_forgetToGrpd a0_tp a1_tp p_tp) = 
   apply Functor.Grothendieck.FunctorTo.hext
   · rw [path_comp_forgetToGrpd, p_tp]
     rw! [path0_unpath, path1_unpath]
+    rfl
   · intro x
     exact heq_of_eq_of_heq (pathFibObj_unpath ..) (PGrpd.objFiber'_heq p_tp)
   · intro x y f
@@ -346,51 +360,41 @@ lemma a1_comp_forgetToGrpd : a1 ⋙ PGrpd.forgetToGrpd = A := by
 
 lemma obj_ff_fiber (x) : (p.obj (ff x)).fiber ≍
     PGrpd.objFiber' (a0_comp_forgetToGrpd p_tp δ0_p) x := by
+  subst a0
   symm
-  convert PGrpd.objFiber'_heq (path0_comp_forgetToGrpd p_tp) (x := x)
-  rw [← δ0_p]
+  rw [PGrpd.objFiber'_naturality (sectR ⟨⟨.false⟩⟩ _) p_tp x]
+  exact PGrpd.objFiber'_heq p_tp
 
 lemma obj_tt_fiber (x) : (p.obj (tt x)).fiber ≍
     PGrpd.objFiber' (a1_comp_forgetToGrpd p_tp δ1_p) x := by
+  subst a1
   symm
-  convert PGrpd.objFiber'_heq (path1_comp_forgetToGrpd p_tp) (x := x)
-  rw [← δ1_p]
+  rw [PGrpd.objFiber'_naturality (sectR ⟨⟨.true⟩⟩ _) p_tp x]
+  exact PGrpd.objFiber'_heq p_tp
 
 lemma map_ff_fiber {x y : Γ} (f : ff x ⟶ ff y) : (p.map f).fiber ≍
     PGrpd.mapFiber' (a0_comp_forgetToGrpd p_tp δ0_p) f.2 := by
+  subst a0
   symm
-  convert PGrpd.mapFiber'_heq p_tp f
-  · rw! [← obj_ff_fiber p_tp δ0_p x]
-    rw! [PGrpd.objFiber'_heq p_tp]
-  · rw! [← obj_ff_fiber p_tp δ0_p y]
-    rw! [PGrpd.objFiber'_heq p_tp]
-  · rw! [← δ0_p, path0, PGrpd.mapFiber'_naturality p_tp (sectR { down := { as := false } } Γ)]
-    rw! [PGrpd.mapFiber'_heq p_tp]
-    rw! [PGrpd.mapFiber'_heq p_tp f]
-    rfl
+  rw [PGrpd.mapFiber'_naturality p_tp (sectR ⟨⟨.false⟩⟩ _) f.2]
+  exact PGrpd.mapFiber'_heq p_tp f
 
 lemma map_tt_fiber {x y : Γ} (f : tt x ⟶ tt y) : (p.map f).fiber ≍
     PGrpd.mapFiber' (a1_comp_forgetToGrpd p_tp δ1_p) f.2 := by
+  subst a1
   symm
-  convert PGrpd.mapFiber'_heq p_tp f
-  · rw! [← obj_tt_fiber p_tp δ1_p x]
-    rw! [PGrpd.objFiber'_heq p_tp]
-  · rw! [← obj_tt_fiber p_tp δ1_p y]
-    rw! [PGrpd.objFiber'_heq p_tp]
-  · rw! [← δ1_p, path1, PGrpd.mapFiber'_naturality p_tp (sectR { down := { as := true } } Γ)]
-    rw! [PGrpd.mapFiber'_heq p_tp]
-    rw! [PGrpd.mapFiber'_heq p_tp f]
-    rfl
+  rw [PGrpd.mapFiber'_naturality p_tp (sectR ⟨⟨.true⟩⟩ _) f.2]
+  exact PGrpd.mapFiber'_heq p_tp f
 
 lemma mapFiber'_ffm {x y : Γ} (f : x ⟶ y) : PGrpd.mapFiber' p_tp (ffm f) ≍
     PGrpd.mapFiber' (a0_comp_forgetToGrpd p_tp δ0_p) f := by
   rw! [← δ0_p, PGrpd.mapFiber'_naturality p_tp (sectR ..)]
-  simp
+  rfl
 
 lemma mapFiber'_ttm {x y : Γ} (f : x ⟶ y) : PGrpd.mapFiber' p_tp (ttm f) ≍
     PGrpd.mapFiber' (a1_comp_forgetToGrpd p_tp δ1_p) f := by
   rw! [← δ1_p, PGrpd.mapFiber'_naturality p_tp (sectR ..)]
-  simp
+  rfl
 
 @[simp]
 lemma objFiber_path (x) : PGrpd.objFiber (path p_tp) x = pathFibObj p_tp x :=
@@ -405,7 +409,7 @@ lemma mapFiber_ft (x) : PGrpd.mapFiber p (ft x) ≍
   symm
   rw [objFiber'_path_as]
   simp only [Functor.comp_obj, snd_obj, Functor.comp_map, snd_map, PGrpd.mapFiber',
-    Grpd.forgetToCat, Functor.Grothendieck.forget_obj, PGrpd.objFiber'EqToHom,
+    Grpd.forgetToCat, PGrpd.objFiber'EqToHom,
     PGrpd.mapFiber'EqToHom, Grpd.eqToHom_hom, eqToHom_trans_assoc, PGrpd.mapFiber]
   apply HEq.trans (eqToHom_comp_heq ..)
   simp
@@ -436,8 +440,8 @@ lemma inv_mapFiber_tf_heq (y : Γ) :
   rw [PGrpd.mapFiber_inv]
   apply HEq.trans _ (eqToHom_comp_heq ..).symm
   rw! [PGrpd.inv_mapFiber_heq]
-  simp only [Grpd.forgetToCat, Functor.Grothendieck.forget_obj, Functor.comp_obj, Functor.comp_map,
-    Functor.Grothendieck.forget_map, Cat.of_α, id_eq, cast_heq_iff_heq]
+  simp only [Grpd.forgetToCat, Functor.comp_obj, Functor.comp_map,
+    PGrpd.forgetToGrpd_map, Cat.of_α, cast_heq_iff_heq]
   rw! [map_tf_base p_tp, Grpd.eqToHom_hom]
   simp only [Grpd.forgetToCat, PGrpd.mapFiber, cast_heq_iff_heq]
   rw! (castMode := .all) [Functor.map_inv]
@@ -448,16 +452,16 @@ lemma unpath_map_ft_fiber {x y} (f : ff x ⟶ tt y) :
     ((unpath (a0_comp_forgetToGrpd p_tp δ0_p) (a1_comp_forgetToGrpd p_tp δ1_p)
     (p := FunctorOperation.Path.path p_tp)
     (by rw [path_comp_forgetToGrpd]; congr)).map f).fiber ≍ (p.map f).fiber := by
-  simp only [Grpd.forgetToCat, unpath, Functor.Grothendieck.functorTo_obj_base,
-    Functor.comp_obj, snd_obj, Cat.of_α, Functor.Grothendieck.functorTo_map_base,
-    Functor.comp_map, snd_map, id_eq, Functor.Grothendieck.functorTo_obj_fiber, unpathFibObj,
+  simp only [Grpd.forgetToCat, unpath,
+    Cat.of_α,
+    unpathFibObj,
     Functor.Grothendieck.functorTo_map_fiber, unpathFibMap]
   -- have hf : f = ttm f.2 ≫ ft y := by aesop_cat
   -- TODO: mwe and report: this should not type check
   have hf : f = ffm f.2 ≫ ft y := by aesop_cat
   conv => rhs; rw! (castMode := .all) [hf]
-  simp only [heq_eqRec_iff_heq]
-  convert_to _ ≍ mapFiber _ _
+  simp only [heq_eqRec_iff]
+  change _ ≍ mapFiber p _
   erw [mapFiber_comp]
   rw! [← mapFiber'_ffm p_tp δ0_p]
   apply HEq.trans _ (eqToHom_comp_heq ..).symm
@@ -465,25 +469,28 @@ lemma unpath_map_ft_fiber {x y} (f : ff x ⟶ tt y) :
   · erw [Functor.congr_obj p_tp (tt y)]
     simp
   · have H := Functor.congr_hom p_tp (ffm f.2)
-    simp only [Grpd.forgetToCat, Functor.comp_obj, Functor.Grothendieck.forget_obj,
+    simp only [Grpd.forgetToCat, Functor.comp_obj,
       Functor.comp_map, Functor.Grothendieck.forget_map, snd_obj, snd_map,
       Grpd.comp_eq_comp] at H
     erw [Functor.congr_hom p_tp (ft y)]
     rw! [← δ0_p, path0, objFiber'_naturality (sectR ..) p_tp, objFiber'_heq]
     simp [mapObjFiber, Grpd.eqToHom_obj, objFiber, Functor.congr_obj H,
       Grpd.eqToHom_obj]
+    try rfl
   · simp only [Functor.Grothendieck.forget_map]
     rw! [← δ0_p, path0, objFiber'_naturality (sectR ..) p_tp, objFiber'_heq,
       map_ft_base p_tp, Grpd.eqToHom_obj]
     simp [objFiber]
+    rfl
   · rw! [← δ1_p, path1, objFiber'_naturality (sectR ..) p_tp, objFiber'_heq]
     simp [objFiber]
+    rfl
   · simp only [Functor.comp_obj, snd_obj, Functor.comp_map, snd_map, Grpd.forgetToCat,
-      Functor.Grothendieck.forget_obj, Functor.Grothendieck.forget_map, cast_heq_iff_heq]
+      PGrpd.forgetToGrpd_map, cast_heq_iff_heq]
     rw! [map_ft_base p_tp, mapFiber'_heq]
     simp [Grpd.eqToHom_hom, mapFiber]
   · rw! [mapFiber_ft p_tp y]
-    simp only [Grpd.forgetToCat, Functor.Grothendieck.forget_obj, Functor.Grothendieck.forget_map,
+    simp only [
       objFiber'_rfl, heq_cast_iff_heq]
     apply Discrete.as_heq_as
     · congr
@@ -497,14 +504,15 @@ lemma unpath_map_tf_fiber {x y} (f : tt x ⟶ ff y) :
     ((unpath (a0_comp_forgetToGrpd p_tp δ0_p) (a1_comp_forgetToGrpd p_tp δ1_p)
     (p := FunctorOperation.Path.path p_tp)
     (by rw [path_comp_forgetToGrpd]; congr)).map f).fiber ≍ (p.map f).fiber := by
-  simp only [Grpd.forgetToCat, unpath, Functor.Grothendieck.functorTo_obj_base, Functor.comp_obj,
-    snd_obj, Cat.of_α, Functor.Grothendieck.functorTo_map_base, Functor.comp_map, snd_map, id_eq,
-    Functor.Grothendieck.functorTo_obj_fiber, unpathFibObj, Functor.Grothendieck.functorTo_map_fiber,
+  simp only [Grpd.forgetToCat, unpath,
+    Cat.of_α,
+    unpathFibObj,
+    Functor.Grothendieck.functorTo_map_fiber,
     unpathFibMap]
   have hf : f = ttm f.2 ≫ tf y := by aesop_cat
   conv => rhs; rw! (castMode := .all) [hf]
-  simp only [heq_eqRec_iff_heq]
-  convert_to _ ≍ mapFiber _ _
+  simp only [heq_eqRec_iff]
+  change _ ≍ mapFiber p _
   erw [mapFiber_comp]
   rw! [← mapFiber'_ttm p_tp δ1_p f.2]
   apply HEq.trans _ (eqToHom_comp_heq ..).symm
@@ -512,23 +520,26 @@ lemma unpath_map_tf_fiber {x y} (f : tt x ⟶ ff y) :
   have : objFiber' (a0_comp_forgetToGrpd p_tp δ0_p) y ≍ objFiber p (ff y) := by
     rw! [← δ0_p, path0, objFiber'_naturality (sectR ..) p_tp, objFiber'_heq]
     simp [objFiber]
+    rfl
   apply Grpd.comp_heq_comp
   · assumption
   · have H := Functor.congr_hom p_tp (ttm f.2)
-    simp only [Grpd.forgetToCat, Functor.comp_obj, Functor.Grothendieck.forget_obj,
+    simp only [Grpd.forgetToCat, Functor.comp_obj,
       Functor.comp_map, Functor.Grothendieck.forget_map, snd_obj, snd_map,
       Grpd.comp_eq_comp] at H
     erw [Functor.congr_hom p_tp (tf y)]
     rw! [← δ1_p, path1, objFiber'_naturality (sectR ..) p_tp, objFiber'_heq]
     simp [mapObjFiber, Grpd.eqToHom_obj, objFiber, Functor.congr_obj H,
       Grpd.eqToHom_obj]
+    try rfl
   · simp only [Functor.Grothendieck.forget_map]
     rw! [← δ1_p, path1, objFiber'_naturality (sectR ..) p_tp, objFiber'_heq,
       map_tf_base p_tp, Grpd.eqToHom_obj]
     simp [objFiber]
+    rfl
   · assumption
   · simp only [Functor.comp_obj, snd_obj, Functor.comp_map, snd_map, Grpd.forgetToCat,
-      Functor.Grothendieck.forget_obj, Functor.Grothendieck.forget_map, cast_heq_iff_heq]
+      PGrpd.forgetToGrpd_map, cast_heq_iff_heq]
     rw! [map_tf_base p_tp, mapFiber'_heq]
     simp [Grpd.eqToHom_hom, mapFiber]
   · apply Grpd.inv_heq_of_heq_inv
@@ -579,6 +590,11 @@ open Grpd Model.UnstructuredUniverse
 
 def cylinder : Cylinder Grpd := .ofCartesianMonoidalCategoryLeft Interval δ0 δ1
 
+private lemma cylinder_δ0_obj (Γ : Grpd) (x : Γ) :
+    (cylinder.δ0.app Γ).obj x = FunctorOperation.Path.ff x := rfl
+
+attribute [local simp] cylinder_δ0_obj
+
 namespace UId
 
 variable {Γ Δ : Grpd} (σ : Δ ⟶ Γ) {A : Γ ⟶ U.{v}.Ty} (a0 a1 : Γ ⟶ U.Tm)
@@ -595,8 +611,8 @@ def Id : Γ ⟶ U.{v}.Ty :=
     (pt_tp a1 a1_tp))
 
 lemma Id_comp :
-    UId.Id (A := σ ≫ A) (σ ≫ a0) (σ ≫ a1) (by simp only [Category.assoc, a0_tp, U_Ty])
-      (by simp only [Category.assoc, a1_tp, U_Ty]) = σ ≫ UId.Id a0 a1 a0_tp a1_tp := by
+    UId.Id (A := σ ≫ A) (σ ≫ a0) (σ ≫ a1) (by simp only [Category.assoc, a0_tp])
+      (by simp only [Category.assoc, a1_tp]) = σ ≫ UId.Id a0 a1 a0_tp a1_tp := by
   dsimp only [U_Ty, comp_eq_comp, Id]
   rw [← toCoreAsSmallEquiv_symm_apply_comp_left, ← FunctorOperation.Id_comp]
 
@@ -689,8 +705,8 @@ variable (σ : Δ ⟶ Γ) (p0 : Γ ⟶ U.{v}.Tm) (p : cylinder.I.obj Γ ⟶ U.Ty
 
 @[simp]
 def liftObj : Grpd.Interval × Γ → U.{v}.Tm
-| ⟨⟨⟨.false⟩⟩, x2⟩ => p0.obj x2
-| ⟨⟨⟨.true⟩⟩, x2⟩ => tpClovenIsofibration.liftObj (p.map (FunctorOperation.Path.ft x2))
+  | ⟨⟨⟨.false⟩⟩, x2⟩ => p0.obj x2
+  | ⟨⟨⟨.true⟩⟩, x2⟩ => tpClovenIsofibration.liftObj (p.map (FunctorOperation.Path.ft x2))
     (Functor.congr_obj p0_tp x2)
 
 @[simp]
@@ -738,10 +754,10 @@ lemma lift_comp_tp :
       · erw [Functor.congr_hom p0_tp f.2]
         simp
         rfl
-      · simp only [U_Tm, comp_eq_comp, Functor.comp_obj, lift_obj, liftObj, U_Ty, U_tp,
+      · simp only [comp_eq_comp, Functor.comp_obj, liftObj,
           Functor.comp_map, lift_map, liftMap, liftMap0, Functor.map_comp]
         erw [Functor.congr_hom p0_tp f.2]
-        simp only [U_Tm, comp_eq_comp, Functor.comp_obj, Functor.id_obj, Functor.comp_map,
+        simp only [comp_eq_comp, Functor.comp_obj, Functor.id_obj, Functor.comp_map,
           Category.assoc]
         have : f = ffm f.2 ≫ ft y := by aesop
         conv => rhs; rw [this]
@@ -750,24 +766,24 @@ lemma lift_comp_tp :
         simp [← Category.assoc]
         rfl
     · rcases y with ⟨⟨⟨_|_⟩⟩, y⟩
-      · simp only [U_Tm, comp_eq_comp, Functor.comp_obj, lift_obj, liftObj, U_Ty, U_tp,
+      · simp only [comp_eq_comp, Functor.comp_obj, liftObj,
           Functor.comp_map, lift_map, liftMap, liftMap0, Functor.map_comp, Functor.map_inv,
           IsIso.inv_comp_eq]
         erw [Functor.congr_hom p0_tp f.2]
         have : f = tf x ≫ ffm f.2 := by aesop
         slice_rhs 2 3 => rw [this]
         rw [Functor.ClovenIsofibration.map_liftIso', Functor.map_comp]
-        simp only [U_Tm, comp_eq_comp, Functor.comp_obj, Functor.id_obj, Functor.comp_map,
+        simp only [comp_eq_comp, Functor.comp_obj, Functor.id_obj, Functor.comp_map,
           Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
         have : ft x ≫ tf x = 𝟙 _ := by aesop
         slice_rhs 2 3 => rw [← Functor.map_comp, this, CategoryTheory.Functor.map_id]
         rfl
-      · simp only [U_Tm, comp_eq_comp, Functor.comp_obj, lift_obj, liftObj, U_Ty, U_tp,
+      · simp only [comp_eq_comp, Functor.comp_obj, liftObj,
           Functor.comp_map, lift_map, liftMap, liftMap0, Functor.map_comp, Functor.map_inv,
           IsIso.inv_comp_eq]
         erw [Functor.congr_hom p0_tp f.2]
         rw [Functor.ClovenIsofibration.map_liftIso', Functor.ClovenIsofibration.map_liftIso']
-        simp only [U_Tm, comp_eq_comp, Functor.comp_obj, Functor.id_obj, Functor.comp_map,
+        simp only [comp_eq_comp, Functor.comp_obj, Functor.id_obj, Functor.comp_map,
           ← Category.assoc, ← heq_eq_eq, heq_comp_eqToHom_iff, comp_eqToHom_heq_iff]
         simp only [Category.assoc, eqToHom_trans, eqToHom_refl, Category.comp_id,
           ← Functor.map_comp, heq_eq_eq]
@@ -776,13 +792,7 @@ lemma lift_comp_tp :
         rfl
 
 lemma δ0_comp_lift : cylinder.δ0.app Γ ≫ hurewiczUTp.lift p0 p p0_tp = p0 := by
-  fapply CategoryTheory.Functor.ext
-  · intro x
-    convert_to (lift p0 p p0_tp).obj ⟨⟨⟨.false⟩⟩, x⟩ = _
-    simp
-  · intro x y f
-    convert_to (lift p0 p p0_tp).map (ffm f) = _
-    simp
+  rfl
 
 @[simp]
 lemma I_map_obj_ff (x : Δ) : (cylinder.I.map σ).obj ({ down := { as := false } }, x) =
@@ -801,7 +811,7 @@ lemma lift_map_ft (x : Δ) : (lift p0 p p0_tp).map (ft (σ.obj x)) =
 lemma lift_map_ft' (x : Δ) : (lift p0 p p0_tp).map (ft (σ.obj x)) =
     tpClovenIsofibration.liftIso (p.map (⟨⟨⟨⟩⟩, σ.map (𝟙 _)⟩ : ff (σ.obj x) ⟶ tt (σ.obj x)))
     (by simpa using Functor.congr_obj p0_tp (σ.obj x)) ≫ eqToHom (by simp) := by
-  simp only [U_Tm, lift_obj, liftObj, U_Ty, U_tp, ft, lift_map, liftMap,
+  simp only [liftObj, ft, lift_map, liftMap,
     CategoryTheory.Functor.map_id, liftMap0, Category.id_comp, ← heq_eq_eq, heq_comp_eqToHom_iff]
   rw! (castMode := .all) [← CategoryTheory.Functor.map_id]
   rfl
@@ -815,7 +825,7 @@ lemma lift_map_tf' (x : Δ) : (lift p0 p p0_tp).map (tf (σ.obj x)) =
     eqToHom (by simp [ft]; rfl) ≫
     inv (tpClovenIsofibration.liftIso (p.map (⟨⟨⟨⟩⟩, σ.map (𝟙 _)⟩ : ff (σ.obj x) ⟶ tt (σ.obj x)))
     (by simpa using Functor.congr_obj p0_tp (σ.obj x))) := by
-  simp only [U_Tm, lift_obj, liftObj, U_Ty, U_tp, ft, tf, lift_map, liftMap, liftMap0,
+  simp only [liftObj, ft, tf, lift_map, liftMap, liftMap0,
     CategoryTheory.Functor.map_id, Category.comp_id, ← heq_eq_eq, heq_eqToHom_comp_iff]
   rw! (castMode := .all) [← CategoryTheory.Functor.map_id]
   rfl
@@ -826,14 +836,15 @@ lemma lift_comp : lift (σ ≫ p0) (cylinder.I.map σ ≫ p)
   fapply CategoryTheory.Functor.ext
   · intro x
     rcases x with ⟨⟨⟨_|_⟩⟩, x⟩
-    · convert_to _ = (lift p0 p p0_tp).obj (ff (σ.obj x))
-      simp
-    · convert_to _ = (lift p0 p p0_tp).obj (tt (σ.obj x))
-      simp only [U_Tm, comp_eq_comp, lift_obj, liftObj, U_Ty, U_tp, Functor.comp_obj,
-        Functor.comp_map]
-      congr
-      conv => rhs; rw [ft, ← CategoryTheory.Functor.map_id]
-      rfl
+    · rfl
+    · simp only [Grpd.comp_eq_comp, comp_eq_comp, lift_obj, liftObj,
+        Functor.comp_obj, Functor.comp_map, ft]
+      have htt : (cylinder.I.map σ).obj (tt x) = tt (σ.obj x) := by rfl
+      have hft : (cylinder.I.map σ).map (ft x) = ft (σ.obj x) := by
+        dsimp [cylinder, Cylinder.ofCartesianMonoidalCategoryLeft]
+        change ((ft x).1, σ.map (𝟙 x)) = ((ft x).1, 𝟙 (σ.obj x))
+        rw [CategoryTheory.Functor.map_id]
+      simp only [htt, hft]
   · intro x y f
     rcases x with ⟨⟨⟨_|_⟩⟩, x⟩
     · rcases y with ⟨⟨⟨_|_⟩⟩, y⟩
@@ -854,7 +865,7 @@ lemma lift_comp : lift (σ ≫ p0) (cylinder.I.map σ ≫ p)
       · have : (cylinder.I.map σ).map f = tf (σ.obj x) ≫ ffm (σ.map f.2) ≫ ft (σ.obj y) := by aesop
         slice_rhs 2 3 => simp only [Grpd.comp_eq_comp, Functor.comp_map, this, Functor.map_comp,
           lift_map_ffm, lift_map_tf', lift_map_ft']
-        simp only [U_Tm, comp_eq_comp, lift_obj, liftObj, U_Ty, U_tp, Functor.comp_obj, ft,
+        simp only [comp_eq_comp, liftObj, Functor.comp_obj, ft,
           Functor.comp_map, lift_map, liftMap, liftMap0, Category.assoc, eqToHom_trans,
           eqToHom_refl, Category.comp_id, eqToHom_trans_assoc, Category.id_comp, IsIso.eq_inv_comp]
         erw [IsIso.hom_inv_id_assoc]
@@ -875,20 +886,36 @@ lemma isNormal (A : Γ ⟶ U.Ty) (π_A : p = CategoryTheory.Prod.snd _ Γ ≫ A)
     rcases x with ⟨⟨⟨_|_⟩⟩, x⟩
     · rcases y with ⟨⟨⟨_|_⟩⟩, y⟩
       · simp
-      · simp only [U_Tm, comp_eq_comp, lift_obj, liftObj, U_Ty, U_tp, Functor.comp_obj,
+      · simp only [comp_eq_comp, liftObj, Functor.comp_obj,
           Prod.snd_obj, Functor.comp_map, Prod.snd_map, lift_map, liftMap, liftMap0,
           eqToHom_refl, Category.id_comp]
-        rw! [CategoryTheory.Functor.map_id, liftIso_id]
+        rw! (castMode := .all) [CategoryTheory.Functor.map_id, liftIso_id]
+        simp only [← heq_eq_eq, eqRec_heq_iff,
+          heq_comp_eqToHom_iff, comp_eqToHom_heq_iff]
+        rfl
     · rcases y with ⟨⟨⟨_|_⟩⟩, y⟩
-      · simp only [U_Tm, comp_eq_comp, lift_obj, liftObj, U_Ty, U_tp, Functor.comp_obj,
+      · simp only [comp_eq_comp, liftObj, Functor.comp_obj,
           Prod.snd_obj, Functor.comp_map, Prod.snd_map, lift_map, liftMap, liftMap0,
           eqToHom_refl, Category.comp_id, IsIso.inv_comp_eq]
-        rw! [CategoryTheory.Functor.map_id, liftIso_id]
-        simp
+        rw! (castMode := .all) [CategoryTheory.Functor.map_id, liftIso_id]
+        simp only [← heq_eq_eq, heq_eqRec_iff,
+          heq_eqToHom_comp_iff, ]
+        rfl
       · simp
-        rw! [CategoryTheory.Functor.map_id, liftIso_id]
-        slice_rhs 1 2 => rw! [CategoryTheory.Functor.map_id, liftIso_id]
-        simp
+        rw! (castMode := .all) [CategoryTheory.Functor.map_id, liftIso_id]
+        slice_rhs 1 2 => rw! (castMode := .all) [CategoryTheory.Functor.map_id, liftIso_id]
+        simp only [← heq_eq_eq,
+          comp_eqToHom_heq_iff]
+        symm
+        apply HEq.trans ?_ (heq_of_eq (Category.id_comp (p0.map f.2)))
+        apply heq_comp <;>
+          simp only [eqRec_heq_iff, liftObj_id,
+            comp_eqToHom_heq_iff,
+            eqToHom_comp_heq_iff] <;> try rfl
+        · rw! (castMode := .all) [CategoryTheory.Functor.map_id]
+          apply liftObj_id
+        · apply eqToHom_heq_id
+          rfl
 
 end hurewiczUTp
 

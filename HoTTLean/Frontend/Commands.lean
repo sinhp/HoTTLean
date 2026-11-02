@@ -21,16 +21,15 @@ def envDiff (old new : Environment) : Array ConstantInfo := Id.run do
 and return them as an axiom environment.
 Assumes that all such axioms are present in the ambient environment
 as definitions of type `CheckedAx _` under the same name. -/
-def computeAxioms (thyEnv : Environment) (constNm : Name) : MetaM ((E : Q(Axioms Name)) × Q(($E).Wf)) := do
-  let (_, st) ← (CollectAxioms.collect constNm).run thyEnv |>.run {}
-  let axioms := st.axioms
+def computeAxioms (thyEnv : Environment) (constNm : Name) :
+    MetaM ((E : Q(Axioms Name)) × Q(($E).Wf)) := do
+  let axioms ← withEnv thyEnv <| collectAxioms constNm
   -- The output includes `constNm` if it is itself an axiom.
   let axioms := axioms.filter (· != constNm)
   -- Order the axioms by '`a` uses `b`'.
   let mut axiomAxioms : Std.HashMap Name (Array Name) := {}
   for axNm in axioms do
-    let (_, st) ← (CollectAxioms.collect axNm).run thyEnv |>.run {}
-    let axioms := st.axioms.filter (· != axNm)
+    let axioms := (← withEnv thyEnv <| collectAxioms axNm).filter (· != axNm)
     axiomAxioms := axiomAxioms.insert axNm axioms
   let mut axioms := axioms.qsort (fun a b => axiomAxioms[b]!.contains a)
   -- HACK: replace `sorryAx` with our universe-monomorphic versions.
